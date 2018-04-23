@@ -1,0 +1,5 @@
+package node;
+
+message InterestPacket {
+  repeated int32 interests = 1;
+}

@@ -1,0 +1,207 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\shared\deps\json\json_reader.cpp" />
+    <ClCompile Include="..\..\shared\deps\json\json_value.cpp" />
+    <ClCompile Include="..\..\shared\deps\json\json_writer.cpp" />
+    <ClCompile Include="..\..\shared\deps\tinyxml\tinystr.cpp" />
+    <ClCompile Include="..\..\shared\deps\tinyxml\tinyxml.cpp" />
+    <ClCompile Include="..\..\shared\deps\tinyxml\tinyxmlerror.cpp" />
+    <ClCompile Include="..\..\shared\deps\tinyxml\tinyxmlparser.cpp" />
+    <ClCompile Include="..\src\framework\data_packet.pb.cc" />
+    <ClCompile Include="..\src\framework\LoginModule.cpp" />
+    <ClCompile Include="..\src\framework\GameClient.cpp" />
+    <ClCompile Include="..\src\framework\LoginWebRequest.cpp" />
+    <ClCompile Include="..\src\framework\main.cpp" />
+    <ClCompile Include="..\src\framework\msg_agent_login.pb.cc" />
+    <ClCompile Include="..\src\framework\msg_login_login.pb.cc" />
+    <ClCompile Include="..\src\framework\PlayerFactory.cpp" />
+    <ClCompile Include="..\src\framework\ClientModule.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\shared\deps\json\autolink.h" />
+    <ClInclude Include="..\..\shared\deps\json\config.h" />
+    <ClInclude Include="..\..\shared\deps\json\features.h" />
+    <ClInclude Include="..\..\shared\deps\json\forwards.h" />
+    <ClInclude Include="..\..\shared\deps\json\json.h" />
+    <ClInclude Include="..\..\shared\deps\json\json_batchallocator.h" />
+    <ClInclude Include="..\..\shared\deps\json\reader.h" />
+    <ClInclude Include="..\..\shared\deps\json\value.h" />
+    <ClInclude Include="..\..\shared\deps\json\writer.h" />
+    <ClInclude Include="..\..\shared\deps\stacktrace\Array.h" />
+    <ClInclude Include="..\..\shared\deps\stacktrace\MapFile.h" />
+    <ClInclude Include="..\..\shared\deps\stacktrace\MapFileEntry.h" />
+    <ClInclude Include="..\..\shared\deps\stacktrace\StackTrace.h" />
+    <ClInclude Include="..\..\shared\deps\stacktrace\TextFile.h" />
+    <ClInclude Include="..\..\shared\deps\tinyxml\tinystr.h" />
+    <ClInclude Include="..\..\shared\deps\tinyxml\tinyxml.h" />
+    <ClInclude Include="..\..\shared\include\Common.h" />
+    <ClInclude Include="..\..\shared\include\httpclient\HttpClientManager.h" />
+    <ClInclude Include="..\..\shared\include\httpclient\HttpRequest.h" />
+    <ClInclude Include="..\..\shared\include\module\INotificationBody.h" />
+    <ClInclude Include="..\..\shared\include\module\ModuleEnv.h" />
+    <ClInclude Include="..\..\shared\include\module\ModuleManager.h" />
+    <ClInclude Include="..\..\shared\include\network\BitStream.h" />
+    <ClInclude Include="..\..\shared\include\network\NetworkSync.h" />
+    <ClInclude Include="..\..\shared\include\network\NetworkTrace.h" />
+    <ClInclude Include="..\..\shared\include\network\NetworkTypes.h" />
+    <ClInclude Include="..\..\shared\include\network\ReceiveBuffer.h" />
+    <ClInclude Include="..\..\shared\include\network\SingleProducerConsumer.h" />
+    <ClInclude Include="..\..\shared\include\network\SmallBuffer.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPLinkInterface.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPLinkMTInterface.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPPacketInterface.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPSocketBase.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPSocketWin32.h" />
+    <ClInclude Include="..\..\shared\include\ShareConfig.h" />
+    <ClInclude Include="..\..\shared\include\ShareDefines.h" />
+    <ClInclude Include="..\..\shared\include\ShareErrors.h" />
+    <ClInclude Include="..\..\shared\include\threading\AtomicLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\CircleQueue.h" />
+    <ClInclude Include="..\..\shared\include\threading\CThreads.h" />
+    <ClInclude Include="..\..\shared\include\threading\FastMutex.h" />
+    <ClInclude Include="..\..\shared\include\threading\ILock.h" />
+    <ClInclude Include="..\..\shared\include\threading\IRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\Mutex.h" />
+    <ClInclude Include="..\..\shared\include\threading\ScopedLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ScopedRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ThreadBase.h" />
+    <ClInclude Include="..\..\shared\include\threading\Threading.h" />
+    <ClInclude Include="..\..\shared\include\threading\ThreadPool.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\AgentMethod.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\CommandManager.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleEvent.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleEventArray.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimerEvent.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimerManager.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimestampManager.h" />
+    <ClInclude Include="..\..\shared\include\utility\AutoPointer.h" />
+    <ClInclude Include="..\..\shared\include\utility\CallBack.h" />
+    <ClInclude Include="..\..\shared\include\utility\CrashDump.h" />
+    <ClInclude Include="..\..\shared\include\utility\CsvParser.h" />
+    <ClInclude Include="..\..\shared\include\utility\ExceptionManager.h" />
+    <ClInclude Include="..\..\shared\include\utility\GuidFactory.h" />
+    <ClInclude Include="..\..\shared\include\utility\ITComparer.h" />
+    <ClInclude Include="..\..\shared\include\utility\ITPriorityQueue.h" />
+    <ClInclude Include="..\..\shared\include\utility\Log.h" />
+    <ClInclude Include="..\..\shared\include\utility\Md5.h" />
+    <ClInclude Include="..\..\shared\include\utility\PoolBase.h" />
+    <ClInclude Include="..\..\shared\include\utility\printStackTrace.h" />
+    <ClInclude Include="..\..\shared\include\utility\ProcessStatus.h" />
+    <ClInclude Include="..\..\shared\include\utility\SeparatedStream.h" />
+    <ClInclude Include="..\..\shared\include\utility\SimpleAllocator.h" />
+    <ClInclude Include="..\..\shared\include\utility\Singleton.h" />
+    <ClInclude Include="..\..\shared\include\utility\TPriorityQueue.h" />
+    <ClInclude Include="..\..\shared\include\utility\Utf8.h" />
+    <ClInclude Include="..\..\shared\include\utility\WeakPointer.h" />
+    <ClInclude Include="..\src\framework\AppConfig.h" />
+    <ClInclude Include="..\src\framework\BodyBitStream.h" />
+    <ClInclude Include="..\src\framework\BodyMessage.h" />
+    <ClInclude Include="..\src\framework\data_packet.pb.h" />
+    <ClInclude Include="..\src\framework\msg_agent_login.pb.h" />
+    <ClInclude Include="..\src\framework\NodeDefines.h" />
+    <ClInclude Include="..\src\framework\LoginModule.h" />
+    <ClInclude Include="..\src\framework\GameClient.h" />
+    <ClInclude Include="..\src\framework\LoginWebRequest.h" />
+    <ClInclude Include="..\src\framework\InnerOperateHelper.h" />
+    <ClInclude Include="..\src\framework\msg_login_login.pb.h" />
+    <ClInclude Include="..\src\framework\PlayerBase.h" />
+    <ClInclude Include="..\src\framework\PlayerFactory.h" />
+    <ClInclude Include="..\src\framework\ClientModule.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\shared\deps\json\json_internalarray.inl" />
+    <None Include="..\..\shared\deps\json\json_internalmap.inl" />
+    <None Include="..\..\shared\deps\json\json_valueiterator.inl" />
+    <None Include="..\bin\win32\debug\App.config" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FC0F3398-A11D-4F1B-8238-9D88FB50D80A}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>GameServer</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../bin/win32/debug/</OutDir>
+    <IntDir>../build/win32/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../bin/win32/release/</OutDir>
+    <IntDir>../build/win32/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARE_DLL;OPEN_LOG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../shared/include;../../shared/include/utility;../../shared/include/module;../../shared/include/network;../../shared/include/threading;../../shared/include/timerevent;../../shared/include/httpclient;../../shared/deps;../../shared/deps/boost;../../shared/deps/json;../../shared/deps/libcurl;../src;../src/framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../../shared/libs/win32/boost/libboost_thread-vc100-mt-gd-1_61.lib;../../shared/libs/win32/boost/libboost_date_time-vc100-mt-gd-1_61.lib;../../shared/libs/win32/boost/libboost_system-vc100-mt-gd-1_61.lib;../../shared/libs/win32/boost/libboost_chrono-vc100-mt-gd-1_61.lib;../../shared/libs/win32/protobuf/debug/libprotobuf.lib;../../shared/libs/win32/protobuf/debug/libprotobuf-lite.lib;../../shared/libs/win32/protobuf/debug/libprotoc.lib;../../shared/libs/win32/shared/debug/Shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateMapFile>false</GenerateMapFile>
+      <MapExports>false</MapExports>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../shared/include;../../shared/include/utility;../../shared/include/module;../../shared/include/network;../../shared/include/threading;../../shared/include/timerevent;../../shared/include/httpclient;../../shared/deps;../../shared/deps/boost;../../shared/deps/json;../../shared/deps/libcurl;../src;../src/framework;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>../../shared/libs/win32/boost/libboost_thread-vc100-mt-1_61.lib;../../shared/libs/win32/boost/libboost_date_time-vc100-mt-1_61.lib;../../shared/libs/win32/boost/libboost_system-vc100-mt-1_61.lib;../../shared/libs/win32/boost/libboost_chrono-vc100-mt-1_61.lib;../../shared/libs/win32/protobuf/release/libprotobuf.lib;../../shared/libs/win32/protobuf/release/libprotobuf-lite.lib;../../shared/libs/win32/protobuf/release/libprotoc.lib;../../shared/libs/win32/shared/release/Shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

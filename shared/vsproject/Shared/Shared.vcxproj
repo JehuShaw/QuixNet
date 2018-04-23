@@ -1,0 +1,254 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{29F088A9-32F7-4400-94D8-8BF892A7E254}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Shared</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARED_EXPORTS;SHARE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;../../source/database;../../source/module;../../source/network;../../source/threading;../../source/timerevent;../../source/utility;../../deps/mysql;../../include/database;../../include/httpclient;../../include/module;../../include/network;../../include/threading;../../include/timerevent;../../include/utility;../../deps/stacktrace;../../deps/libcurl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ProgramDataBaseFileName>$(TargetDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../../libs/win32/stacktrace/stacktraced.lib;../../libs/win32/mysql/debug/libmysql.lib;../../libs/win32/libcurl/libcurld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARED_EXPORTS;SHARE_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../include;../../source/database;../../source/httpclient;../../source/module;../../source/network;../../source/threading;../../source/timerevent;../../source/utility;../../deps/mysql;../../include/database;../../include/httpclient;../../include/module;../../include/network;../../include/threading;../../include/timerevent;../../include/utility;../../deps/libcurl;../../deps/stacktrace;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ProgramDataBaseFileName>$(TargetDir)vc$(PlatformToolsetVersion).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>../../libs/win32/stacktrace/stacktrace.lib;../../libs/win32/mysql/release/libmysql.lib;../../libs/win32/libcurl/libcurl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\Common.h" />
+    <ClInclude Include="..\..\include\database\CallBackDB.h" />
+    <ClInclude Include="..\..\include\database\Database.h" />
+    <ClInclude Include="..\..\include\database\DatabaseEnv.h" />
+    <ClInclude Include="..\..\include\database\Field.h" />
+    <ClInclude Include="..\..\include\database\MySQLDatabase.h" />
+    <ClInclude Include="..\..\include\httpclient\CurlMultiMT.h" />
+    <ClInclude Include="..\..\include\httpclient\HttpClientManager.h" />
+    <ClInclude Include="..\..\include\httpclient\HttpRequest.h" />
+    <ClInclude Include="..\..\include\module\INotificationBody.h" />
+    <ClInclude Include="..\..\include\module\ModuleEnv.h" />
+    <ClInclude Include="..\..\include\module\ModuleManager.h" />
+    <ClInclude Include="..\..\include\network\BitStream.h" />
+    <ClInclude Include="..\..\include\network\NetworkSync.h" />
+    <ClInclude Include="..\..\include\network\NetworkTrace.h" />
+    <ClInclude Include="..\..\include\network\NetworkTypes.h" />
+    <ClInclude Include="..\..\include\network\ReceiveBuffer.h" />
+    <ClInclude Include="..\..\include\network\SingleProducerConsumer.h" />
+    <ClInclude Include="..\..\include\network\SmallBuffer.h" />
+    <ClInclude Include="..\..\include\network\TCPLinkInterface.h" />
+    <ClInclude Include="..\..\include\network\TCPPacketInterface.h" />
+    <ClInclude Include="..\..\include\network\TCPSocketBase.h" />
+    <ClInclude Include="..\..\include\network\TCPSocketWin32.h" />
+    <ClInclude Include="..\..\include\ShareConfig.h" />
+    <ClInclude Include="..\..\include\ShareDefines.h" />
+    <ClInclude Include="..\..\include\ShareDll.h" />
+    <ClInclude Include="..\..\include\ShareErrors.h" />
+    <ClInclude Include="..\..\include\threading\AtomicLock.h" />
+    <ClInclude Include="..\..\include\threading\CircleQueue.h" />
+    <ClInclude Include="..\..\include\threading\CondVar.h" />
+    <ClInclude Include="..\..\include\threading\CThreads.h" />
+    <ClInclude Include="..\..\include\threading\FastMutex.h" />
+    <ClInclude Include="..\..\include\threading\IWrapBase.h" />
+    <ClInclude Include="..\..\include\threading\IWrapLock.h" />
+    <ClInclude Include="..\..\include\threading\IWrapRWLock.h" />
+    <ClInclude Include="..\..\include\threading\Mutex.h" />
+    <ClInclude Include="..\..\include\threading\ReadWriteLock.h" />
+    <ClInclude Include="..\..\include\threading\RecursiveRWLock.h" />
+    <ClInclude Include="..\..\include\threading\SpinEvent.h" />
+    <ClInclude Include="..\..\include\threading\ILock.h" />
+    <ClInclude Include="..\..\include\threading\IRWLock.h" />
+    <ClInclude Include="..\..\include\threading\CriticalSection.h" />
+    <ClInclude Include="..\..\include\threading\ScopedLock.h" />
+    <ClInclude Include="..\..\include\threading\ScopedRWLock.h" />
+    <ClInclude Include="..\..\include\threading\ScopedWrapLock.h" />
+    <ClInclude Include="..\..\include\threading\ScopedWrapRWLock.h" />
+    <ClInclude Include="..\..\include\threading\SpinRecursiveLock.h" />
+    <ClInclude Include="..\..\include\threading\SpinRecursiveRWLock.h" />
+    <ClInclude Include="..\..\include\threading\SpinRWLock.h" />
+    <ClInclude Include="..\..\include\threading\SpinLock.h" />
+    <ClInclude Include="..\..\include\threading\SysCurrentThreadId.h" />
+    <ClInclude Include="..\..\include\threading\ThreadBase.h" />
+    <ClInclude Include="..\..\include\threading\Threading.h" />
+    <ClInclude Include="..\..\include\threading\ThreadPool.h" />
+    <ClInclude Include="..\..\include\threading\WrapLock.h" />
+    <ClInclude Include="..\..\include\threading\WrapRWLock.h" />
+    <ClInclude Include="..\..\include\timerevent\AgentMethod.h" />
+    <ClInclude Include="..\..\include\timerevent\CommandManager.h" />
+    <ClInclude Include="..\..\include\timerevent\SimpleEvent.h" />
+    <ClInclude Include="..\..\include\timerevent\SimpleEventArray.h" />
+    <ClInclude Include="..\..\include\timerevent\SysTickCount.h" />
+    <ClInclude Include="..\..\include\timerevent\TimerEvent.h" />
+    <ClInclude Include="..\..\include\timerevent\TimerManager.h" />
+    <ClInclude Include="..\..\include\timerevent\TimerManagerHelper.h" />
+    <ClInclude Include="..\..\include\timerevent\TimestampManager.h" />
+    <ClInclude Include="..\..\include\utility\ArrayList.h" />
+    <ClInclude Include="..\..\include\utility\ArrayMap.h" />
+    <ClInclude Include="..\..\include\utility\AutoPointer.h" />
+    <ClInclude Include="..\..\include\utility\BitSignSet.h" />
+    <ClInclude Include="..\..\include\utility\CallBack.h" />
+    <ClInclude Include="..\..\include\utility\CrashDump.h" />
+    <ClInclude Include="..\..\include\utility\CsvParser.h" />
+    <ClInclude Include="..\..\include\utility\ExceptionManager.h" />
+    <ClInclude Include="..\..\include\utility\GuidFactory.h" />
+    <ClInclude Include="..\..\include\utility\IRankData.h" />
+    <ClInclude Include="..\..\include\utility\IStream.h" />
+    <ClInclude Include="..\..\include\utility\ITComparer.h" />
+    <ClInclude Include="..\..\include\utility\ITPriorityQueue.h" />
+    <ClInclude Include="..\..\include\utility\Log.h" />
+    <ClInclude Include="..\..\include\utility\Md5.h" />
+    <ClInclude Include="..\..\include\utility\PoolBase.h" />
+    <ClInclude Include="..\..\include\utility\PrintStackTrace.h" />
+    <ClInclude Include="..\..\include\utility\ProcessStatus.h" />
+    <ClInclude Include="..\..\include\utility\RankSetMT.h" />
+    <ClInclude Include="..\..\include\utility\ReferObject.h" />
+    <ClInclude Include="..\..\include\utility\ScopedPointer.h" />
+    <ClInclude Include="..\..\include\utility\SeparatedStream.h" />
+    <ClInclude Include="..\..\include\utility\Singleton.h" />
+    <ClInclude Include="..\..\include\utility\SkipList.h" />
+    <ClInclude Include="..\..\include\utility\StoreStream.h" />
+    <ClInclude Include="..\..\include\utility\StreamDataType.h" />
+    <ClInclude Include="..\..\include\utility\StringResolved.h" />
+    <ClInclude Include="..\..\include\utility\TimeSeries.h" />
+    <ClInclude Include="..\..\include\utility\TPriorityQueue.h" />
+    <ClInclude Include="..\..\include\utility\TransferStream.h" />
+    <ClInclude Include="..\..\include\utility\Utf8.h" />
+    <ClInclude Include="..\..\include\utility\ValueStream.h" />
+    <ClInclude Include="..\..\include\utility\WeakPointer.h" />
+    <ClInclude Include="..\..\include\utility\XqxAllocator.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable0.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable0S.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable1.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable1S.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable1Store.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable2.h" />
+    <ClInclude Include="..\..\include\utility\XqxTable2S.h" />
+    <ClInclude Include="..\..\include\utility\XqxTableIndex.h" />
+    <ClInclude Include="..\..\include\utility\XqxTableIndexS.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\source\Common.cpp" />
+    <ClCompile Include="..\..\source\database\CreateInterface.cpp" />
+    <ClCompile Include="..\..\source\database\Database.cpp" />
+    <ClCompile Include="..\..\source\database\MySQLDatabase.cpp" />
+    <ClCompile Include="..\..\source\httpclient\CurlMultiMT.cpp" />
+    <ClCompile Include="..\..\source\httpclient\HttpClientManager.cpp" />
+    <ClCompile Include="..\..\source\httpclient\HttpRequest.cpp" />
+    <ClCompile Include="..\..\source\module\ModuleManager.cpp" />
+    <ClCompile Include="..\..\source\network\BitStream.cpp" />
+    <ClCompile Include="..\..\source\network\NetworkTrace.cpp" />
+    <ClCompile Include="..\..\source\network\NetworkTypes.cpp" />
+    <ClCompile Include="..\..\source\network\ReceiveBuffer.cpp" />
+    <ClCompile Include="..\..\source\network\TCPLinkInterface.cpp" />
+    <ClCompile Include="..\..\source\network\TCPPacketInterface.cpp" />
+    <ClCompile Include="..\..\source\network\TCPSocketWin32.cpp" />
+    <ClCompile Include="..\..\source\threading\CondVar.cpp" />
+    <ClCompile Include="..\..\source\threading\ReadWriteLock.cpp" />
+    <ClCompile Include="..\..\source\threading\RecursiveRWLock.cpp" />
+    <ClCompile Include="..\..\source\threading\SpinRecursiveRWLock.cpp" />
+    <ClCompile Include="..\..\source\threading\SysCurrentThreadId.cpp" />
+    <ClCompile Include="..\..\source\threading\ThreadPool.cpp" />
+    <ClCompile Include="..\..\source\timerevent\CommandManager.cpp" />
+    <ClCompile Include="..\..\source\timerevent\SysTickCount.cpp" />
+    <ClCompile Include="..\..\source\timerevent\TimerEvent.cpp" />
+    <ClCompile Include="..\..\source\timerevent\TimerManager.cpp" />
+    <ClCompile Include="..\..\source\timerevent\TimestampManager.cpp" />
+    <ClCompile Include="..\..\source\utility\BitSignSet.cpp" />
+    <ClCompile Include="..\..\source\utility\CrashDump.cpp" />
+    <ClCompile Include="..\..\source\utility\CsvParser.cpp" />
+    <ClCompile Include="..\..\source\utility\ExceptionManager.cpp" />
+    <ClCompile Include="..\..\source\utility\GuidFactory.cpp" />
+    <ClCompile Include="..\..\source\utility\itostr.c" />
+    <ClCompile Include="..\..\source\utility\Log.cpp" />
+    <ClCompile Include="..\..\source\utility\Md5.cpp" />
+    <ClCompile Include="..\..\source\utility\PrintStackTrace.cpp" />
+    <ClCompile Include="..\..\source\utility\ProcessStatus.cpp" />
+    <ClCompile Include="..\..\source\utility\SeparatedStream.cpp" />
+    <ClCompile Include="..\..\source\utility\StoreStream.cpp" />
+    <ClCompile Include="..\..\source\utility\TimeSeries.cpp" />
+    <ClCompile Include="..\..\source\utility\TransferStream.cpp" />
+    <ClCompile Include="..\..\source\utility\Utf8.cpp" />
+    <ClCompile Include="dllmain.cpp">
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+      </PrecompiledHeader>
+      <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Shared.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

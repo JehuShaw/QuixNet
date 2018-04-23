@@ -1,0 +1,17 @@
+Name,Value,Describe,Remarks
+Action_Point_Time,300,多少秒回复1次体力,备注
+Action_Renew_Value,110,每次自动回复体力的值。,
+Speed_Default,1,默认攻速,
+Power_Limit,500,怒气上限值,
+Power_Time,0,每秒回复多少怒气,
+Power_CommonAttack,200,普通攻击回复的怒气值,
+Power_Kill,50,击杀单位获得怒气值,
+Power_Hit,500,每次受到攻击获得怒气值=受伤害百分比*Power_Hit(Value),
+Break_HitHP,15,受到多少百分比的生命值伤害则打断当前动作,
+Version,1,版本,
+Initial_Gem,100000,角色创建时，初始的充值货币,
+Initial_Coin,200000,角色创建时，初始的游戏货币,
+Initial_PhyPower,3000,角色创建时，初始的体力值,
+Boss_DailyTimes,2,每天允许进入Boss 副本次数,
+Boss_ResetTimes,2,玩家每天可重置次数,
+Boss_VipResetTimes,3,Vip玩家每天可重置次数,

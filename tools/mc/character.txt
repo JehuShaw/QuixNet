@@ -1,0 +1,19 @@
+// 角色账号ID
+uint64_t account;
+// 角色名称
+string name;
+// 角色等级
+int32_t level;
+// 角色经验
+int32_t exp;
+// 角色充值货币
+int32_t gem;
+// 角色游戏币
+int32_t coin;
+// 角色创建时间
+string createTime;
+// 角色最后一次离线时间
+string offlineTime;
+// 玩家状态
+int32_t status;
+

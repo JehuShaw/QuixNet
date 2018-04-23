@@ -1,0 +1,7 @@
+package rank;
+
+message UpdateRankPacket {
+	// 用于排名的分数值
+	required int32 score = 1;
+}
+

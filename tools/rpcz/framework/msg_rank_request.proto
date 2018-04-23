@@ -1,0 +1,15 @@
+import "msg_rank_item.proto";
+
+package rank;
+
+message RequestRankPacket {
+	// 排行类型
+	required int32 rank_type = 1;
+}
+
+message RequestRankResultPacket {
+	// 排行类型
+	required int32 rank_type = 1;
+	// 排行信息列表
+	repeated RankItemPacket items = 2;
+}

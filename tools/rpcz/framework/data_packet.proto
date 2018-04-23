@@ -1,0 +1,14 @@
+package node;
+
+message DataPacket {
+  // Operate code
+  required int32 cmd = 1;
+  // Route type, 0 by user ID, 1 by server ID, 2 broadcast user
+  optional int32 route_type = 2;
+  // Route data, can be user ID or server ID.
+  optional uint64 route = 3;
+  // If have result code.
+  optional int32 result = 4;
+  // bytes data.
+  optional bytes data = 5;
+}

@@ -1,0 +1,18 @@
+import "void_packet.proto";
+import "interest_packet.proto";
+import "data_packet.proto";
+
+package node;
+
+
+service WorkerService {
+  rpc HandleProtocol(DataPacket) returns(DataPacket);
+  rpc HandleNotification(DataPacket) returns(DataPacket);
+  rpc ListProtocolInterests(VoidPacket) returns(InterestPacket);
+  rpc ListNotificationInterests(VoidPacket) returns(InterestPacket);
+
+  rpc SendToClient(DataPacket) returns(DataPacket);
+  rpc CloseClient(DataPacket) returns(DataPacket);
+  rpc SendToWorker(DataPacket) returns(DataPacket);
+  rpc KickLogged(DataPacket) returns(DataPacket);
+}

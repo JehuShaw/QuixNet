@@ -1,0 +1,7 @@
+package game;
+
+message PlayerRenamePacket {
+	// 重新命名的名字
+	required string name = 1;
+
+}

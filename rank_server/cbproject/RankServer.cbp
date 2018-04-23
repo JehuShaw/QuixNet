@@ -1,0 +1,913 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="RankServer" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Option virtualFolders="framework/;shared/;shared/database/;shared/json/;shared/module/;shared/network/;shared/rpcz/;shared/stacktrace/;shared/threading/;shared/timerevent/;shared/tinyxml/;shared/utility/;resource/;headers/;sources/;memcache/;protocol/;template/;" />
+		<Build>
+			<Target title="Debug">
+				<Option output="../bin/linux32/Debug/RankServer" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../bin/linux32/Debug/" />
+				<Option object_output="../build/linux32/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-std=c++11" />
+					<Add option="-g" />
+					<Add directory="../../shared/include" />
+					<Add directory="../../shared/include/utility" />
+					<Add directory="../../shared/include/module" />
+					<Add directory="../../shared/include/network" />
+					<Add directory="../../shared/include/database" />
+					<Add directory="../../shared/include/timerevent" />
+					<Add directory="../../shared/include/threading" />
+					<Add directory="../../shared/deps" />
+					<Add directory="../../shared/deps/rpcz" />
+					<Add directory="../../shared/deps/boost" />
+					<Add directory="../../shared/deps/zeromq" />
+					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../src" />
+					<Add directory="../src/framework" />
+					<Add directory="../src/memcache" />
+					<Add directory="../src/protocol" />
+					<Add directory="../src/template" />
+				</Compiler>
+				<Linker>
+					<Add option="-lpthread" />
+					<Add library="../../shared/libs/linux32/boost/libboost_chrono.a" />
+					<Add library="../../shared/libs/linux32/boost/libboost_date_time.a" />
+					<Add library="../../shared/libs/linux32/boost/libboost_system.a" />
+					<Add library="../../shared/libs/linux32/boost/libboost_thread.a" />
+					<Add library="../../shared/libs/linux32/protobuf/libprotobuf.a" />
+					<Add library="../../shared/libs/linux32/protobuf/libprotobuf-lite.a" />
+					<Add library="../../shared/libs/linux32/protobuf/libprotoc.a" />
+					<Add library="../../shared/libs/linux32/zeromq/libzmq.so" />
+					<Add library="../../shared/libs/linux32/shared/debug/libShared.so" />
+					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="../bin/linux32/Release/RankServer" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../bin/linux32/Release/" />
+				<Option object_output="../build/linux32/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-std=c++11" />
+					<Add directory="../../shared/include" />
+					<Add directory="../../shared/include/utility" />
+					<Add directory="../../shared/include/module" />
+					<Add directory="../../shared/include/network" />
+					<Add directory="../../shared/include/database" />
+					<Add directory="../../shared/include/timerevent" />
+					<Add directory="../../shared/include/threading" />
+					<Add directory="../../shared/deps" />
+					<Add directory="../../shared/deps/rpcz" />
+					<Add directory="../../shared/deps/boost" />
+					<Add directory="../../shared/deps/zeromq" />
+					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../src" />
+					<Add directory="../src/framework" />
+					<Add directory="../src/memcache" />
+					<Add directory="../src/protocol" />
+					<Add directory="../src/template" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add option="-lpthread" />
+					<Add library="../../shared/libs/linux32/boost/libboost_chrono.a" />
+					<Add library="../../shared/libs/linux32/boost/libboost_date_time.a" />
+					<Add library="../../shared/libs/linux32/boost/libboost_system.a" />
+					<Add library="../../shared/libs/linux32/boost/libboost_thread.a" />
+					<Add library="../../shared/libs/linux32/protobuf/libprotobuf.a" />
+					<Add library="../../shared/libs/linux32/protobuf/libprotobuf-lite.a" />
+					<Add library="../../shared/libs/linux32/protobuf/libprotoc.a" />
+					<Add library="../../shared/libs/linux32/zeromq/libzmq.so" />
+					<Add library="../../shared/libs/linux32/shared/release/libShared.so" />
+					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+		</Compiler>
+		<Unit filename="../../shared/deps/json/assertions.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/autolink.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/config.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/features.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/forwards.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/json.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/json_batchallocator.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/json_reader.cpp">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/json_tool.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/json_value.cpp">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/json_writer.cpp">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/reader.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/value.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/version.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/json/writer.h">
+			<Option virtualFolder="shared/json/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/application.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/application.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/application_options.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/application_options.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/broker_thread.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/broker_thread.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/callback.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/client_connection.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/client_connection.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/client_request_callback.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/clock.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/clock.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/common.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/connection.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/connection.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/connection_manager.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/connection_manager.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/connection_manager_ptr.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/connection_manager_status.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/event_id_generator.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/event_id_generator.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/internal_commands.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/logging.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/reactor.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/reactor.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/remote_response_wrapper.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_channel.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_channel.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_channel_impl.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_channel_impl.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_controller.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_controller.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpc_service.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpcz.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpcz.pb.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/rpcz.pb.h">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/server.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/server.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/server_function.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/server_impl.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/server_impl.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/service.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/sync_event.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/sync_event.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/zmq_utils.cc">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/rpcz/zmq_utils.hpp">
+			<Option virtualFolder="shared/rpcz/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/Array.h">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/MapFile.cpp">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/MapFile.h">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/MapFileEntry.cpp">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/MapFileEntry.h">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/StackTrace.cpp">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/StackTrace.h">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/TextFile.cpp">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/stacktrace/TextFile.h">
+			<Option virtualFolder="shared/stacktrace/" />
+		</Unit>
+		<Unit filename="../../shared/deps/tinyxml/tinystr.cpp">
+			<Option virtualFolder="shared/tinyxml/" />
+		</Unit>
+		<Unit filename="../../shared/deps/tinyxml/tinystr.h">
+			<Option virtualFolder="shared/tinyxml/" />
+		</Unit>
+		<Unit filename="../../shared/deps/tinyxml/tinyxml.cpp">
+			<Option virtualFolder="shared/tinyxml/" />
+		</Unit>
+		<Unit filename="../../shared/deps/tinyxml/tinyxml.h">
+			<Option virtualFolder="shared/tinyxml/" />
+		</Unit>
+		<Unit filename="../../shared/deps/tinyxml/tinyxmlerror.cpp">
+			<Option virtualFolder="shared/tinyxml/" />
+		</Unit>
+		<Unit filename="../../shared/deps/tinyxml/tinyxmlparser.cpp">
+			<Option virtualFolder="shared/tinyxml/" />
+		</Unit>
+		<Unit filename="../../shared/include/Common.h">
+			<Option virtualFolder="shared/" />
+		</Unit>
+		<Unit filename="../../shared/include/ControlCMD.h">
+			<Option virtualFolder="shared/" />
+		</Unit>
+		<Unit filename="../../shared/include/ShareConfig.h">
+			<Option virtualFolder="shared/" />
+		</Unit>
+		<Unit filename="../../shared/include/ShareDefines.h">
+			<Option virtualFolder="shared/" />
+		</Unit>
+		<Unit filename="../../shared/include/ShareErrors.h">
+			<Option virtualFolder="shared/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/CallBackDB.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/Database.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/DatabaseEnv.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/Field.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/MySQLDatabase.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/Queue.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/database/TypeDefine.h">
+			<Option virtualFolder="shared/database/" />
+		</Unit>
+		<Unit filename="../../shared/include/module/INotificationBody.h">
+			<Option virtualFolder="shared/module/" />
+		</Unit>
+		<Unit filename="../../shared/include/module/ModuleEnv.h">
+			<Option virtualFolder="shared/module/" />
+		</Unit>
+		<Unit filename="../../shared/include/module/ModuleManager.h">
+			<Option virtualFolder="shared/module/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/BitStream.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/NetworkSync.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/NetworkTrace.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/NetworkTypes.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/ReceiveBuffer.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/SingleProducerConsumer.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/SmallBuffer.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPLinkInterface.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPPacketInterface.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPSocketBSD.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPSocketBase.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPSocketLinux.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPSocketWin32.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPThreadInfo.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPThreadList.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/network/TCPThreadPool.h">
+			<Option virtualFolder="shared/network/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/AtomicLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/CThreads.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/CircleQueue.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/CondVar.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/CriticalSection.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/FastMutex.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ILock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/IRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/IWrapBase.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/IWrapLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/IWrapRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/Mutex.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ReadWriteLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/RecursiveRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ScopedLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ScopedRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ScopedWrapLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ScopedWrapRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/SpinEvent.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/SpinLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/SpinRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/SpinRecursiveLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/SpinRecursiveRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/SysCurrentThreadId.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ThreadBase.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/ThreadPool.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/Threading.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/WrapLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/threading/WrapRWLock.h">
+			<Option virtualFolder="shared/threading/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/AgentMethod.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/CommandManager.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/SimpleEvent.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/SimpleEventArray.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/SysTickCount.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/TimerEvent.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/TimerManager.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/TimerManagerHelper.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/timerevent/TimestampManager.h">
+			<Option virtualFolder="shared/timerevent/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/AutoPointer.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/BitSignSet.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/CallBack.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/CrashDump.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/CsvParser.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/DynamicBitset.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ExceptionManager.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/GuidFactory.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/IRankData.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/IStream.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ITComparer.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ITPriorityQueue.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/Log.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/Md5.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/PoolBase.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/PrintStackTrace.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ProcessStatus.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/RankSetMT.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ReferObject.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ScopedPointer.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/SeparatedStream.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/Singleton.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/SkipList.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/StoreStream.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/StreamDataType.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/StringResolved.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/TPriorityQueue.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/TimeSeries.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/TransferStream.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/Utf8.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/ValueStream.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/WeakPointer.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxAllocator.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable0.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable0S.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable1.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable1S.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable1Store.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable2.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTable2S.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTableIndex.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../../shared/include/utility/XqxTableIndexS.h">
+			<Option virtualFolder="shared/utility/" />
+		</Unit>
+		<Unit filename="../bin/win32/debug/App.config">
+			<Option virtualFolder="resource/" />
+		</Unit>
+		<Unit filename="../src/FillPacketHelper.cpp">
+			<Option virtualFolder="sources/" />
+		</Unit>
+		<Unit filename="../src/FillPacketHelper.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
+		<Unit filename="../src/RankModule.cpp">
+			<Option virtualFolder="sources/" />
+		</Unit>
+		<Unit filename="../src/RankModule.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
+		<Unit filename="../src/framework/AppConfig.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/BodyBitStream.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/BodyMessage.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheChannel.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheModule.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheModule.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheOperateHelper.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheRecord.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheRecord.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheRecordManager.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheRecordManager.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ChannelManager.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlArgument.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlCentreModule.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlCentreModule.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlCentreServiceImp.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlCentreServiceImp.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlCentreStubImp.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ControlCentreStubImpEx.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ICacheRecord.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ICacheValue.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/IChannelControl.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/IChannelValue.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/IServerRegister.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/IncludeModule.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/IncludeTemplate.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/MCResult.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/NodeDefines.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/NodeDefines.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/PlayerBase.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/PlayerCallBack.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ProtoRpczServiceImpl.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ProtoRpczServiceImpl.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/RankServer.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/RankServer.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/RankServerRegister.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/RankServerRegister.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/ServerRegisterHelper.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/TemplateBase.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/TemplateBase.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerChannel.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerModule.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerModule.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerOperateHelper.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerServiceImp.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerServiceImp.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/WorkerServiceImpHelper.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/cache.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/cache.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/cache.rpcz.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/cache.rpcz.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/controlcentre.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/controlcentre.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/controlcentre.rpcz.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/controlcentre.rpcz.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/data_packet.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/data_packet.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/interest_packet.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/interest_packet.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/main.cpp">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/msg_client_login.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/msg_client_login.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/void_packet.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/void_packet.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/worker.pb.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/worker.pb.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/worker.rpcz.cc">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/worker.rpcz.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/memcache/RankData.cpp">
+			<Option virtualFolder="memcache/" />
+		</Unit>
+		<Unit filename="../src/memcache/RankData.h">
+			<Option virtualFolder="memcache/" />
+		</Unit>
+		<Unit filename="../src/protocol/msg_rank_item.pb.cc">
+			<Option virtualFolder="protocol/" />
+		</Unit>
+		<Unit filename="../src/protocol/msg_rank_item.pb.h">
+			<Option virtualFolder="protocol/" />
+		</Unit>
+		<Unit filename="../src/protocol/msg_rank_request.pb.cc">
+			<Option virtualFolder="protocol/" />
+		</Unit>
+		<Unit filename="../src/protocol/msg_rank_request.pb.h">
+			<Option virtualFolder="protocol/" />
+		</Unit>
+		<Unit filename="../src/protocol/msg_rank_update.pb.cc">
+			<Option virtualFolder="protocol/" />
+		</Unit>
+		<Unit filename="../src/protocol/msg_rank_update.pb.h">
+			<Option virtualFolder="protocol/" />
+		</Unit>
+		<Unit filename="../src/template/ConfigTemplate.cpp">
+			<Option virtualFolder="template/" />
+		</Unit>
+		<Unit filename="../src/template/ConfigTemplate.h">
+			<Option virtualFolder="template/" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

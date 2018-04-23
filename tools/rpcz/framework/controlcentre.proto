@@ -1,0 +1,148 @@
+package node;
+
+message ControlCentreVoid {
+}
+
+message RegisterRequest {
+  required int32 servertype = 1;
+  required string endpoint = 2;
+  required bytes servername = 3;
+  required uint32 serverid = 4;
+  required uint32 serverregion = 5;
+  optional bytes projectname = 6;
+  optional string acceptaddress = 7;
+  optional bytes processpath = 8;
+  optional uint32 servantid = 9;
+}
+
+message RemoveRequest {
+  required bytes servername = 1;
+  required uint32 serverid = 2;
+  optional int32 servertype = 3;
+}
+
+message OperateResponse {
+  required int32 result = 1;
+}
+
+message KeepRegisterRequest {
+  required uint32 serverid = 1;
+  optional bytes servername = 2;
+  optional string endpoint = 3;
+  optional int32 servertype = 4;
+  optional uint32 serverload = 5;
+  optional int32 serverstatus = 6;
+  optional bytes serverstate = 7;
+}
+
+message KeepRegisterResponse {
+  required bool reregister = 1;
+}
+
+message UserLoginRequest {
+  required bytes servername = 1;
+  required uint32 serverid = 2;
+  required uint64 userid = 3;
+}
+
+message UserLogoutRequest {
+  required bytes servername = 1;
+  required uint64 userid = 2;
+}
+
+message LowLoadNodeRequest {
+  required bytes servername = 1;
+}
+
+message LowLoadNodeResponse {
+  required string acceptaddress = 1;
+  required uint32 serverregion = 2;
+}
+
+message RegionLowLoadRequest {
+  required bytes servername = 1;
+  required uint32 serverregion = 2;
+}
+
+message RegionLowLoadResponse {
+  required string acceptaddress = 1;
+}
+
+message NodeListRequest {
+  required bytes servername = 1;
+}
+
+message NodeDetail {
+  required uint32 serverregion = 1;
+  required string acceptaddress = 2;
+  required int32 serverload = 3;
+}
+
+message NodeListResponse {
+  repeated NodeDetail nodes = 1;
+}
+
+message CreateIdRequest {
+	required uint64 account = 1;
+}
+
+message CreateIdResponse {
+	required int32 result = 1;
+	optional uint64 userid = 2;
+	optional uint32 serverregion = 3;
+	optional string createtime = 4;
+}
+
+message CheckIdRequest {
+	required uint64 account = 1;
+}
+
+message CheckIdResponse {
+	required int32 result = 1;
+	optional uint64 userid = 2;
+	optional string createtime = 3;
+	optional uint32 serverregion = 4;
+	optional uint64 cas = 5;
+}
+
+message UpdateRegionRequest {
+	required uint64 account = 1;
+	required uint32 serverregion = 2;
+	required uint64 cas = 3;
+}
+
+message UpdateRegionResponse {
+	required int32 result = 1;
+}
+
+message CacheStoreRequest {
+	required uint32 serverid = 1;
+	required int32 routetype = 2;
+	required uint64 route = 3;
+	repeated string keys = 4;
+}
+
+message CacheKeyResult {
+	required string key = 1;
+	required int32 result = 2;
+}
+
+message CacheStoreResponse {
+	required int32 result = 1;
+	repeated CacheKeyResult keyresults = 2;
+}
+
+service ControlCentreService {
+  rpc RegisterModule(RegisterRequest) returns(OperateResponse);
+  rpc RemoveModule(RemoveRequest) returns(OperateResponse);
+  rpc KeepRegister(KeepRegisterRequest) returns(KeepRegisterResponse);
+  rpc UserLogin(UserLoginRequest) returns(ControlCentreVoid);
+  rpc UserLogout(UserLogoutRequest) returns(ControlCentreVoid);
+  rpc GetLowLoadNode(LowLoadNodeRequest) returns(LowLoadNodeResponse);
+  rpc GetRegionLowLoad(RegionLowLoadRequest) returns(RegionLowLoadResponse);
+  rpc GetNodeList(NodeListRequest) returns(NodeListResponse);
+  rpc CreateUserId(CreateIdRequest) returns(CreateIdResponse);
+  rpc CheckUserId(CheckIdRequest) returns(CheckIdResponse);
+  rpc UpdateUserRegion(UpdateRegionRequest) returns(UpdateRegionResponse);
+  rpc CacheServerStore(CacheStoreRequest) returns(CacheStoreResponse);
+}

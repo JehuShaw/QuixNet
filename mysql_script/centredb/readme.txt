@@ -1,0 +1,1 @@
+存储过程SP_GET_USER_ID 记得修改限定（Definer)

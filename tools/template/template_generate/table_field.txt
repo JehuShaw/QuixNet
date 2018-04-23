@@ -1,0 +1,6 @@
+ID
+Effect
+Value
+Value_Lv
+EffectTimes
+TimeInterval
