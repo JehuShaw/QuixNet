@@ -1,4 +1,0 @@
-package node;
-
-message VoidPacket {
-}

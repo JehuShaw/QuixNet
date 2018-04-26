@@ -1,8 +1,0 @@
-package master;
-
-message LoginRequest {
-  required uint64 account = 1;
-  required string sessionkey = 2;
-}
-
-
