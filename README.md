@@ -8,6 +8,3 @@ The server architecture can look at some of the files in the doc directory. The 
 Interested friends can contact me:
 Email: xqx83@hotmail.com Tencent QQ: 183708457
 
-Directory Structure:
-
-The game_client is a test project.
