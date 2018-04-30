@@ -133,7 +133,7 @@ inline static bool HandleLoadRecord(
 	int nResult = pCacheMemMgr->LoadCacheRecord(pOutRecord,
 		u16DBID, strKey, bHasCas, 0, &nInFlag, &nOutFlag);
 
-	if(MCERR_OK != nResult) {	
+	if(MCERR_OK != nResult) {
 		SetRecordResult(pMcResponse, nResult);
 	} else {
 		if(0 != nOutFlag && nInFlag != nOutFlag) {
@@ -189,21 +189,21 @@ void CCacheServiceImp::ListNotificationInterests(
 {
 	::node::InterestPacket cacheInterest;
 	cacheInterest.add_interests(N_CMD_ADD);
-    cacheInterest.add_interests(N_CMD_LOAD);
-    cacheInterest.add_interests(N_CMD_STORE);
-    cacheInterest.add_interests(N_CMD_GET);
+	cacheInterest.add_interests(N_CMD_LOAD);
+	cacheInterest.add_interests(N_CMD_STORE);
+	cacheInterest.add_interests(N_CMD_GET);
 	cacheInterest.add_interests(N_CMD_SET);
-    cacheInterest.add_interests(N_CMD_GETS);
+	cacheInterest.add_interests(N_CMD_GETS);
 	cacheInterest.add_interests(N_CMD_CAS);
 	cacheInterest.add_interests(N_CMD_DEL);
 	cacheInterest.add_interests(N_CMD_LOADALL);
-    cacheInterest.add_interests(N_CMD_DB_INSERT);
-    cacheInterest.add_interests(N_CMD_DB_SELECT);
-    cacheInterest.add_interests(N_CMD_DB_UPDATE);
-    cacheInterest.add_interests(N_CMD_DB_DELETE);
-    cacheInterest.add_interests(N_CMD_DB_SELECTALL);
-    cacheInterest.add_interests(N_CMD_DB_ESCAPESTRING);
-    cacheInterest.add_interests(N_CMD_DB_STOREDPROCEDURES);
+	cacheInterest.add_interests(N_CMD_DB_INSERT);
+	cacheInterest.add_interests(N_CMD_DB_SELECT);
+	cacheInterest.add_interests(N_CMD_DB_UPDATE);
+	cacheInterest.add_interests(N_CMD_DB_DELETE);
+	cacheInterest.add_interests(N_CMD_DB_SELECTALL);
+	cacheInterest.add_interests(N_CMD_DB_ESCAPESTRING);
+	cacheInterest.add_interests(N_CMD_DB_STOREDPROCEDURES);
 	cacheInterest.add_interests(N_CMD_DB_ASYNCSTOREDPROCEDURES);
 	cacheInterest.add_interests(N_CMD_SEND_TO_CLIENT);
 	cacheInterest.add_interests(N_CMD_BROADCAST_TO_CLIENT);
@@ -211,6 +211,8 @@ void CCacheServiceImp::ListNotificationInterests(
 	cacheInterest.add_interests(N_CMD_CLOSE_ALLCLIENT);
 	cacheInterest.add_interests(N_CMD_SEND_TO_WORKER);
 	cacheInterest.add_interests(N_CMD_KICK_LOGGED);
+	cacheInterest.add_interests(N_CMD_SERVER_PLAY);
+	cacheInterest.add_interests(N_CMD_SERVER_STOP);
 	response.send(cacheInterest);
 }
 
@@ -232,24 +234,24 @@ void CCacheServiceImp::HandleNotification(const ::node::DataPacket& request,
 	::node::DataPacket dataResponse;
 	int nOperate = request.cmd();
 	switch(nOperate) {
-    case N_CMD_GETS:
-        HandleGets(request, dataResponse);
-        break;
-    case N_CMD_CAS:
-        HandleCAS(request, dataResponse);
-        break;
-    case N_CMD_LOAD:
-        HandleLoad(request, dataResponse);
-        break;
-    case N_CMD_STORE:
-        HandleStore(request, dataResponse);
-        break;
+	case N_CMD_GETS:
+		HandleGets(request, dataResponse);
+		break;
+	case N_CMD_CAS:
+		HandleCAS(request, dataResponse);
+		break;
+	case N_CMD_LOAD:
+		HandleLoad(request, dataResponse);
+		break;
+	case N_CMD_STORE:
+		HandleStore(request, dataResponse);
+		break;
 	case N_CMD_ADD:
 		HandleAdd(request, dataResponse);
 		break;
-    case N_CMD_GET:
-        HandleGet(request, dataResponse);
-        break;
+	case N_CMD_GET:
+		HandleGet(request, dataResponse);
+		break;
 	case N_CMD_SET:
 		HandleSet(request, dataResponse);
 		break;
@@ -259,27 +261,27 @@ void CCacheServiceImp::HandleNotification(const ::node::DataPacket& request,
 	case N_CMD_LOADALL:
 		HandleLoadAll(request, dataResponse);
 		break;
-    case N_CMD_DB_INSERT:
-        HandleDBInsert(request, dataResponse);
-        break;
-    case N_CMD_DB_SELECT:
-        HandleDBSelect(request, dataResponse);
-        break;
-    case N_CMD_DB_UPDATE:
-        HandleDBUpdate(request, dataResponse);
-        break;
-    case N_CMD_DB_DELETE:
-        HandleDBDelete(request, dataResponse);
-        break;
-    case N_CMD_DB_SELECTALL:
-        HandleDBSelectAll(request, dataResponse);
-        break;
-    case N_CMD_DB_ESCAPESTRING:
-        HandleDBEscapeString(request, dataResponse);
-        break;
-    case N_CMD_DB_STOREDPROCEDURES:
-        HandleDBStoredProcedures(request, dataResponse);
-        break;
+	case N_CMD_DB_INSERT:
+		HandleDBInsert(request, dataResponse);
+		break;
+	case N_CMD_DB_SELECT:
+		HandleDBSelect(request, dataResponse);
+		break;
+	case N_CMD_DB_UPDATE:
+		HandleDBUpdate(request, dataResponse);
+		break;
+	case N_CMD_DB_DELETE:
+		HandleDBDelete(request, dataResponse);
+		break;
+	case N_CMD_DB_SELECTALL:
+		HandleDBSelectAll(request, dataResponse);
+		break;
+	case N_CMD_DB_ESCAPESTRING:
+		HandleDBEscapeString(request, dataResponse);
+		break;
+	case N_CMD_DB_STOREDPROCEDURES:
+		HandleDBStoredProcedures(request, dataResponse);
+		break;
 	case N_CMD_DB_ASYNCSTOREDPROCEDURES:
 		HandleDBAsyncStoredProcedures(request, dataResponse);
 		break;
@@ -529,14 +531,14 @@ void CCacheServiceImp::HandleLoad(
 			storeRequest.set_serverid(it->first);
 			storeRequest.set_routetype(inRequest.route_type());
 			storeRequest.set_route(inRequest.route());
-	
+
 			eServerError nResult = pCtrlCentreStub->CacheServerStore(
 				m_servantAddress, storeRequest);
 			if(SERVER_SUCCESS != nResult) {
 				OutputError("pCtrlCentreStub->CacheServerStore()"
 					" return %d != SERVER_SUCCESS ", nResult);
 			}
-		}	
+		}
 	}
 
 	// reload
@@ -552,7 +554,7 @@ void CCacheServiceImp::HandleLoad(
 				OutputError("0 != nOutFlag && nInFlag{%d} != "
 					"nOutFlag{%d}", (int)m_serverId, nOutFlag);
 				assert(false);
-			}	
+			}
 		}
 	}
 
@@ -631,7 +633,7 @@ void CCacheServiceImp::HandleStore(
             SetRecordResult(pMcRecord, MCERR_OK);
         }
     }
-	
+
 	outResponse.set_result(SERVER_SUCCESS);
 	SerializeCacheData(outResponse, cacheResponse);
 }
