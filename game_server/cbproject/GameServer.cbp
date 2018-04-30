@@ -28,6 +28,8 @@
 					<Add directory="../../shared/deps/boost" />
 					<Add directory="../../shared/deps/zeromq" />
 					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../../shared/deps/berkeleydb/build_linux" />
+					<Add directory="../../shared/deps/berkeleydb/stl" />
 					<Add directory="../src" />
 					<Add directory="../src/framework" />
 					<Add directory="../src/memcache" />
@@ -46,6 +48,8 @@
 					<Add library="../../shared/libs/linux32/zeromq/libzmq.so" />
 					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
 					<Add library="../../shared/libs/linux32/shared/debug/libShared.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb-6.2.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb_stl.so" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -69,6 +73,8 @@
 					<Add directory="../../shared/deps/boost" />
 					<Add directory="../../shared/deps/zeromq" />
 					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../../shared/deps/berkeleydb/build_linux" />
+					<Add directory="../../shared/deps/berkeleydb/stl" />
 					<Add directory="../src" />
 					<Add directory="../src/framework" />
 					<Add directory="../src/memcache" />
@@ -88,6 +94,8 @@
 					<Add library="../../shared/libs/linux32/zeromq/libzmq.so" />
 					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
 					<Add library="../../shared/libs/linux32/shared/release/libShared.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb-6.2.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb_stl.so" />
 				</Linker>
 			</Target>
 		</Build>

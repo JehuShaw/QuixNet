@@ -19,6 +19,8 @@
 #if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
 #include <io.h>
 #include <direct.h>
+#else
+#include <sys/stat.h>
 #endif
 
 using namespace mdl;
@@ -26,7 +28,7 @@ using namespace util;
 using namespace evt;
 
 inline static bool IsMasterModule(uint16_t serverType) {
-	return (REGISTER_TYPE_CACHE == serverType 
+	return (REGISTER_TYPE_CACHE == serverType
 		|| REGISTER_TYPE_WORKER == serverType);
 }
 
@@ -79,7 +81,7 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 		response.send(operateResponse);
 		return;
 	}
-	
+
 	bool bMasterModule = IsMasterModule(serverType);
 	std::string serverName;
 	if(bMasterModule) {
@@ -107,7 +109,7 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 			break;
 		case REGISTER_TYPE_NODE:
 		case REGISTER_TYPE_SERVANT:
-			module.SetRawPointer(new CNodeModule(serverName, request.endpoint(), serverId, 
+			module.SetRawPointer(new CNodeModule(serverName, request.endpoint(), serverId,
 				serverType, acceptAddress, processPath, projectName, serverRegion));
 			break;
 		default:
@@ -123,7 +125,7 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 		}
 		// send data
 		pFacade->RegisterModule(module);
-		// 
+		//
 		if(REGISTER_TYPE_NODE == serverType) {
 			RouteCreateTable(serverName, serverId);
 		}
@@ -142,7 +144,7 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 		if(bMasterModule) {
 			bRet = pChannelModule->CreatChannel(serverId, request.endpoint(), serverType);
 		} else {
-			bRet = pChannelModule->CreatChannel(serverId, request.endpoint(), serverType, 
+			bRet = pChannelModule->CreatChannel(serverId, request.endpoint(), serverType,
 				acceptAddress, processPath, projectName, serverRegion);
 		}
 
@@ -156,7 +158,7 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 			response.send(operateResponse);
 			////////////////////////////////////////////////////////////////////
 			CAutoPointer<CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*> >
-				callback(new CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*> 
+				callback(new CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*>
 				(&CMasterServiceImp::KeepTimeoutCallback, serverName, serverId, serverType, &m_cacheCount));
 
 			CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -219,7 +221,7 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 	}
 	////////////////////////////////////////////////////////////////////
 	CAutoPointer<CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*> >
-		callback(new CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*> 
+		callback(new CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*>
 		(&CMasterServiceImp::KeepTimeoutCallback, serverName, serverId, serverType, &m_cacheCount));
 
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -255,7 +257,7 @@ void CMasterServiceImp::RemoveModule(const ::node::RemoveRequest& request,
 		operateResponse.set_result(CSR_WITHOUT_THIS_MODULE);
 		response.send(operateResponse);
 	} else {
-			
+
 		CAutoPointer<IChannelControl> pChannelModule(module);
 		if(pChannelModule.IsInvalid()) {
 			::node::OperateResponse operateResponse;
@@ -319,7 +321,7 @@ void CMasterServiceImp::KeepRegister(const ::node::KeepRegisterRequest& request,
 {
 	uint16_t serverId = (uint16_t)request.serverid();
 	if(ID_NULL == serverId) {
-		// If serverId is NULL, can be used to check if this server exists.  
+		// If serverId is NULL, can be used to check if this server exists.
 		node::KeepRegisterResponse registerResponse;
 		registerResponse.set_reregister(false);
 		response.send(registerResponse);
@@ -436,7 +438,7 @@ void CMasterServiceImp::KeepTimeoutCallback(
 			pChannelModule->RemoveChannel(serverId);
 		}
 	}
-	
+
 	EraseServerKey(serverKey);
 }
 
@@ -773,7 +775,7 @@ void CMasterServiceImp::CacheServerStore(const ::node::CacheStoreRequest& reques
 	}
 
 	mc_request_t mcRequest;
-	
+
 	int nKeySize = request.keys_size();
 	for(int i = 0; i < nKeySize; ++i) {
 		mc_record_t* pMcRecord = SetRecord(mcRequest);

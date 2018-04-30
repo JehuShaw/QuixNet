@@ -13,6 +13,8 @@
 #if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
 #include <io.h>
 #include <direct.h>
+#else
+#include <sys/stat.h>
 #endif
 
 using namespace mdl;
@@ -57,8 +59,8 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
 	// read data
 	uint16_t serverRegion = (uint16_t)request.serverregion();
-	if(ID_NULL != serverRegion 
-		&& ID_NULL != m_serverRegion 
+	if(ID_NULL != serverRegion
+		&& ID_NULL != m_serverRegion
 		&& serverRegion != m_serverRegion)
 	{
 		::node::OperateResponse operateResponse;
@@ -78,7 +80,7 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 	int32_t registerType = request.servertype();
 	const std::string serverName(request.servername());
 	const std::string& endPoint = request.endpoint();
-	
+
 	CAutoPointer<IModule> module(pFacade->RetrieveModule(serverName));
 	if(module.IsInvalid()) {
 
@@ -118,7 +120,7 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 			response.send(operateResponse);
 			/////////////////////////////////////////////////////////////////
 			CAutoPointer<CallBackFuncP1<uint16_t> >
-				callback(new CallBackFuncP1<uint16_t> 
+				callback(new CallBackFuncP1<uint16_t>
 				(&CControlCentreServiceImp::KeepTimeoutCallback, serverId));
 
 			CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -134,7 +136,7 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 	pFacade->SendNotification(N_CMD_NODE_REGISTER, serverId);
 	////////////////////////////////////////////////////////////////////
 	CAutoPointer<CallBackFuncP1<uint16_t> >
-		callback(new CallBackFuncP1<uint16_t> 
+		callback(new CallBackFuncP1<uint16_t>
 		(&CControlCentreServiceImp::KeepTimeoutCallback, serverId));
 
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -192,7 +194,7 @@ void CControlCentreServiceImp::KeepRegister(const ::node::KeepRegisterRequest& r
 {
 	uint16_t serverId = (uint16_t)request.serverid();
 	if(ID_NULL == serverId) {
-		// If serverId is NULL, can be used to check if this server exists.  
+		// If serverId is NULL, can be used to check if this server exists.
 		node::KeepRegisterResponse registerResponse;
 		registerResponse.set_reregister(false);
 		response.send(registerResponse);
@@ -221,7 +223,7 @@ void CControlCentreServiceImp::ClearAllTimer()
 	thd::CScopedReadLock rdLock(s_wrLock);
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 	SERVER_ID_SET_T::const_iterator it = s_serverIds.begin();
-	for(; s_serverIds.end() != it; ++it) {		
+	for(; s_serverIds.end() != it; ++it) {
 		pTMgr->Remove(*it, true);
 	}
 }

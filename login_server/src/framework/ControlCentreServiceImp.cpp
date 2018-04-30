@@ -13,6 +13,8 @@
 #if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
 #include <io.h>
 #include <direct.h>
+#else
+#include <sys/stat.h>
 #endif
 
 using namespace mdl;

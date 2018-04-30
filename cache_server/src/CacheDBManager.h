@@ -1,7 +1,7 @@
-/* 
+/*
  * File:   CacheDBManager.h
  * Author: Jehu Shaw
- * 
+ *
  * Created on 2014_8_4, 16:00
  */
 
@@ -15,7 +15,7 @@
 #include "Singleton.h"
 
 #if defined(ENABLE_DATABASE_MYSQL)
-#include "CacheMysqlAdpt.h"
+#include "CacheMySqlAdpt.h"
 #endif
 
 
@@ -284,8 +284,8 @@ private:
 	void LoadDBServers(util::CAutoPointer<db::Database>& pDatabase, const char* szDataDBNames);
 	void GetColumnsType(
 		util::CAutoPointer<db::Database>& pDatabase,
-		DB_COLUMNS_TYPE_T& outColumnsType, 
-		const std::string& strTableName, 
+		DB_COLUMNS_TYPE_T& outColumnsType,
+		const std::string& strTableName,
 		const std::string& strDBName);
 	int GetDBType(const std::string& strType);
 
@@ -300,8 +300,8 @@ private:
 
 	util::CAutoPointer<db::Database> GetValidDb(uint16_t u16DBId);
 
-	uint16_t SelectDBId(uint64_t u64Route, const CContainerData& tableInfo); 
-	
+	uint16_t SelectDBId(uint64_t u64Route, const CContainerData& tableInfo);
+
 	uint16_t MinLoadDBId(uint64_t u64Route, const CContainerData& tableInfo);
 
 	bool SaveRoute(uint16_t u16DBId, const CContainerData& tableInfo, uint64_t u64Route);
@@ -309,7 +309,7 @@ private:
 	void DisposeAllDBServer();
 private:
 	bool m_bInit;
-    
+
     char m_cSeparator;
     char m_cTableMapDelimiter;
 	uint16_t m_u16ServerId;

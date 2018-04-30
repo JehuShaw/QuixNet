@@ -17,6 +17,9 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../cache_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../cache_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../cache_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../cache_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../cache_server/bin/linux32/Debug'
+
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../cache_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../cache_server/bin/linux32/Release'
@@ -28,6 +31,8 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../cache_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../cache_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../cache_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../cache_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../cache_server/bin/linux32/Release'
 
 
 
@@ -66,6 +71,8 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../game_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../game_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../game_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../game_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../game_server/bin/linux32/Debug'
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../game_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../game_server/bin/linux32/Release'
@@ -77,6 +84,8 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../game_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../game_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../game_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../game_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../game_server/bin/linux32/Release'
 
 
 
@@ -90,6 +99,8 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../login_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../login_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../login_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../login_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../login_server/bin/linux32/Debug'
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../login_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../login_server/bin/linux32/Release'
@@ -101,7 +112,8 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../login_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../login_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../login_server/bin/linux32/Release'
-
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../login_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../login_server/bin/linux32/Release'
 
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../master_server/bin/linux32/Debug'
@@ -114,6 +126,8 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../master_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../master_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../master_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../master_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../master_server/bin/linux32/Debug'
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../master_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../master_server/bin/linux32/Release'
@@ -125,7 +139,8 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../master_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../master_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../master_server/bin/linux32/Release'
-
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../master_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../master_server/bin/linux32/Release'
 
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../agent_server/bin/linux32/Debug'
@@ -138,6 +153,8 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../agent_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../agent_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../agent_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../agent_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../agent_server/bin/linux32/Debug'
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../agent_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../agent_server/bin/linux32/Release'
@@ -149,7 +166,8 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../agent_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../agent_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../agent_server/bin/linux32/Release'
-
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../agent_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../agent_server/bin/linux32/Release'
 
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../rank_server/bin/linux32/Debug'
@@ -162,6 +180,8 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../rank_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../rank_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../rank_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../rank_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../rank_server/bin/linux32/Debug'
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../rank_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../rank_server/bin/linux32/Release'
@@ -173,7 +193,8 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../rank_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../rank_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../rank_server/bin/linux32/Release'
-
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../rank_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../rank_server/bin/linux32/Release'
 
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../servant_server/bin/linux32/Debug'
@@ -186,6 +207,8 @@
 \cp -vf '../libs/linux32/shared/debug/libShared.so' '../../servant_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1' '../../servant_server/bin/linux32/Debug'
 \cp -vf '../libs/linux32/shared/debug/libShared.so.1.0.0' '../../servant_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../servant_server/bin/linux32/Debug'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../servant_server/bin/linux32/Debug'
 
 \cp -vf '../libs/linux32/libcurl/libcurl.so' '../../servant_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/libcurl/libcurl.so.4' '../../servant_server/bin/linux32/Release'
@@ -197,6 +220,7 @@
 \cp -vf '../libs/linux32/shared/release/libShared.so' '../../servant_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1' '../../servant_server/bin/linux32/Release'
 \cp -vf '../libs/linux32/shared/release/libShared.so.1.0.0' '../../servant_server/bin/linux32/Release'
-
+\cp -vf '../libs/linux32/berkeleydb/libdb-6.2.so' '../../servant_server/bin/linux32/Release'
+\cp -vf '../libs/linux32/berkeleydb/libdb_stl-6.2.so' '../../servant_server/bin/linux32/Release'
 
 

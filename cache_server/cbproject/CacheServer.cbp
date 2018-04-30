@@ -29,6 +29,8 @@
 					<Add directory="../../shared/deps/boost" />
 					<Add directory="../../shared/deps/zeromq" />
 					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../../shared/deps/berkeleydb/build_linux" />
+					<Add directory="../../shared/deps/berkeleydb/stl" />
 					<Add directory="../src" />
 					<Add directory="../src/framework" />
 				</Compiler>
@@ -44,6 +46,8 @@
 					<Add library="../../shared/libs/linux32/zeromq/libzmq.so" />
 					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
 					<Add library="../../shared/libs/linux32/shared/debug/libShared.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb-6.2.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb_stl.so" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -68,6 +72,8 @@
 					<Add directory="../../shared/deps/boost" />
 					<Add directory="../../shared/deps/zeromq" />
 					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../../shared/deps/berkeleydb/build_linux" />
+					<Add directory="../../shared/deps/berkeleydb/stl" />
 					<Add directory="../src" />
 					<Add directory="../src/framework" />
 				</Compiler>
@@ -84,6 +90,8 @@
 					<Add library="../../shared/libs/linux32/zeromq/libzmq.so" />
 					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
 					<Add library="../../shared/libs/linux32/shared/release/libShared.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb-6.2.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb_stl.so" />
 				</Linker>
 			</Target>
 		</Build>
@@ -655,10 +663,19 @@
 		<Unit filename="../bin/win32/debug/App.config">
 			<Option virtualFolder="resource/" />
 		</Unit>
+		<Unit filename="../src/BalServIDManager.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
 		<Unit filename="../src/CacheDBManager.cpp">
 			<Option virtualFolder="sources/" />
 		</Unit>
 		<Unit filename="../src/CacheDBManager.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
+		<Unit filename="../src/CacheDBServer.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
+		<Unit filename="../src/CacheDBType.h">
 			<Option virtualFolder="headers/" />
 		</Unit>
 		<Unit filename="../src/CacheMemory.cpp">
@@ -673,10 +690,22 @@
 		<Unit filename="../src/CacheMemoryManager.h">
 			<Option virtualFolder="headers/" />
 		</Unit>
+		<Unit filename="../src/CacheMySqlAdpt.cpp">
+			<Option virtualFolder="sources/" />
+		</Unit>
+		<Unit filename="../src/CacheMysqlAdpt.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
+		<Unit filename="../src/CachePlayer.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
 		<Unit filename="../src/CacheServiceImp.cpp">
 			<Option virtualFolder="sources/" />
 		</Unit>
 		<Unit filename="../src/CacheServiceImp.h">
+			<Option virtualFolder="headers/" />
+		</Unit>
+		<Unit filename="../src/DirServIDManager.h">
 			<Option virtualFolder="headers/" />
 		</Unit>
 		<Unit filename="../src/ICacheMemory.h">
@@ -713,6 +742,9 @@
 			<Option virtualFolder="framework/" />
 		</Unit>
 		<Unit filename="../src/framework/CacheServerRegister.h">
+			<Option virtualFolder="framework/" />
+		</Unit>
+		<Unit filename="../src/framework/CacheServiceImpHelper.h">
 			<Option virtualFolder="framework/" />
 		</Unit>
 		<Unit filename="../src/framework/ChannelManager.h">
@@ -862,6 +894,7 @@
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

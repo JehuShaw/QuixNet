@@ -23,15 +23,17 @@
 					<Add directory="../../shared/include/database" />
 					<Add directory="../../shared/include/timerevent" />
 					<Add directory="../../shared/include/threading" />
+					<Add directory="../../shared/include/httpclient" />
 					<Add directory="../../shared/deps" />
 					<Add directory="../../shared/deps/rpcz" />
 					<Add directory="../../shared/deps/boost" />
 					<Add directory="../../shared/deps/zeromq" />
 					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../../shared/deps/libcurl" />
+					<Add directory="../../shared/deps/berkeleydb/build_linux" />
+					<Add directory="../../shared/deps/berkeleydb/stl" />
 					<Add directory="../src" />
 					<Add directory="../src/framework" />
-					<Add directory="../../shared/include/httpclient" />
-					<Add directory="../../shared/deps/libcurl" />
 				</Compiler>
 				<Linker>
 					<Add option="-lpthread" />
@@ -46,6 +48,8 @@
 					<Add library="../../shared/libs/linux32/shared/debug/libShared.so" />
 					<Add library="../../shared/libs/linux32/libcurl/libcurl.so" />
 					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb-6.2.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb_stl.so" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -64,15 +68,17 @@
 					<Add directory="../../shared/include/database" />
 					<Add directory="../../shared/include/timerevent" />
 					<Add directory="../../shared/include/threading" />
+					<Add directory="../../shared/include/httpclient" />
 					<Add directory="../../shared/deps" />
 					<Add directory="../../shared/deps/rpcz" />
 					<Add directory="../../shared/deps/boost" />
 					<Add directory="../../shared/deps/zeromq" />
 					<Add directory="../../shared/deps/tinyxml" />
+					<Add directory="../../shared/deps/libcurl" />
+					<Add directory="../../shared/deps/berkeleydb/build_linux" />
+					<Add directory="../../shared/deps/berkeleydb/stl" />
 					<Add directory="../src" />
 					<Add directory="../src/framework" />
-					<Add directory="../../shared/include/httpclient" />
-					<Add directory="../../shared/deps/libcurl" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -88,6 +94,8 @@
 					<Add library="../../shared/libs/linux32/shared/release/libShared.so" />
 					<Add library="../../shared/libs/linux32/libcurl/libcurl.so" />
 					<Add library="../../shared/libs/linux32/mysql/libmysqlclient.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb-6.2.so" />
+					<Add library="../../shared/libs/linux32/berkeleydb/libdb_stl.so" />
 				</Linker>
 			</Target>
 		</Build>
@@ -902,6 +910,7 @@
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>
