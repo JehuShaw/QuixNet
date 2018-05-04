@@ -28,7 +28,7 @@ With these problems, this framework was born.
 ##### 1.Building Shiny-Engine for Windows
 Visual C++ .NET 2010
 
-#####　2.Building Shiny-Engine for Linux
+##### 2.Building Shiny-Engine for Linux
 Code::Blocks 16.01
 
 
