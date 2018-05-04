@@ -55,7 +55,7 @@ Int32_t level;
 // Character experience  
 Int32_t exp;  
 
-Then double-click DataCodeGenerate\一键获取.bat to get the code.
+Then double-click DataCodeGenerate\Build.bat to get the code.
 
 # 如何使用
 #### 1.设置配置文件
@@ -79,4 +79,4 @@ int32_t level;
 // 角色经验  
 int32_t exp;  
 
-然后鼠标双击 DataCodeGenerate\一键获取.bat 获得代码。
+然后鼠标双击 DataCodeGenerate\Build.bat 获得代码。
