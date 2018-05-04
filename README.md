@@ -26,11 +26,13 @@ With these problems, this framework was born.
 如何编译
 
 1.Building Shiny-Engine for Windows
+
 在Windows下编译 shiny-engine
 
 Visual C++ .NET 2010
 
 2.Building Shiny-Engine for Linux
+
 在Linux 下编译 shiny-engine
 
 Code::Blocks 16.01
