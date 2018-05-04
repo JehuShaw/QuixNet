@@ -34,3 +34,8 @@ Visual C++ .NET 2010
 在Linux 下编译 shiny-engine
 
 Code::Blocks 16.01
+
+# How to use
+如何使用
+
+
