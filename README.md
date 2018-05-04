@@ -22,34 +22,34 @@ With these problems, this framework was born.
 
 
 # How to build
-##### 1.Building Shiny-Engine for Windows
+#### 1.Building Shiny-Engine for Windows
 Visual C++ .NET 2010
 
-##### 2.Building Shiny-Engine for Linux
+#### 2.Building Shiny-Engine for Linux
 Code::Blocks 16.01
 
 # 如何编译
-##### 1.在Windows下编译 shiny-engine
+#### 1.在Windows下编译 shiny-engine
 Visual C++ .NET 2010
 
-##### 2.在Linux 下编译 shiny-engine
+#### 2.在Linux 下编译 shiny-engine
 Code::Blocks 16.01
 
 # how to use
-##### 1. Set the configuration file
+#### 1. Set the configuration file
 Each node has a configuration file "App.config" (eg： agent_server path: agent_server\bin\win32\debug\App.config).
 Please set the corresponding field. The key field "ServerID" is not allowed to be duplicated.
-##### 2. Install Database for CacheServer
+#### 2. Install Database for CacheServer
 1. Each “CacheServer” node must have a database to configure related data. (For example: mysql_script\centredb\node_memcache.sql)
 2. Each “CacheServer” node must also have a database for storing data. (For example: mysql_script\centredb\node_control_centre.sql)
 3. Configure the node_control_centre.sql table information to node_memcache.sql (this process is equivalent to converting the relational table to a Key-Value structure)
 
 # 如何使用
-##### 1.设置配置文件
+#### 1.设置配置文件
 每一个节点都有一个配置文件“App.config”（比如：agent_server 路径：agent_server\bin\win32\debug\App.config),
 请设置下对应的字段。其中关键字段“ServerID” 是不允许重复的。
 
-##### 2.给CacheServer安装数据库
+#### 2.给CacheServer安装数据库
 1.每个CacheServer节点必须设置一个数据库用于配置相关数据。（比如：mysql_script\centredb\node_memcache.sql）
 2.每个CacheServer还必须要一个用于存储数据的数据库。（比如：mysql_script\centredb\node_control_centre.sql）
 3.把 node_control_centre.sql 表信息配置到 node_memcache.sql (这个过程相当于把关系表转换成Key-Value结构）
