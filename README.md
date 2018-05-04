@@ -43,6 +43,19 @@ Please set the corresponding field. The key field "ServerID" is not allowed to b
 1. Each “CacheServer” node must have a database to configure related data. (For example: mysql_script\centredb\node_memcache.sql)
 2. Each “CacheServer” node must also have a database for storing data. (For example: mysql_script\centredb\node_control_centre.sql)
 3. Configure the node_control_centre.sql table information to node_memcache.sql (this process is equivalent to converting the relational table to a Key-Value structure)
+#### 3. Let the tool generate code for GameServer that can automatically update to the database
+Use the tools\mc.rar tool to list fields in DataCodeGenerate\in.txt, such as:
+
+// Character account ID
+Uint64_t account;
+// Character Name
+String name;
+// Character level
+Int32_t level;
+// Character experience
+Int32_t exp;
+
+Then double-click DataCodeGenerate\一键获取.bat to get the code.
 
 # 如何使用
 #### 1.设置配置文件
@@ -54,3 +67,16 @@ Please set the corresponding field. The key field "ServerID" is not allowed to b
 2. 每个CacheServer还必须要一个用于存储数据的数据库。（比如：mysql_script\centredb\node_control_centre.sql）
 3. 把 node_control_centre.sql 表信息配置到 node_memcache.sql (这个过程相当于把关系表转换成Key-Value结构）
 
+#### 3.让工具给GameServer生成可以自动更新到数据的代码 
+使用 tools\mc.rar 工具，在 DataCodeGenerate\in.txt 列举出字段，比如:
+
+// 角色账号ID
+uint64_t account;
+// 角色名称
+string name;
+// 角色等级
+int32_t level;
+// 角色经验
+int32_t exp;
+
+然后鼠标双击 DataCodeGenerate\一键获取.bat 获得代码。
