@@ -35,8 +35,14 @@ Visual C++ .NET 2010
 ##### 2.在Linux 下编译 shiny-engine
 Code::Blocks 16.01
 
-# How to use
-##### 1.Setting up the configuration file
+# how to use
+##### 1. Set the configuration file
+Each node has a configuration file "App.config" (eg： agent_server path: agent_server\bin\win32\debug\App.config).
+Please set the corresponding field. The key field "ServerID" is not allowed to be duplicated.
+##### 2. Install Database for CacheServer
+1. Each “CacheServer” node must have a database to configure related data. (For example: mysql_script\centredb\node_memcache.sql)
+2. Each “CacheServer” node must also have a database for storing data. (For example: mysql_script\centredb\node_control_centre.sql)
+3. Configure the node_control_centre.sql table information to node_memcache.sql (this process is equivalent to converting the relational table to a Key-Value structure)
 
 # 如何使用
 ##### 1.设置配置文件
