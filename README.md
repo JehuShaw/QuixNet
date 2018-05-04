@@ -9,13 +9,12 @@ Interested friends can contact me:
 Email: xqx83@hotmail.com Tencent QQ: 183708457
 
 # Why use shiny-engine
-为什么使用shiny-engine
-
 Distributed game server development general technology is relatively difficult and development cycle is relatively long. The traditional game server development model is to customize a distributed game framework for a game, so you should think it is not a common framework to solve Repeat the development of the framework and whether the public functions can be developed in advance through the framework.
 Whether it is possible to reduce the difficulty of development through an automated way, such as: automatic routing of messages, automatic update of data within the node server to the database, automatic memory management, automatic locking of multi-threaded operations, and so on.
 
 With these problems, this framework was born.
 
+# 为什么使用shiny-engine
 分布式游戏服务端开发一般技术难度比较大而且开发周期比较长.传统的游戏服务端开发模式都是针对某款游戏定制一个分布式游戏框架,所以你应该会想是不是用通用的框架来解决重复开发框架的问题,并且能否通过框架的形式预先把公共的功能都开发好.
 是否可以通过一种自动化的方式让开发难度降低,比如:自动路由消息,自动把节点内的数据更新到数据库,自动内存管理,多线程操作自动加锁等等.
 
@@ -23,15 +22,13 @@ With these problems, this framework was born.
 
 
 # How to build
-如何编译
-
 ##### 1.Building Shiny-Engine for Windows
 Visual C++ .NET 2010
 
 ##### 2.Building Shiny-Engine for Linux
 Code::Blocks 16.01
 
-
+# 如何编译
 ##### 1.在Windows下编译 shiny-engine
 Visual C++ .NET 2010
 
@@ -39,6 +36,6 @@ Visual C++ .NET 2010
 Code::Blocks 16.01
 
 # How to use
-如何使用
+# 如何使用
 
 
