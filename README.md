@@ -25,16 +25,17 @@ With these problems, this framework was born.
 # How to build
 如何编译
 
-1.Building Shiny-Engine for Windows
-
-在Windows下编译 shiny-engine
-
+##### 1.Building Shiny-Engine for Windows
 Visual C++ .NET 2010
 
-2.Building Shiny-Engine for Linux
+#####　2.Building Shiny-Engine for Linux
+Code::Blocks 16.01
 
-在Linux 下编译 shiny-engine
 
+##### 1.在Windows下编译 shiny-engine
+Visual C++ .NET 2010
+
+##### 2.在Linux 下编译 shiny-engine
 Code::Blocks 16.01
 
 # How to use
