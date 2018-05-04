@@ -50,7 +50,7 @@ Please set the corresponding field. The key field "ServerID" is not allowed to b
 请设置下对应的字段。其中关键字段“ServerID” 是不允许重复的。
 
 #### 2.给CacheServer安装数据库
-1.每个CacheServer节点必须设置一个数据库用于配置相关数据。（比如：mysql_script\centredb\node_memcache.sql）
-2.每个CacheServer还必须要一个用于存储数据的数据库。（比如：mysql_script\centredb\node_control_centre.sql）
-3.把 node_control_centre.sql 表信息配置到 node_memcache.sql (这个过程相当于把关系表转换成Key-Value结构）
+1. 每个CacheServer节点必须设置一个数据库用于配置相关数据。（比如：mysql_script\centredb\node_memcache.sql）
+2. 每个CacheServer还必须要一个用于存储数据的数据库。（比如：mysql_script\centredb\node_control_centre.sql）
+3. 把 node_control_centre.sql 表信息配置到 node_memcache.sql (这个过程相当于把关系表转换成Key-Value结构）
 
