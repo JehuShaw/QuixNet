@@ -58,6 +58,15 @@ int32_t exp;
 
 Then double-click DataCodeGenerate\Build.bat to get the code.
 
+#### 5. How nodes receive messages
+Which receiving node's message the receiving node wants to receive requires that the receiving node's interested message be registered with the sending node.The interior of the node is assembled through modules. The receiving node registered in the sending node is also treated as a module.The messages processed in the module, that is, the messages that the module is interested in, also need to be listed and registered to the module management.  
+Therefore, what message the node needs to register needs to be registered, and the registration message is eventually divided into two steps:  
+1. Message registration between nodes  
+2. Message registration between modules within a node  
+Need special instructions:  
+1. They handle differently in the case of no message registration, no messages are registered between nodes, all messages are received, and the modules areNo message is received without message registration.  
+2. The message is ultimately processed within the module.  
+
 # 如何使用
 #### 1.为节点设置配置文件 （像 agent_server、game_server、login_server、cache_server 等等，都称为节点）
 每一个节点都有一个配置文件“App.config”（比如：agent_server 路径：agent_server\bin\win32\debug\App.config),
@@ -84,3 +93,14 @@ int32_t level;
 int32_t exp;  
 
 然后鼠标双击 DataCodeGenerate\Build.bat 获得代码。
+
+#### 5.节点如何接收消息
+接收节点要收取哪个发送节点的消息就需要把接收节点感兴趣的消息注册给发送节点。
+节点内部是通过模块组合起来的，在发送节点里被注册过来的接收节点也是被当成一个模块处理的。
+模块内处理的消息，也就是模块感兴趣的消息，也需要列举出来注册到模块管理。  
+所以，节点接收什么消息就需要注册什么消息，注册消息最终分成两步：  
+1。节点间的消息注册  
+2。节点内模块间的消息注册  
+需要特别说明的是：  
+1。他们在没有消息注册的情况处理有所不同， 节点间在没有消息注册的情况是接收所有消息，而模块间在没有消息注册的情况下是不接收任何消息。  
+2。消息最终是在模块内被处理。 
