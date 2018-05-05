@@ -114,9 +114,9 @@ static void NodeProtocolInterests(::node::InterestPacket& outInterests) {
     outInterests.add_interests(P_CMD_C_LOGIN);   
     outInterests.add_interests(P_CMD_S_LOGOUT);   
     outInterests.add_interests(P_CMD_C_PLAYER_RENAME);    
-                      .    
-                      .   
-                      .  
+                      .      
+                      .     
+                      .    
  }  
  
 然后把“NodeProtocolInterests”函数指针传给 CWorkerServiceImp 实例。   
@@ -124,9 +124,9 @@ CWorkerServiceImp 实例在 "game_server\src\framework\GameServer.cpp" 的 bool 
 如果是节点间的消息请在 "game_server\src\framework\WorkerServiceImpHelper.h" 的“NodeNotificationInterests”函数列举出来:   
 static void NodeNotificationInterests(::node::InterestPacket& outInterests) {  
     outInterests.add_interests(N_CMD_KICK_LOGGED);  
-                     .   
-                     .   
-                     .  
+                     .     
+                     .     
+                     .    
 }  
 
 然后把“NodeNotificationInterests”函数指针传给 CWorkerServiceImp 实例。
