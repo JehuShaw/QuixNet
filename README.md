@@ -69,6 +69,31 @@ Need special instructions:   
 1. They handle differently in the case of no message registration, no messages are registered between nodes, all messages are received, but the modules are no message is received without message registration.   
 2. The message is ultimately processed within the module.  
 
+Take GameServer as an example:   
+Messages sent by clients interested in the node are listed in the function "NodeProtocolInterests" in the file "game_server\src\framework\WorkerServiceImpHelper.h":   
+```
+Static void NodeProtocolInterests(::node::InterestPacket& outInterests)  {  
+    outInterests.add_interests(P_CMD_C_LOGIN);  
+    outInterests.add_interests(P_CMD_S_LOGOUT);  
+    outInterests.add_interests(P_CMD_C_PLAYER_RENAME);  
+                    .
+                    .
+                    .
+}
+```
+Then pass the "NodeProtocolInterests" function pointer to the CWorkerServiceImp instance.   
+CWorkerServiceImp instance is Defined in "game_server\src\framework\GameServer.cpp" function bool Init(int argc, char** argv);   
+If the message is transmitted between nodes, Please list the message in the file "game_server\src\framework\WorkerServiceImpHelper.h" function "NodeNotificationInterests" :  
+```
+Static void NodeNotificationInterests(::node::InterestPacket& outInterests) {
+    outInterests.add_interests(N_CMD_KICK_LOGGED);
+                    . 
+                    .
+                    .
+}
+```
+Then pass the "NodeNotificationInterests" function pointer to the CWorkerServiceImp instance.
+
 # 如何使用
 #### 1.为节点设置配置文件 （像 agent_server、game_server、login_server、cache_server 等等，都称为节点）
 每一个节点都有一个配置文件“App.config”（比如：agent_server 路径：agent_server\bin\win32\debug\App.config),
