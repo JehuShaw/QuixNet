@@ -65,7 +65,7 @@ Therefore, what message the node needs to register needs to be registered, and t
 2. Message registration between modules within a node
 
 Need special instructions:    
-1. They handle differently in the case of no message registration, no messages are registered between nodes, all messages are received, and the modules areNo message is received without message registration.   
+1. They handle differently in the case of no message registration, no messages are registered between nodes, all messages are received, but the modules are no message is received without message registration.   
 2. The message is ultimately processed within the module.  
 
 # 如何使用
