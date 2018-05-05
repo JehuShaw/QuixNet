@@ -36,7 +36,7 @@ Visual C++ .NET 2010
 Code::Blocks 16.01
 
 # how to use
-#### 1. Set the configuration file
+#### 1. Set the configuration file for the node (Like agent_server, game_server, login_server, cache_server, etc. are all called nodes.)
 Each node has a configuration file "App.config" (eg： agent_server path: agent_server\bin\win32\debug\App.config).
 Please set the corresponding field. The key field "ServerID" is not allowed to be duplicated.
 #### 2. Install Database for CacheServer
@@ -58,7 +58,7 @@ int32_t exp;
 Then double-click DataCodeGenerate\Build.bat to get the code.
 
 # 如何使用
-#### 1.设置配置文件
+#### 1.为节点设置配置文件 （像 agent_server、game_server、login_server、cache_server 等等，都称为节点）
 每一个节点都有一个配置文件“App.config”（比如：agent_server 路径：agent_server\bin\win32\debug\App.config),
 请设置下对应的字段。其中关键字段“ServerID” 是不允许重复的。
 
