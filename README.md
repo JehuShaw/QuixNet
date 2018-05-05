@@ -47,13 +47,13 @@ Please set the corresponding field. The key field "ServerID" is not allowed to b
 Use the tools\mc.rar tool to list fields in DataCodeGenerate\in.txt, such as:
 
 // Character account ID  
-Uint64_t account;  
+uint64_t account;  
 // Character Name  
-String name;  
+string name;  
 // Character level  
-Int32_t level;  
+int32_t level;  
 // Character experience  
-Int32_t exp;  
+int32_t exp;  
 
 Then double-click DataCodeGenerate\Build.bat to get the code.
 
