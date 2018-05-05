@@ -107,3 +107,26 @@ int32_t exp;
 需要特别说明的是:  
 1. 他们在没有消息注册的情况处理有所不同， 节点间在没有消息注册的情况是接收所有消息，而模块间在没有消息注册的情况下是不接收任何消息。  
 2. 消息最终是在模块内被处理。 
+
+以GameServer为例：  
+节点感兴趣的客户端消息在文件 "game_server\src\framework\WorkerServiceImpHelper.h" 的“NodeProtocolInterests”函数列举出来：    
+static void NodeProtocolInterests(::node::InterestPacket& outInterests) {  
+    outInterests.add_interests(P_CMD_C_LOGIN);
+    outInterests.add_interests(P_CMD_S_LOGOUT);
+    outInterests.add_interests(P_CMD_C_PLAYER_RENAME); 
+                      .      
+                      . 
+                      .
+ }
+ 
+然后把“NodeProtocolInterests”函数指针传给 CWorkerServiceImp 实例。   
+CWorkerServiceImp 实例在 "game_server\src\framework\GameServer.cpp" 的 bool Init(int argc, char** argv)；函数内定义。  
+如果是节点间的消息请在 "game_server\src\framework\WorkerServiceImpHelper.h" 的“NodeNotificationInterests”函数列举出来:  
+static void NodeNotificationInterests(::node::InterestPacket& outInterests) {
+    outInterests.add_interests(N_CMD_KICK_LOGGED);
+                     . 
+                     . 
+                     .
+}
+
+然后把“NodeNotificationInterests”函数指针传给 CWorkerServiceImp 实例。
