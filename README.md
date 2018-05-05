@@ -11,6 +11,7 @@ Email: xqx83@hotmail.com Tencent QQ: 183708457
 # Why use shiny-engine
 Distributed game server development general technology is relatively difficult and development cycle is relatively long. The traditional game server development model is to customize a distributed game framework for a game, so you should think it is not a common framework to solve Repeat the development of the framework and whether the public functions can be developed in advance through the framework.
 Whether it is possible to reduce the difficulty of development through an automated way, such as: automatic routing of messages, automatic update of data within the node server to the database, automatic memory management, automatic locking of multi-threaded operations, and so on.
+
 With these problems, this framework was born.
 
 # 为什么使用shiny-engine
