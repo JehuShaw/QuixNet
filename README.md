@@ -82,7 +82,8 @@ Static void NodeProtocolInterests(::node::InterestPacket& outInterests)  {
 }
 ```
 Then pass the "NodeProtocolInterests" function pointer to the CWorkerServiceImp instance.   
-CWorkerServiceImp instance is Defined in "game_server\src\framework\GameServer.cpp" function bool Init(int argc, char** argv);   
+CWorkerServiceImp instance is Defined in "game_server\src\framework\GameServer.cpp" function   
+bool Init(int argc, char** argv);   
 If the message is transmitted between nodes, Please list the message in the file "game_server\src\framework\WorkerServiceImpHelper.h" function "NodeNotificationInterests" :  
 ```
 Static void NodeNotificationInterests(::node::InterestPacket& outInterests) {
