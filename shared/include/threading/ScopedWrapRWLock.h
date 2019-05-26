@@ -251,6 +251,22 @@ public:
 		return *pThis;
 	}
 
+	bool operator==(const CScopedWrapRWLock<UseType>& right) const {
+		return m_data == right.m_data;
+	}
+
+	bool operator!=(const CScopedWrapRWLock<UseType>& right) const {
+		return m_data != right.m_data;
+	}
+
+	bool operator>(const CScopedWrapRWLock<UseType>& right) const {
+		return m_data > right.m_data;
+	}
+
+	bool operator<(const CScopedWrapRWLock<UseType>& right) const {
+		return m_data < right.m_data;
+	}
+
 private:
 	enum eWrapRWLockState {
 		WRAP_RWLOCK_UNINIT,

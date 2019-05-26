@@ -137,6 +137,22 @@ namespace thd {
 			} 
 		}
 
+		bool operator==(const CScopedWrapLock<UseType>& right) const {
+			return m_data == right.m_data;
+		}
+
+		bool operator!=(const CScopedWrapLock<UseType>& right) const {
+			return m_data != right.m_data;
+		}
+
+		bool operator>(const CScopedWrapLock<UseType>& right) const {
+			return m_data > right.m_data;
+		}
+
+		bool operator<(const CScopedWrapLock<UseType>& right) const {
+			return m_data < right.m_data;
+		}
+
 	private:
 		enum eWrapLockState {
 			WRAP_LOCK_UNINIT,
