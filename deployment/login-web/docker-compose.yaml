@@ -1,0 +1,8 @@
+services:
+  login-web:
+    build: .
+      context: login-web
+      dockerfile: deployment/login-web
+    command: bash -c "./root/workspace/start.sh"
+    ports:
+      - "80:80"
