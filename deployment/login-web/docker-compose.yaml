@@ -1,0 +1,7 @@
+services:
+  account:
+    build: .
+    context: login-web
+    dockerfile: deployment/login-web
+    ports:
+      - "80:80"
