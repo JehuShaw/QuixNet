@@ -5,4 +5,11 @@ services:
       dockerfile: deployment/login-web
     command: bash -c "./root/workspace/start.sh"
     ports:
-      - "80:80"
+      - 80:80
+      - 3306
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+    
+      
