@@ -38,7 +38,7 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
 
 \> make -j$(nproc)
-##### No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
+##### 4). No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
 
 # 如何编译
 #### 1.在Windows下编译 QuixNet
@@ -59,7 +59,7 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
 
 \> make -j$(nproc)
-##### 没必要执行 make install。如果需要编译release 版本，请修改参数为 -DCMAKE_SUILD_TYPE=Release 。
+##### 4). 没必要执行 make install。如果需要编译release 版本，请修改参数为 -DCMAKE_SUILD_TYPE=Release 。
 
 # how to use
 #### 1. Set the configuration file for the node (Like agent_server, game_server, login_server, cache_server, etc. are all called nodes.)
