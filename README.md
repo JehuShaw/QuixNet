@@ -42,7 +42,6 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 # 如何编译
 #### 1.在Windows下编译 QuixNet
 #####1). 安装 Visual Studio 2022
-
 #####2). 安装子模块（第三方依赖库）
 打开命令窗口 "Developer Command Prompt for VS 2022", 输入如下：
 \> "你工程的路径\submodule.bat"
@@ -51,10 +50,8 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 打开每个节点VS工程文件 "xxxx_server\vsproject\xxxx_server.sln"
 #### 2.在Linux 下编译 QuixNet
 #####1). 安装 CMake 3.5 及以上版本 或者 使用图形界面IDE CLion
-
 #####2). 安装子模块（第三方依赖库）， 到你的工程目录打开终端“Terminal"并执行如下命令：
 \> "你的工程目录/submodule.sh"
-
 #####3). 编译代码，使用CMake编译，输入如下命令：
 \> cd xxxx_server
 \> mkdir cbuild
