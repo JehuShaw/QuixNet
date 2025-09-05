@@ -22,11 +22,11 @@ With these problems, this framework was born.
 
 # How to build
 #### 1.Building QuixNet for Windows
-1).Install "Visual Studio 2022"
-2).Install submodule (Third party dependency libraries)
+##### 1).Install "Visual Studio 2022"
+##### 2).Install submodule (Third party dependency libraries)
 Open "Developer Command Prompt for VS 2022"
 > "Your project path\submodule.bat"
-3). Compile code
+##### 3). Compile code
 Open "xxxx_server\vsproject\xxxx_server.sln"
 
 #### 2.Building QuixNet for Linux
