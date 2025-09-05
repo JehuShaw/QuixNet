@@ -36,6 +36,7 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 \> cd xxxx_server
 \> mkdir cbuild
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
+
 \> make -j$(nproc)
 ##### No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
 
@@ -46,7 +47,7 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 打开命令窗口 "Developer Command Prompt for VS 2022", 输入如下：
 \> "你工程的路径\submodule.bat"
 
-3).编译代码
+##### 3).编译代码
 打开每个节点VS工程文件 "xxxx_server\vsproject\xxxx_server.sln"
 #### 2.在Linux 下编译 QuixNet
 ##### 1). 安装 CMake 3.5 及以上版本 或者 使用图形界面IDE CLion
@@ -56,6 +57,7 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 \> cd xxxx_server
 \> mkdir cbuild
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
+
 \> make -j$(nproc)
 ##### 没必要执行 make install。如果需要编译release 版本，请修改参数为 -DCMAKE_SUILD_TYPE=Release 。
 
