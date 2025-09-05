@@ -38,6 +38,8 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 
 \> mkdir cbuild
 
+\> cd cbuild
+
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
 
 \> make -j$(nproc)
@@ -62,6 +64,8 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 \> cd xxxx_server
 
 \> mkdir cbuild
+
+\> cd cbuild
 
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
 
