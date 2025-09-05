@@ -33,8 +33,11 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 ##### 2). Install submodule (Third party dependency libraries). Go to your project directory and open the terminal
 \> "Your project path/submodule.sh"
 ##### 3). Compile code，Compile using CMake and enter the following command：
+
 \> cd xxxx_server
+
 \> mkdir cbuild
+
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
 
 \> make -j$(nproc)
@@ -53,9 +56,13 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 ##### 1). 安装 CMake 3.5 及以上版本 或者 使用图形界面IDE CLion
 ##### 2). 安装子模块（第三方依赖库）， 到你的工程目录打开终端“Terminal"并执行如下命令：
 \> "你的工程目录/submodule.sh"
+
 ##### 3). 编译代码，使用CMake编译，输入如下命令：
+
 \> cd xxxx_server
+
 \> mkdir cbuild
+
 \> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
 
 \> make -j$(nproc)
