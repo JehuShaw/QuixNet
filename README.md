@@ -25,29 +25,26 @@ With these problems, this framework was born.
 ##### 1).Install "Visual Studio 2022"
 ##### 2).Install submodule (Third party dependency libraries)
 Open "Developer Command Prompt for VS 2022"
-> "Your project path\submodule.bat"
+\> "Your project path\submodule.bat"
 ##### 3). Compile code
 Open "xxxx_server\vsproject\xxxx_server.sln"
 
 #### 2.Building QuixNet for Linux
-1). Install "CMake 3.5+" or IDE "CLion"
-
-2). Install submodule (Third party dependency libraries). Go to your project directory and open the terminal
-> "Your project path/submodule.sh"
-
-3). Compile code，Compile using CMake and enter the following command：
-> cd xxxx_server
-> mkdir cbuild
-> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug ..
-> make -j$(nproc)
-
-No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
+#####1). Install "CMake 3.5+" or IDE "CLion"
+#####2). Install submodule (Third party dependency libraries). Go to your project directory and open the terminal
+\> "Your project path/submodule.sh"
+#####3). Compile code，Compile using CMake and enter the following command：
+\> cd xxxx_server
+\> mkdir cbuild
+\> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug ..
+\> make -j$(nproc)
+#####No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
 
 # 如何编译
 #### 1.在Windows下编译 QuixNet
-1). 安装 Visual Studio 2022
+#####1). 安装 Visual Studio 2022
 
-2). 安装子模块（第三方依赖库）
+#####2). 安装子模块（第三方依赖库）
 打开命令窗口 "Developer Command Prompt for VS 2022", 输入如下：
 > "你工程的路径\submodule.bat"
 
