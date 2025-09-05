@@ -6,7 +6,7 @@ Currently supports Window 64-bit systems and linux ubuntu 64-bit systems. Commun
 The server architecture can look at some of the files in the doc directory. The current documentation is quite simple, mainly because the author is too lazy. Of course, follow-up will continue to complete the document and continue to improve the project.
 
 Interested friends can contact me:
-Email: xqx83@hotmail.com Tencent QQ: 183708457
+Email: kongke84@outlook.com Tencent QQ: 183708457
 
 # Why use QuixNet
 Distributed game server development general technology is relatively difficult and development cycle is relatively long. The traditional game server development model is to customize a distributed game framework for a game, so you should think it is not a common framework to solve Repeat the development of the framework and whether the public functions can be developed in advance through the framework.
