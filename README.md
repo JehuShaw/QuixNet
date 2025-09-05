@@ -22,17 +22,43 @@ With these problems, this framework was born.
 
 # How to build
 #### 1.Building QuixNet for Windows
-Visual C++ .NET 2010
+1).Install "Visual Studio 2022"
+2).Install submodule (Third party dependency libraries)
+Open "Developer Command Prompt for VS 2022"
+> "Your project path\submodule.bat"
+3). Compile code
+Open "xxxx_server\vsproject\xxxx_server.sln"
 
 #### 2.Building QuixNet for Linux
-Code::Blocks 16.01
+1). Install "CMake 3.5+" or IDE "CLion"
+2). Install submodule (Third party dependency libraries). Go to your project directory and open the terminal
+> "Your project path/submodule.sh"
+3). Compile code，Compile using CMake and enter the following command：
+> cd xxxx_server
+> mkdir cbuild
+> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug ..
+> make -j$(nproc)
+No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
 
 # 如何编译
 #### 1.在Windows下编译 QuixNet
-Visual C++ .NET 2010
+1). 安装 Visual Studio 2022
+2). 安装子模块（第三方依赖库）
+打开命令窗口 "Developer Command Prompt for VS 2022", 输入如下：
+> "你工程的路径\submodule.bat"
+3).编译代码
+打开每个节点VS工程文件 "xxxx_server\vsproject\xxxx_server.sln"
 
 #### 2.在Linux 下编译 QuixNet
-Code::Blocks 16.01
+1). 安装 CMake 3.5 及以上版本 或者 使用图形界面IDE CLion
+2). 安装子模块（第三方依赖库）， 到你的工程目录打开终端“Terminal"并执行如下命令：
+> "你的工程目录/submodule.sh"
+3). 编译代码，使用CMake编译，输入如下命令：
+> cd xxxx_server
+> mkdir cbuild
+> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug ..
+> make -j$(nproc)
+没必要执行 make install。如果需要编译release 版本，请修改参数为 -DCMAKE_SUILD_TYPE=Release 。
 
 # how to use
 #### 1. Set the configuration file for the node (Like agent_server, game_server, login_server, cache_server, etc. are all called nodes.)
