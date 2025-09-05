@@ -8,8 +8,8 @@
 #ifndef TCPPACKETINTERFACE_H
 #define	TCPPACKETINTERFACE_H
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-#include "TCPSocketWin32.h"
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+#include "TCPSocketWin.h"
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
 #include "TCPSocketBSD.h"
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -20,6 +20,60 @@
 
 namespace  ntwk {
 
+	class CThreadCtrler
+	{
+	public:
+		CThreadCtrler()
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			: m_hSema(NULL)
+#endif
+		{}
+
+		~CThreadCtrler() {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+#else
+			pthread_mutex_destroy(&mutex);
+			pthread_cond_destroy(&cond);
+#endif
+		}
+
+		void Setup()
+		{
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			m_hSema = CreateSemaphore(NULL, 0, 2147483647, NULL);
+#else
+			pthread_mutex_init(&mutex, NULL);
+			pthread_cond_init(&cond, NULL);
+#endif
+		}
+
+		void Suspend()
+		{
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			WaitForSingleObject(m_hSema, INFINITE);
+#else
+			pthread_cond_wait(&cond, &mutex);
+#endif
+		}
+
+		bool Resume()
+		{
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			return ReleaseSemaphore(m_hSema, 1, NULL) != FALSE;
+#else
+			return pthread_cond_signal(&cond) == 0;
+#endif
+		}
+
+	private:
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+		HANDLE m_hSema;
+#else
+		pthread_cond_t cond;
+		pthread_mutex_t mutex;
+#endif
+	};
+
     struct ReceivePacket {
         Packet packet;
         SocketID socketId;
@@ -27,8 +81,8 @@ namespace  ntwk {
 
     typedef std::set<int> REGISTER_LIST_T;
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-    class SHARED_DLL_DECL TCPPacketInterface :protected TCPSocketWin32 {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+    class SHARED_DLL_DECL TCPPacketInterface :protected TCPSocketWin {
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
     class SHARED_DLL_DECL TCPPacketInterface :protected TCPSocketBSD {
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -36,7 +90,7 @@ namespace  ntwk {
 #endif
     public:
         TCPPacketInterface();
-#if !defined( __WIN32__ ) && !defined( WIN32 ) && !defined( _WIN32 )
+#if !defined( __WIN32__ ) && !defined( WIN32 ) && !defined( _WIN32 ) && !defined( _WIN64 )
         TCPPacketInterface(socket_domain domain);
 #endif
         virtual ~TCPPacketInterface();
@@ -54,22 +108,34 @@ namespace  ntwk {
 
         // Sends a byte stream
         inline bool Send(unsigned char * data,unsigned int length,const SocketID& socketId) {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-            return this->TCPSocketWin32::Send(data,length,socketId.index);
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+            return this->TCPSocketWin::Send(data,length,socketId);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-            return this->TCPSocketBSD::Send(data,length,socketId.index);
+            return this->TCPSocketBSD::Send(data,length,socketId);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-            return this->TCPSocketLinux::Send(data,length,socketId.index);
+            return this->TCPSocketLinux::Send(data,length,socketId);
 #endif
         }
 
-		inline bool Send(unsigned char * data,unsigned int length,int socketIdx) {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-			return this->TCPSocketWin32::Send(data,length,socketIdx);
+		// Is exist ?
+		inline bool Exist(const SocketID& socketId) const {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			return this->TCPSocketWin::Exist(socketId);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-            return this->TCPSocketBSD::Send(data,length,socketIdx);
+			return this->TCPSocketBSD::Exist(socketId);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-			return this->TCPSocketLinux::Send(data,length,socketIdx);
+			return this->TCPSocketLinux::Exist(socketId);
+#endif
+		}
+
+		// Number of socket connections
+		inline uint32_t Size() const {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			return this->TCPSocketWin::Size();
+#elif defined( __NetBSD__ ) || defined( __APPLE__ )
+			return this->TCPSocketBSD::Size();
+#elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
+			return this->TCPSocketLinux::Size();
 #endif
 		}
 
@@ -98,54 +164,63 @@ namespace  ntwk {
 			return false;
 		}
         //check lost connections
-		inline bool HasLostConnection(SocketID& socketId){
-			SocketID *temp = lostConnections.ReadLock();
+		inline bool HasLostConnection(SocketID& socketId, int& nWhy){
+			LostData* temp = lostConnections.ReadLock();
 			if (temp){
-				socketId = *temp;
+				socketId = temp->socketId;
+				nWhy = temp->nWhy;
 				lostConnections.ReadUnlock();
 				return true;
 			}
 			return false;
 		}
         //Disconnects aplayer/address
-		inline void CloseConnection(const SocketID& socketId){
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-			this->TCPSocketWin32::CloseConnection(socketId);
+		inline void CloseConnection(const SocketID& socketId, int nWhy){
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			this->TCPSocketWin::CloseConnection(socketId, nWhy);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-            this->TCPSocketBSD::CloseConnection(socketId);
+            this->TCPSocketBSD::CloseConnection(socketId, nWhy);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-			this->TCPSocketLinux::CloseConnection(socketId);
+			this->TCPSocketLinux::CloseConnection(socketId, nWhy);
 #endif
 		}
 
 		inline int GetLinkCount() const {
-			return (int)registerList.size();
+			return (int)linkCount_;
 		}
 
     protected:
-        SingleProducerConsumer<SocketID> newConnections,lostConnections;
+		SingleProducerConsumer<SocketID> newConnections;
+		SingleProducerConsumer<LostData> lostConnections;
         SingleProducerConsumer<ReceivePacket> totalIngoingQueue;
         SingleProducerConsumer<int> loginQueue;
         SingleProducerConsumer<int> logoutQueue;
 
-        REGISTER_LIST_T registerList;
 
         volatile bool bRegistered;
         ILinkData* AllocateLinkerData();
-        void AcceptCallback(SocketLink& socketLink);
+
+        void AcceptCallback(const SocketLink& socketLink);
+
         int ReceiveCallback(
 			SocketLink& socketLink,
             const unsigned char* buffer,
             const unsigned int length,
             const unsigned char* moreBuffer,
             const unsigned int moreLength);
+
 		void SendCallback(
 			Packet& dstPacket,
 			const unsigned char* data,
 			const unsigned int length,
 			const unsigned char* prefixData,
 			const unsigned int prefixLength);
-        void DisconnectCallback(SocketLink& socketLink);
+
+        void DisconnectCallback(
+			int nIndex,
+			const SocketID& socketId,
+			int nWhy);
+
         void MisdataCallback(
 			SocketLink& socketLink,
             const unsigned char* buffer,
@@ -154,20 +229,22 @@ namespace  ntwk {
 private:
         void DispatchRun();
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
         friend unsigned int _stdcall DispatchInterfaceLoop(void * arguments);
 #else
         friend void * DispatchInterfaceLoop(void * arguments);
 #endif
 
 
-        volatile bool isDispatched;
-        thd::CSpinEvent dispatchDone;
+        volatile bool isDispatched_;
+		volatile long linkCount_;
+		CThreadCtrler threadCtrler_;
+		thd::CSpinEvent threadDone_;
         // Limit the packet size, The unit is byte
-        uint32_t packetSizeLimit;
+        uint32_t packetSizeLimit_;
     };
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
     extern unsigned int _stdcall DispatchInterfaceLoop(void * arguments);
 #else
     extern void * DispatchInterfaceLoop(void * arguments);

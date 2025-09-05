@@ -5,8 +5,8 @@
  * Created on 2014_4_28, 13:15
  */
 
-#ifndef _NODEMODULE_H
-#define	_NODEMODULE_H
+#ifndef NODEMODULE_H
+#define	NODEMODULE_H
 
 #include "NodeDefines.h"
 
@@ -16,14 +16,12 @@
 #include "IChannelValue.h"
 
 
-class CNodeModule : public INodeControl
+class CNodeModule : public virtual INodeControl
 {
 public:
-	CNodeModule(void);
-
 	CNodeModule(const std::string& moduleName,
 		const std::string& endPoint,
-		uint16_t serverId,
+		uint32_t serverId,
 		uint16_t serverType,
 		const std::string& acceptAddress,
 		const std::string& processPath,
@@ -43,13 +41,11 @@ public:
 	virtual void HandleNotification(const util::CWeakPointer<mdl::INotification>& request,
 		util::CWeakPointer<mdl::IResponse>& reply);
 
-	virtual bool CreatChannel(uint16_t serverId, const std::string& endPoint, uint16_t serverType);
-
-	virtual bool CreatChannel(uint16_t serverId, const std::string& endPoint, uint16_t serverType,
+	virtual bool CreatChannel(uint32_t serverId, const std::string& endPoint, uint16_t serverType,
 		const std::string& acceptAddress, const std::string& processPath, const std::string& projectName,
 		uint16_t serverRegion);
 
-	virtual bool RemoveChannel(uint16_t serverId);
+	virtual bool RemoveChannel(uint32_t serverId);
 
 	virtual int ChannelCount() const ;
 
@@ -59,23 +55,39 @@ public:
 
 	virtual util::CAutoPointer<IChannelValue> GetLowLoadByRegion(uint16_t serverRegion) const;
 
-	util::CAutoPointer<IChannelValue> GetChnlByDirServId(uint16_t serverId) const;
+	util::CAutoPointer<IChannelValue> GetChnlByDirServId(uint32_t serverId) const;
 
-	virtual void UpdateChannelLoad(uint16_t serverId, uint32_t serverLoad);
+	virtual void UpdateChannelLoad(uint32_t serverId, int32_t serverLoad);
 
-	int SendNotification(uint16_t serverId, int32_t cmd);
+	int SendNotification(uint32_t serverId, int32_t cmd);
 
-	int SendNotification(uint16_t serverId, int32_t cmd, const ::google::protobuf::Message& message);
+	int SendNotification(uint32_t serverId, int32_t cmd, const ::google::protobuf::Message& request);
 
-	int SendNotification(uint16_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& message);
+	int SendNotification(uint32_t serverId, int32_t cmd, const ::google::protobuf::Message& request, ::google::protobuf::Message& response);
 
-	int SendNotification(uint16_t serverId, int32_t cmd, const std::string& data);
+	int SendNotification(uint32_t serverId, int32_t cmd, const std::string& request, std::string& response);
 
-	int SendNotification(uint16_t serverId, int32_t cmd, uint64_t userId, const std::string& data);
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request, ::google::protobuf::Message& response);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, const std::string& request, std::string& response);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, int32_t subcmd);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& message, int32_t subcmd);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request, ::google::protobuf::Message& response, int32_t subcmd);
+
+	int SendNotification(uint32_t serverId, int32_t cmd, uint64_t userId, const std::string& request, std::string& response, int32_t subcmd);
 
 	int SendNotification(util::CAutoPointer<IChannelValue>& rpcChannel, const ::node::DataPacket& request);
 
-	static util::CAutoPointer<IChannelValue> GetStaticChannel(uint16_t serverId) {
+	int SendNotification(util::CAutoPointer<IChannelValue>& rpcChannel, const ::node::DataPacket& request, ::node::DataPacket& response);
+
+	static util::CAutoPointer<IChannelValue> GetStaticChannel(uint32_t serverId) {
 		thd::CScopedReadLock rdLock(s_rwTicket);
 		SERVERID_TO_CHANNEL_T::const_iterator it(s_serIdChannels.find(serverId));
 		if(s_serIdChannels.end() == it) {
@@ -98,15 +110,29 @@ public:
 		}
 	}
 
-	static int SendNodeMessage(uint16_t serverId, int32_t cmd);
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd);
 
-	static int SendNodeMessage(uint16_t serverId, int32_t cmd, const ::google::protobuf::Message& message);
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, const ::google::protobuf::Message& request);
 
-	static int SendNodeMessage(uint16_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& message);
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, const ::google::protobuf::Message& request, ::google::protobuf::Message& response);
 
-	static int SendNodeMessage(uint16_t serverId, int32_t cmd, const std::string& data);
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, const std::string& request, std::string& response);
 
-	static int SendNodeMessage(uint16_t serverId, int32_t cmd, uint64_t userId, const std::string& data);
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request, ::google::protobuf::Message& response);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, const std::string& request, std::string& response);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, int32_t subcmd);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request, int32_t subcmd);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, const ::google::protobuf::Message& request, ::google::protobuf::Message& response, int32_t subcmd);
+
+	static int SendNodeMessage(uint32_t serverId, int32_t cmd, uint64_t userId, const std::string& request, std::string& response, int32_t subcmd);
 
 	static int SendNodeMessage(util::CAutoPointer<IChannelValue>& rpcChannel, const ::node::DataPacket& request);
 
@@ -115,22 +141,16 @@ public:
 	static void BroadcastAllNodes(int32_t cmd);
 
 public:
-	static int AddServerId(uint16_t servantId, uint16_t serverId);
+	static int AddServerId(uint32_t servantId, uint32_t serverId);
 
-	static void RemoveStaticChannel(uint16_t serverId) {
+	static void RemoveStaticChannel(uint32_t serverId) {
 		thd::CScopedWriteLock wrLock(s_rwTicket);
 		s_serIdChannels.erase(serverId);
 	}
 
 private:
 	bool InsertSerIdChannel(
-		uint16_t serverId,
-		uint16_t serverType,
-		const std::string& endPoint,
-		util::CAutoPointer<IChannelValue>& outRpcChannel);
-
-	bool InsertSerIdChannel(
-		uint16_t serverId,
+		uint32_t serverId,
 		uint16_t serverType,
 		const std::string& endPoint,
 		const std::string& acceptAddress,
@@ -139,14 +159,14 @@ private:
 		uint16_t serverRegion,
 		util::CAutoPointer<IChannelValue>& outRpcChannel);
 
-	bool EraseSerIdChannel(uint16_t serverId);
+	bool EraseSerIdChannel(uint32_t serverId);
 
-	static void AddStaticChannel(uint16_t serverId, const util::CAutoPointer<IChannelValue>& pChannel) {
+	static void AddStaticChannel(uint32_t serverId, const util::CAutoPointer<IChannelValue>& pChannel) {
 		thd::CScopedWriteLock wrLock(s_rwTicket);
 		s_serIdChannels[serverId] = pChannel;
 	}
 
-	static void ServantRemoveStaticChannel(uint16_t serverId);
+	static void ServantRemoveStaticChannel(uint32_t serverId);
 
 private:
 	struct NodeSetCompare {
@@ -158,8 +178,8 @@ private:
 			if(n16Region1 < n16Region2) {
 				return true;
 			} else if(n16Region1 == n16Region2) {
-				uint32_t nLoad1 = pChannel1->GetServerLoad();
-				uint32_t nLoad2 = pChannel2->GetServerLoad();
+				int32_t nLoad1 = pChannel1->GetServerLoad();
+				int32_t nLoad2 = pChannel2->GetServerLoad();
 				if(nLoad1 < nLoad2) {
 					return true;
 				} else if(nLoad1 == nLoad2) {
@@ -178,7 +198,7 @@ private:
 	SORT_REGION_T m_sortRegion;
 	thd::CSpinRWLock m_rwRegion;
 
-	typedef std::map<uint16_t, util::CAutoPointer<IChannelValue> > SERVERID_TO_CHANNEL_T;
+	typedef std::map<uint32_t, util::CAutoPointer<IChannelValue> > SERVERID_TO_CHANNEL_T;
 	SERVERID_TO_CHANNEL_T m_serIdChannels;
 	thd::CSpinRWLock m_rwServer;
 
@@ -187,5 +207,5 @@ private:
 };
 
 
-#endif	/* _NODEMODULE_H */
+#endif	/* NODEMODULE_H */
 

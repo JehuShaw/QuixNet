@@ -5,10 +5,10 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _INCLUDEMODULE_H_
-#define	_INCLUDEMODULE_H_
+#ifndef INCLUDEMODULE_H
+#define	INCLUDEMODULE_H
 
 #include "ControlCentreModule.h"
 
 
-#endif /* _INCLUDEMODULE_H_ */
+#endif /* INCLUDEMODULE_H */

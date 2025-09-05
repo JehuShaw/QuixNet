@@ -5,8 +5,8 @@
  * Created on 2014_8_4, 16:00
  */
 
-#ifndef _CACHERECORD_H
-#define	_CACHERECORD_H
+#ifndef CACHERECORD_H
+#define	CACHERECORD_H
 
 #include "Common.h"
 #include "ICacheMemory.h"
@@ -64,18 +64,17 @@ public:
 		m_strValue.Reset(NULL, 0, false);
     }
 
-    virtual MCResult AddToDB(bool bResetFlag = false);
+    virtual MCResult AddToDB();
 
     virtual MCResult LoadFromDB(
-		bool bDBCas = true,
-		const int32_t* pInFlag = NULL,
-		int32_t* pOutFlag = NULL);
+		bool bDBCas = true);
 
     virtual MCResult UpdateToDB(
-		bool bDBCas = true,
-		bool bResetFlag = false);
+		bool bDBCas = true);
 
     virtual MCResult DeleteFromDB();
+
+	virtual MCResult LoadCasFromDB();
 
     static MCResult SelectAllFromDB(
 		uint16_t u16DBID,
@@ -90,12 +89,14 @@ public:
 		uint16_t u16DBID,
 		const std::string& strProc,
 		const std::string& strParam,
+		bool bEscapeString,
         mc_record_set_t* pRecordSet);
 
 	static MCResult AsyncStoredProcedures(
 		uint16_t u16DBID,
 		const std::string& strProc,
 		const std::string& strParam,
+		bool bEscapeString,
 		mc_record_set_t* pRecordSet);
 
 	static MCResult ChangeFlag(
@@ -103,6 +104,18 @@ public:
 		const std::string& strKey,
 		int32_t nFlag);
 
+	static MCResult CheckGlobalExists(
+		const std::string& strKey);
+
+	static MCResult CheckExistEscapeString(
+		const std::string& strKey,
+		util::CTransferStream& outNewKey);
+
+	static MCResult AllDBStoredProcedures(
+		const std::string& strProc,
+		const std::string& strParam,
+		bool bEscapeString,
+		mc_record_set_t* pRecordSet);
 
     virtual const std::string& GetKey() const {
         return m_strKey;
@@ -123,8 +136,6 @@ public:
 		++m_n64CasIncre;
 		atomic_xchg8(&m_u8ChgType, MCCHANGE_UPDATE);
     }
-
-
 
     MCResult GetsValue(util::CTransferStream& outValue, uint64_t& n64Cas) const;
 
@@ -177,8 +188,15 @@ private:
         thd::CScopedWriteLock wrLock(m_rwTicket);
         m_strValue.ParseResetUpdate(inValue);
         m_n64Cas = n64Cas;
+		m_n64CasIncre = 0;
 		atomic_xchg8(&m_u8ChgType, MCCHANGE_NIL);
     }
+
+	inline void ChangeCas(uint64_t n64Cas) {
+		thd::CScopedWriteLock wrLock(m_rwTicket);
+		m_n64Cas = n64Cas;
+		m_n64CasIncre = 0;
+	}
 
     inline uint64_t GetDBCas() {
         thd::CScopedReadLock rdLock(m_rwTicket);
@@ -265,7 +283,7 @@ private:
 	volatile uint8_t m_u8ChgType;
 };
 
-#endif /* _CACHERECORD_H */
+#endif /* CACHERECORD_H */
 
 
 

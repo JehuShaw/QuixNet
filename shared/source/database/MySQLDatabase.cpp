@@ -48,7 +48,6 @@ bool MySQLDatabase::Initialize(
 	int32_t i;
 	MYSQL * pMysql1 = NULL;
 	MYSQL * pMysql2 = NULL;
-	my_bool bMyTrue = true;
 
 	if(nConnectionSize < 1) {
 		return false;
@@ -74,10 +73,6 @@ bool MySQLDatabase::Initialize(
 			continue;
 		}
 
-		if(mysql_options(pMysql1, MYSQL_SET_CHARSET_NAME, "utf8")) {
-			OutputError("Could not set utf8 character set.");
-		}
-
 		pMysql2 = mysql_real_connect(pMysql1, szHostName, szUserName, szPassword,
 			szDatabaseName, nPort, NULL, CLIENT_MULTI_RESULTS | CLIENT_MULTI_STATEMENTS);
 		if(pMysql2 == NULL) {
@@ -86,8 +81,10 @@ bool MySQLDatabase::Initialize(
 			return false;
 		}
 
-		if (mysql_options(pMysql1, MYSQL_OPT_RECONNECT, &bMyTrue)) {
-			OutputError("MYSQL_OPT_RECONNECT could not be set, connection drops may occur but will be counteracted.");
+        if (mysql_set_character_set(pMysql1, "utf8mb4")) {
+        	if (mysql_set_character_set(pMysql1, "utf8")) {
+        		OutputError("Could not set 'utf8mb4' and 'utf8' character set.");
+			}
 		}
 
 		CAutoPointer<MySQLDatabaseConnection> pMysqlConnc(new MySQLDatabaseConnection);
@@ -421,6 +418,12 @@ bool MySQLDatabase::Reconnect(CAutoPointer<MySQLDatabaseConnection>& conn)
 		OutputError("Could not reconnect to database because of `%s`", mysql_error(temp));
 		mysql_close(temp);
 		return false;
+	}
+
+	if (mysql_set_character_set(temp, "utf8mb4")) {
+		if (mysql_set_character_set(temp, "utf8")) {
+			OutputError("Could not set 'utf8mb4' and 'utf8' character set.");
+		}
 	}
 
 	if(conn->MySql != NULL) {

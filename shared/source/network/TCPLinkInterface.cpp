@@ -13,9 +13,9 @@
 
 namespace ntwk {
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
 TCPLinkInterface::TCPLinkInterface()
-	:TCPSocketWin32(), m_pLinkEvent(NULL), packetSizeLimit(0) {
+	:TCPSocketWin(), m_pLinkEvent(NULL), packetSizeLimit(0) {
 
 }
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
@@ -53,52 +53,52 @@ int TCPLinkInterface::ReceiveCallback(
     //split packet
     uint32_t offset(0);
     int32_t leave(0);
-    while(true){
+    while(true) {
         leave = length + moreLength - offset;
-        if(leave > 7){
-            uint32_t len(0),total(0);
-            if(m_isLittleEndian){
-                // read total uint32
-                SwitchReverseBytes((unsigned char*)&total,sizeof(total),buffer
-                    ,length,moreBuffer,moreLength,offset);
-                // read len uint32
-                SwitchReverseBytes((unsigned char*)&len,sizeof(len),buffer,length
-                    ,moreBuffer,moreLength,offset+sizeof(total));
-            }else{
-                // read total uint32
-                SwitchCopyBytes((unsigned char*)&total,sizeof(total),buffer
-                    ,length,moreBuffer,moreLength,offset);
-                // read len uint32
-                SwitchCopyBytes((unsigned char*)&len,sizeof(len),buffer,length
-                    ,moreBuffer,moreLength,offset+sizeof(total));
-            }
-            if(len > packetSizeLimit) {
-                // Limit the size of packet
-                return -1;
-            }
-            if((len + 4) == total){
-                if((int)(4 + total) <= leave){
-                    offset += 8;
-                    //push the data
-                    LinkData* ptr = dynamic_cast<LinkData*>(socketLink.GetLinkerData());
-                    if(ptr != 0){
-                        Packet * p = ptr->ingoingQueue.WriteLock();
-                        p->length = len;
-                        SwitchMemcpy(p->data,buffer,length,moreBuffer,moreLength,len,offset);
-                        ptr->ingoingQueue.WriteUnlock();
-
-						if(NULL != m_pLinkEvent) {
-							m_pLinkEvent->OnReceive();
-						}
-                    }
-                    offset += len;
-                    continue;
-                }
-            }else{
-                return -1;
-            }
+        if(leave < 8) {
+			break;
+		}
+        uint32_t len(0),total(0);
+        if(m_isLittleEndian){
+            // read total uint32
+            SwitchReverseBytes((unsigned char*)&total,sizeof(total),buffer
+                ,length,moreBuffer,moreLength,offset);
+            // read len uint32
+            SwitchReverseBytes((unsigned char*)&len,sizeof(len),buffer,length
+                ,moreBuffer,moreLength,offset+sizeof(total));
+        }else{
+            // read total uint32
+            SwitchCopyBytes((unsigned char*)&total,sizeof(total),buffer
+                ,length,moreBuffer,moreLength,offset);
+            // read len uint32
+            SwitchCopyBytes((unsigned char*)&len,sizeof(len),buffer,length
+                ,moreBuffer,moreLength,offset+sizeof(total));
         }
-        break;
+        if(len > packetSizeLimit) {
+            // Limit the size of packet
+            return -1;
+        }
+        if((len + 4) != total) {
+			return -1;
+		}
+        if((int)(4 + total) > leave){
+			break;
+		}
+        offset += 8;
+        //push the data
+        LinkData* ptr = dynamic_cast<LinkData*>(socketLink.GetLinkerData());
+        if(ptr != 0){
+            Packet * p = ptr->ingoingQueue.WriteLock();
+            p->length = len;
+            SwitchMemcpy(p->data,buffer,length,moreBuffer,moreLength,len,offset);
+            ptr->ingoingQueue.WriteUnlock();
+
+			if(NULL != m_pLinkEvent) {
+				m_pLinkEvent->OnReceive();
+			}
+        }
+        offset += len;
+        Sleep(1);
     }
     return offset;
 }
@@ -138,22 +138,10 @@ ILinkData* TCPLinkInterface::AllocateLinkerData() {
     return new LinkData();
 }
 
-void TCPLinkInterface::AcceptCallback(SocketLink& socketLink) {
-
-	size_t index = XQXTABLE0S_INDEX_NIL;
-	if(m_pSktLinks) {
-		index = m_pSktLinks->GetIndexByPtr(&socketLink);
-	} else {
-		assert(m_pSktLinks);
-	}
-
-	if(XQXTABLE0S_INDEX_NIL == index) {
-		assert(false);
-		return;
-	}
+void TCPLinkInterface::AcceptCallback(const SocketLink& socketLink) {
 
     SocketID *temp = newConnections.WriteLock();
-    socketLink.GetSocketID(*temp, index);
+    socketLink.GetSocketID(*temp);
     newConnections.WriteUnlock();
 
 	if(NULL != m_pLinkEvent) {
@@ -161,22 +149,11 @@ void TCPLinkInterface::AcceptCallback(SocketLink& socketLink) {
 	}
 }
 
-void TCPLinkInterface::DisconnectCallback(SocketLink& socketLink) {
+void TCPLinkInterface::DisconnectCallback(int nIndex, const SocketID& socketId, int nWhy) {
 
-	size_t index = XQXTABLE0S_INDEX_NIL;
-	if(m_pSktLinks) {
-		index = m_pSktLinks->GetIndexByPtr(&socketLink);
-	} else {
-		assert(m_pSktLinks);
-	}
-
-	if(XQXTABLE0S_INDEX_NIL == index) {
-		assert(false);
-		return;
-	}
-
-    SocketID *temp = lostConnections.WriteLock();
-    socketLink.GetSocketID(*temp, index);
+	LostData *temp = lostConnections.WriteLock();
+    temp->socketId = socketId;
+	temp->nWhy = nWhy;
     lostConnections.WriteUnlock();
 
 	if(NULL != m_pLinkEvent) {

@@ -55,44 +55,75 @@ namespace ntwk
 
     class SocketLink {
     public:
-        SocketLink()
-        : fd(-1)
-        , binaryAddress(0)
-        , port(0)
-        , events(0)
-		, recLock(false)
-        , senLock(false)
+        SocketLink(bool bDel = true)
+        : bDelete(bDel)
 		, pBuffer(NULL)
         , ptr(NULL)
-        , removeLock(false) {
-        }
+		, events(0)
+		, index(XQXTABLE_INDEX_NIL)
+		, lostReason(0) {}
+
+		SocketLink(const SocketLink& orig, int idx)
+			: fd(orig.fd)
+			, binaryAddress(orig.binaryAddress)
+			, port(orig.port)
+			, bDelete(true)
+			, events(0)
+			, recLock(orig.recLock)
+			, senLock(orig.senLock)
+			, pBuffer(orig.pBuffer)
+			, ptr(orig.ptr)
+			, removeLock(orig.removeLock)
+			, index(idx)
+			, lostReason(0)
+		{}
 
         ~SocketLink(){
-            Clear();
-            delete ptr;
-            ptr = NULL;
+			if (bDelete) {
+				Clear();
+				delete ptr;
+				ptr = NULL;
+			} else {
+				atomic_xchg(&events, 0);
+			}
         }
 
-        inline void GetSocketID(SocketID& outSocketID, int index) {
-            outSocketID.index = index;
+        inline void GetSocketID(SocketID& outSocketID) const {
+			outSocketID.fd = this->fd;
+            outSocketID.index = this->index;
             outSocketID.binaryAddress = this->binaryAddress;
             outSocketID.port = this->port;
         }
 
-        inline ILinkData* GetLinkerData() {
+		inline bool IsSocketID(const SocketID& socketID) const {
+			return socketID.index == this->index && socketID.fd == this->fd &&
+				socketID.binaryAddress == this->binaryAddress && socketID.port == this->port;
+		}
+
+        inline ILinkData* GetLinkerData() const {
             return ptr;
         }
+
+		inline int GetIndex() const {
+			return this->index;
+		}
+
+		inline int GetLostReason() const {
+			return lostReason;
+		}
 
    private:
 		friend class TCPSocketLinux;
 
 		int fd;
-        /// index SocketID instance in array
+        /// socket_links_t key
         volatile int index;
         /// The peer address from inet_addr.
         unsigned int binaryAddress;
         /// The port number
         unsigned short port;
+		/// be delete 
+		bool bDelete;
         /// for epoll event.
         volatile int events;
         /// recive overlapped
@@ -105,6 +136,8 @@ namespace ntwk
         ILinkData * ptr;
         /// remove lock
         volatile bool removeLock;
+		/// lost reason
+		volatile int lostReason;
 
         SingleProducerConsumer<Packet> outgoingMessages;
 
@@ -117,6 +150,7 @@ namespace ntwk
         }
 
         void Clear(){
+			atomic_xchg(&index, XQXTABLE_INDEX_NIL);
             delete pBuffer;
             pBuffer = NULL;
 
@@ -124,7 +158,8 @@ namespace ntwk
                 ptr->Clear();
             }
             outgoingMessages.Clear();
-            events = 0;
+			atomic_xchg(&events, 0);
+			atomic_xchg(&lostReason, 0);
         }
     };
 
@@ -151,24 +186,27 @@ namespace ntwk
 		virtual bool Send(
 			unsigned char * data,
 			unsigned int length,
-			int socketIdx,
+			const SocketID& socketId,
 			unsigned char* prefixData = NULL,
 			unsigned int prefixLength = 0);
         //Disconnects aplayer/address
-        virtual void CloseConnection(const SocketID& socketId);
+        virtual void CloseConnection(const SocketID& socketId, int nWhy);
+		//Is exist ?
+		virtual bool Exist(const SocketID& socketId) const;
+		// Number of socket connections
+		virtual uint32_t Size() const;
 
 	protected:
-
 		bool m_isLittleEndian;
 		unsigned short m_maxLink;
 		typedef util::CXqxTable0S<SocketLink> socket_links_t;
 		socket_links_t* m_pSktLinks;
 
-		bool m_isStarted;
+		volatile bool m_isStarted;
 
 		virtual ILinkData* AllocateLinkerData() = 0;
 
-		virtual void AcceptCallback(SocketLink& socketLink) = 0;
+		virtual void AcceptCallback(const SocketLink& socketLink) = 0;
 
 		virtual int ReceiveCallback(
 			SocketLink& socketLink,
@@ -184,7 +222,10 @@ namespace ntwk
 			const unsigned char* prefixData,
 			const unsigned int prefixLength) = 0;
 
-		virtual void DisconnectCallback(SocketLink& socketLink) = 0;
+		virtual void DisconnectCallback(
+			int nIndex,
+			const SocketID& socketId,
+			int nWhy) = 0;
 
 		virtual void MisdataCallback(
 			SocketLink& socketLink,
@@ -206,7 +247,7 @@ namespace ntwk
         //
         static char* unix_socket_dir;
         socket_domain m_domain;      // Unix domain or INET socket
-        bool m_isListened;
+        volatile bool m_isListened;
 
         thd::CSpinEvent m_listenDone;
 
@@ -222,19 +263,65 @@ namespace ntwk
 			if(NULL == m_pSktLinks) {
 				return false;
 			}
-			socket_links_t::value_t val(m_pSktLinks->Find(socketId.index));
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+			SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+			if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
 				return false;
 			}
-			if(NULL == val.pObject) {
-				assert(val.pObject);
-				return false;
-			}
-			return RemoveSocketLink(*val.pObject, val.nIndex);
+			return RemoveSocketLink(*pSktLink);
 		}
-        bool RemoveSocketLink(SocketLink& socketLink, size_t index);
+        bool RemoveSocketLink(SocketLink& socketLink);
 		bool OnRecvCompletion(SocketLink& socketLink);
 		bool OnSendCompletion(SocketLink& socketLink);
+
+		inline static bool TaskRemoveSocket(TCPSocketLinux * mgr, SocketLink& socketLink)
+		{
+			bool bRet = true;
+			if(atomic_cmpxchg8(&socketLink.removeLock, false, true) == false) {
+				bRet = mgr->RemoveSocketLink(socketLink);
+				atomic_xchg8(&socketLink.removeLock, false);
+			}
+			return bRet;
+		}
+
+		inline static bool TaskRecvCompletion(TCPSocketLinux * mgr, SocketLink& socketLink)
+		{
+			bool bRet = true;
+			if(atomic_cmpxchg8(&socketLink.recLock, false, true) == false) {
+				bRet = mgr->OnRecvCompletion(socketLink);
+				atomic_xchg8(&socketLink.recLock, false);
+			}
+			return bRet;
+		}
+
+		inline static bool TaskSendCompletion(TCPSocketLinux * mgr, SocketLink& socketLink)
+		{
+			bool bRet = true;
+			if(atomic_cmpxchg8(&socketLink.senLock, false, true) == false) {
+				bRet = mgr->OnSendCompletion(socketLink);
+				atomic_xchg8(&socketLink.senLock, false);
+			}
+			return bRet;
+		}
+
+		inline static bool SendCompletion(int fd, char* data, ssize_t length)
+		{
+			ssize_t result = 0;
+			while (length > 0) {
+				result = send(fd, data, length, MSG_NOSIGNAL);
+				if (result > 0) {
+					data += result;
+					length -= result;
+				} else if(EAGAIN == errno
+					// nonblocking socket no EINTR error.
+					//|| EINTR == errno
+					|| EWOULDBLOCK == errno) {
+					continue;
+				} else {
+					return false;
+				}
+			}
+			return true;
+		}
 
         void ListenRun();
         static int LeaderFunc(void *argv);

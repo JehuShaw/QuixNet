@@ -36,7 +36,7 @@ public:
 	~CTimestampManager();
 
 	time_t GetTimestamp() {
-		return (time_t)m_uTimestamp;
+		return m_uTimestamp;
 	}
 
 	void GetTM(struct tm* pTm) {
@@ -159,16 +159,17 @@ public:
         return false;
     }
 
-    static time_t GetNetTimestamp();
-private:
-
-	static volatile uint64_t m_uTimestamp;
+    static time_t GetUnixTimeOnline();
 
 private:
+	static volatile time_t m_uTimestamp;
 
+private:
 	bool startTick(void);
-	bool stopTick(void);
-#ifdef _WIN32
+    bool stopTick(void);
+
+#if defined(_WIN32) || defined(_WIN64)
+
 	MMRESULT m_iTimerID;
 	static void WINAPI onTimeFunc(UINT wTimerID, UINT msg,
 		DWORD dwUser, DWORD dwl, DWORD dw2);

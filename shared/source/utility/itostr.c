@@ -103,7 +103,7 @@ SHARED_DLL_DECL int ltostr(char* dst, long val, int base, int uppercase) {
 	char buf[32] = {'\0'};
 	char* pEnd = buf + sizeof(buf) - 1;
 	char* pStart = __ltostr(pEnd, val, base, uppercase);
-	int len = (intptr_t)pEnd - (intptr_t)pStart;
+	int len = (int)((intptr_t)pEnd - (intptr_t)pStart);
 	memcpy(dst, pStart, len + 1);
 #if _DEBUG
 	assert(len >= 0);
@@ -115,7 +115,7 @@ SHARED_DLL_DECL int ultostr(char* dst, unsigned long uval, int base, int upperca
 	char buf[32] = {'\0'};
 	char* pEnd = buf + sizeof(buf) - 1;
 	char* pStart = __ultostr(pEnd, uval, base, uppercase);
-	int len = (intptr_t)pEnd - (intptr_t)pStart;
+	int len = (int)((intptr_t)pEnd - (intptr_t)pStart);
 	memcpy(dst, pStart, len + 1);
 #if _DEBUG
 	assert(len >= 0);
@@ -127,7 +127,7 @@ SHARED_DLL_DECL int lltostr(char* dst, long long val, int base, int uppercase) {
 	char buf[64] = {'\0'};
 	char* pEnd = buf + sizeof(buf) - 1;
 	char* pStart = __lltostr(pEnd, val, base, uppercase);
-	int len = (intptr_t)pEnd - (intptr_t)pStart;
+	int len = (int)((intptr_t)pEnd - (intptr_t)pStart);
 	memcpy(dst, pStart, len + 1);
 #if _DEBUG
 	assert(len >= 0);
@@ -139,7 +139,7 @@ SHARED_DLL_DECL int ulltostr(char* dst, unsigned long long uval, int base, int u
 	char buf[64] = {'\0'};
 	char* pEnd = buf + sizeof(buf) - 1;
 	char* pStart = __ulltostr(pEnd, uval, base, uppercase);
-	int len = (intptr_t)pEnd - (intptr_t)pStart;
+	int len = (int)((intptr_t)pEnd - (intptr_t)pStart);
 	memcpy(dst, pStart, len + 1);
 #if _DEBUG
 	assert(len >= 0);

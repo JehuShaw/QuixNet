@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _SHAREDLL_H_
-#define _SHAREDLL_H_
+#ifndef SHAREDLL_H
+#define SHAREDLL_H
 
 /*
 service system exports/imports
@@ -25,4 +25,4 @@ service system exports/imports
 #endif
 
 
-#endif /*_SHAREDLL_H_*/
+#endif /*SHAREDLL_H*/

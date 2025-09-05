@@ -130,7 +130,13 @@ namespace evt
 
     class CTimer {
     public:
-        CTimer():id(0), key(), bUnique(true), utype(0) {}
+		CTimer() 
+			: id(0)
+			, key()
+			, bUnique(true)
+			, utype(0)
+			, result(false)
+			, workerThread(false) {}
 
         CTimer(const CTimer& orig)
 			: id(orig.id)
@@ -138,6 +144,8 @@ namespace evt
 			, method(orig.method)
             , bUnique(orig.bUnique)
 			, utype(orig.utype)
+			, result(orig.result)
+			, workerThread(orig.workerThread)
 		{
         }
 
@@ -147,6 +155,8 @@ namespace evt
 			this->utype = input.utype;
             this->key = input.key;
             this->method = input.method;
+			this->result = input.result;
+			this->workerThread = input.workerThread;
             return *this;
         }
 
@@ -205,29 +215,32 @@ namespace evt
 		/**
 		* set a timeout
 		* @param id     timer ID
-		* @param delay  unit of 0.1 second
+		* @param delay  unit of 0.01 second
 		* @param method    callback method
 		* @param wait_result  do you want wait the result?
 		* @param unique  unique id?
 		* @param worker_thread  If true open a new thread invoke the callback method.
+		* @param threadOrder If worker_thread open, then thread sequential execution by threadOrder except 0 value.
 		*/
         bool SetTimeout(id64_t id, unsigned int delay,
 			util::CAutoPointer<util::CallbackBase> method, bool bWaitResult = false,
-            bool bUniqueId = true, bool bWorkerThread = true);
+            bool bUniqueId = true, bool bWorkerThread = true, uint64_t threadOrder = 0);
 		/**
 		* set a interval timer
 		* @param id     timer ID
-		* @param interval  unit of 0.1 second
+		* @param interval  unit of 0.01 second
 		* @param method    callback method
-		* @param delay   first delay time , unit of 0.1 second
+		* @param delay   first delay time , unit of 0.01 second
 		* @param wait_result  do you want wait the result?
 		* @param unique  unique id?
 		* @param worker_thread  If true open a new thread invoke the callback method.
+		* @param threadOrder If worker_thread open, then thread sequential execution by threadOrder except 0 value.
 		*/
         bool SetInterval(id64_t id, unsigned int interval,
 			util::CAutoPointer<util::CallbackBase> method,
 			unsigned int delay = 0, bool bWaitResult = false,
-            bool bUniqueId = true, bool bWorkerThread = true);
+            bool bUniqueId = true, bool bWorkerThread = true,
+			uint64_t threadOrder = 0);
 		/**
 		* set a atTime timer
 		* @param id     timer ID
@@ -236,10 +249,11 @@ namespace evt
 		* @param wait_result  do you want wait the result?
 		* @param unique  unique id?
 		* @param worker_thread  If true open a new thread invoke the callback method.
+		* @param threadOrder If worker_thread open, then thread sequential execution by threadOrder except 0 value.
 		*/
         bool SetAtTime(id64_t id, const sAtTime& atTime,
 			util::CAutoPointer<util::CallbackBase> method, bool bWaitResult = false,
-            bool bUniqueId = true, bool bWorkerThread = true);
+            bool bUniqueId = true, bool bWorkerThread = true, uint64_t threadOrder = 0);
 
 		/**
 		* set a atTime timer
@@ -260,7 +274,7 @@ namespace evt
 		* modify the interval value
 		* @param id       timer ID
 		* @param operater
-		* @param data  0.1 second
+		* @param data  0.01 second
 		* @param wait_result  do you want wait the result?
 		*/
         bool Modify(id64_t id, eTimerOperater operater, timer_data_t data = 0, bool bWaitResult = false);
@@ -277,13 +291,13 @@ namespace evt
 		void Loop();
 
 		/**
-		 *  0.1 second tick
+		 *  0.01 second tick
 		 * @return
 		 */
 		static uint64_t GetTick();
 
         /**
-		 *  leave current time 0.1 second
+		 *  past time 0.01 second
 		 * @return
 		 */
         static uint32_t AtTimeIntervalFrom(
@@ -292,7 +306,10 @@ namespace evt
             bool bNext = false);
 
 	protected:
-		virtual void OnTimeout(bool bWorkerThread, id64_t id, util::CAutoPointer<util::CallbackBase>& method);
+		virtual void OnTimeout(
+			id64_t id,
+			util::CAutoPointer<util::CallbackBase>& pMethod,
+			bool bWorkerThread);
 
 		util::CAutoPointer<CTimer> InnerFindTimer(id64_t id, util::CAutoPointer<util::CallbackBase> method);
 
@@ -347,7 +364,7 @@ namespace evt
 
 		//static bool startTick(void);
 		//static bool stopTick(void);
-//#ifdef _WIN32
+//#if defined( _WIN32 ) || defined( _WIN64 )
 //		static UINT_PTR iTimerID;
 //		static VOID CALLBACK TimerProc (HWND hwnd,
 //			UINT message, UINT iTimerID, DWORD dwTime);

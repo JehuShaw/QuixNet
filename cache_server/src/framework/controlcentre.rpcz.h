@@ -21,9 +21,6 @@ class rpc_channel;
 #include "controlcentre.pb.h"
 
 namespace node {
-void rpcz_protobuf_AssignDesc_controlcentre_2eproto();
-void rpcz_protobuf_ShutdownFile_controlcentre_2eproto();
-
 class ControlCentreService_Stub;
 
 class ControlCentreService : public rpcz::service {
@@ -38,9 +35,9 @@ class ControlCentreService : public rpcz::service {
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
   virtual void RegisterModule(const ::node::RegisterRequest& request,
-                       ::rpcz::reply< ::node::OperateResponse> response);
+                       ::rpcz::reply< ::node::RegisterResponse> response);
   virtual void RemoveModule(const ::node::RemoveRequest& request,
-                       ::rpcz::reply< ::node::OperateResponse> response);
+                       ::rpcz::reply< ::node::RemoveResponse> response);
   virtual void KeepRegister(const ::node::KeepRegisterRequest& request,
                        ::rpcz::reply< ::node::KeepRegisterResponse> response);
   virtual void UserLogin(const ::node::UserLoginRequest& request,
@@ -53,14 +50,24 @@ class ControlCentreService : public rpcz::service {
                        ::rpcz::reply< ::node::RegionLowLoadResponse> response);
   virtual void GetNodeList(const ::node::NodeListRequest& request,
                        ::rpcz::reply< ::node::NodeListResponse> response);
-  virtual void CreateUserId(const ::node::CreateIdRequest& request,
-                       ::rpcz::reply< ::node::CreateIdResponse> response);
-  virtual void CheckUserId(const ::node::CheckIdRequest& request,
-                       ::rpcz::reply< ::node::CheckIdResponse> response);
-  virtual void UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-                       ::rpcz::reply< ::node::UpdateRegionResponse> response);
-  virtual void CacheServerStore(const ::node::CacheStoreRequest& request,
-                       ::rpcz::reply< ::node::CacheStoreResponse> response);
+  virtual void GetUsers(const ::node::GetUserRequest& request,
+                       ::rpcz::reply< ::node::GetUserResponse> response);
+  virtual void CreateUser(const ::node::CreateUserRequest& request,
+                       ::rpcz::reply< ::node::CreateUserResponse> response);
+  virtual void CheckUser(const ::node::CheckUserRequest& request,
+                       ::rpcz::reply< ::node::CheckUserResponse> response);
+  virtual void UpdateUser(const ::node::UpdateUserRequest& request,
+                       ::rpcz::reply< ::node::UpdateUserResponse> response);
+  virtual void DeleteUser(const ::node::DeleteUserRequest& request,
+                       ::rpcz::reply< ::node::DeleteUserResponse> response);
+  virtual void GetEndPointFromServant(const ::node::EndPointRequest& request,
+                       ::rpcz::reply< ::node::EndPointResponse> response);
+  virtual void SeizeServer(const ::node::SeizeRequest& request,
+                       ::rpcz::reply< ::node::SeizeResponse> response);
+  virtual void FreeServer(const ::node::FreeRequest& request,
+                       ::rpcz::reply< ::node::FreeResponse> response);
+  virtual void GenerateGuid(const ::node::ControlCentreVoid& request,
+                       ::rpcz::reply< ::node::GuidResponse> response);
 
   // implements Service ----------------------------------------------
 
@@ -90,18 +97,18 @@ class ControlCentreService_Stub {
 
 
   void RegisterModule(const ::node::RegisterRequest& request,
-                       ::node::OperateResponse* response,
+                       ::node::RegisterResponse* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
   void RegisterModule(const ::node::RegisterRequest& request,
-                       ::node::OperateResponse* response,
+                       ::node::RegisterResponse* response,
                        long deadline_ms = -1);
   void RemoveModule(const ::node::RemoveRequest& request,
-                       ::node::OperateResponse* response,
+                       ::node::RemoveResponse* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
   void RemoveModule(const ::node::RemoveRequest& request,
-                       ::node::OperateResponse* response,
+                       ::node::RemoveResponse* response,
                        long deadline_ms = -1);
   void KeepRegister(const ::node::KeepRegisterRequest& request,
                        ::node::KeepRegisterResponse* response,
@@ -145,33 +152,68 @@ class ControlCentreService_Stub {
   void GetNodeList(const ::node::NodeListRequest& request,
                        ::node::NodeListResponse* response,
                        long deadline_ms = -1);
-  void CreateUserId(const ::node::CreateIdRequest& request,
-                       ::node::CreateIdResponse* response,
+  void GetUsers(const ::node::GetUserRequest& request,
+                       ::node::GetUserResponse* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
-  void CreateUserId(const ::node::CreateIdRequest& request,
-                       ::node::CreateIdResponse* response,
+  void GetUsers(const ::node::GetUserRequest& request,
+                       ::node::GetUserResponse* response,
                        long deadline_ms = -1);
-  void CheckUserId(const ::node::CheckIdRequest& request,
-                       ::node::CheckIdResponse* response,
+  void CreateUser(const ::node::CreateUserRequest& request,
+                       ::node::CreateUserResponse* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
-  void CheckUserId(const ::node::CheckIdRequest& request,
-                       ::node::CheckIdResponse* response,
+  void CreateUser(const ::node::CreateUserRequest& request,
+                       ::node::CreateUserResponse* response,
                        long deadline_ms = -1);
-  void UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-                       ::node::UpdateRegionResponse* response,
+  void CheckUser(const ::node::CheckUserRequest& request,
+                       ::node::CheckUserResponse* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
-  void UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-                       ::node::UpdateRegionResponse* response,
+  void CheckUser(const ::node::CheckUserRequest& request,
+                       ::node::CheckUserResponse* response,
                        long deadline_ms = -1);
-  void CacheServerStore(const ::node::CacheStoreRequest& request,
-                       ::node::CacheStoreResponse* response,
+  void UpdateUser(const ::node::UpdateUserRequest& request,
+                       ::node::UpdateUserResponse* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
-  void CacheServerStore(const ::node::CacheStoreRequest& request,
-                       ::node::CacheStoreResponse* response,
+  void UpdateUser(const ::node::UpdateUserRequest& request,
+                       ::node::UpdateUserResponse* response,
+                       long deadline_ms = -1);
+  void DeleteUser(const ::node::DeleteUserRequest& request,
+                       ::node::DeleteUserResponse* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void DeleteUser(const ::node::DeleteUserRequest& request,
+                       ::node::DeleteUserResponse* response,
+                       long deadline_ms = -1);
+  void GetEndPointFromServant(const ::node::EndPointRequest& request,
+                       ::node::EndPointResponse* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void GetEndPointFromServant(const ::node::EndPointRequest& request,
+                       ::node::EndPointResponse* response,
+                       long deadline_ms = -1);
+  void SeizeServer(const ::node::SeizeRequest& request,
+                       ::node::SeizeResponse* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void SeizeServer(const ::node::SeizeRequest& request,
+                       ::node::SeizeResponse* response,
+                       long deadline_ms = -1);
+  void FreeServer(const ::node::FreeRequest& request,
+                       ::node::FreeResponse* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void FreeServer(const ::node::FreeRequest& request,
+                       ::node::FreeResponse* response,
+                       long deadline_ms = -1);
+  void GenerateGuid(const ::node::ControlCentreVoid& request,
+                       ::node::GuidResponse* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void GenerateGuid(const ::node::ControlCentreVoid& request,
+                       ::node::GuidResponse* response,
                        long deadline_ms = -1);
  private:
   ::rpcz::rpc_channel* channel_;

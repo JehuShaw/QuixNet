@@ -9,7 +9,7 @@
 #include "SpinLock.h"
 
 #include <cstdarg>
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 #include <io.h>
 #include <direct.h>
 #include <process.h>
@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <pthread.h>
+#include <unistd.h>
 
 inline static off_t filelength(int fd) {
     if(fd == -1) {
@@ -35,7 +36,7 @@ using namespace std;
 
 namespace util {
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 unsigned int _stdcall threadLoop(void * arguments){
 	CLog * sts = (CLog *) arguments;
 	sts->Run();
@@ -53,34 +54,32 @@ void * threadLoop(void * arguments){
 using namespace util;
 
 CLog::CLog():m_bStarted(false)
-, m_queue(MININUM_LOG_QUEUE_SIZE) {
+, m_queue() {
 
-}
-
-CLog::~CLog() {
-	atomic_xchg8(&m_bStarted, false);
-	m_event.Wait();
 }
 
 void CLog::Init(int32_t fileLogLevel, const string strLogPath)
 {
-	if(atomic_cmpxchg8(&m_bStarted, true, false) != false) {
+	if(atomic_cmpxchg8(&m_bStarted, false, true) != false) {
 		return;
 	}
 	m_strLogPath = strLogPath;
 	TrimStringEx(m_strLogPath, '\"');
 
-	if(access(m_strLogPath.c_str(), 0) == -1) {
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
-		mkdir(m_strLogPath.c_str());
-#else
-		mkdir(m_strLogPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif
+
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
+	if (_access(m_strLogPath.c_str(), 0) == -1) {
+		_mkdir(m_strLogPath.c_str());
 	}
+#else
+	if (access(m_strLogPath.c_str(), F_OK) != 0) {
+		mkdir(m_strLogPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	}
+#endif
 
 	SetFileLoggingLevel(fileLogLevel);
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 	HANDLE handle = (HANDLE)_beginthreadex(NULL, 0, &threadLoop,
 		(LPVOID)this, 0, NULL);
 	CloseHandle(handle);
@@ -89,7 +88,11 @@ void CLog::Init(int32_t fileLogLevel, const string strLogPath)
 	pthread_create(&tid, NULL, &threadLoop, (void*)this);
 	pthread_detach(tid);
 #endif
+}
 
+void CLog::Dispose() {
+	atomic_xchg8(&m_bStarted, false);
+	m_event.Wait();
 }
 
 void CLog::SetFileLoggingLevel(int32_t level)
@@ -113,9 +116,11 @@ void CLog::OutFile(const char* szFileName, const char* szMsg, bool bPrintTime/* 
 		char time_buffer[TIME_FORMAT_LENGTH];
 		Time(time_buffer);
 		pOutput->strMsg = time_buffer;
+		pOutput->strMsg += szMsg;
+	} else {
+		pOutput->strMsg = szMsg;
 	}
 
-	pOutput->strMsg += szMsg;
 	m_queue.WriteUnlock();
 }
 
@@ -267,7 +272,7 @@ void CLog::Run()
 			szLogFile[sizeof(szLogFile) - 1] = '\0';
 
 			FILE* file(NULL);
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 			if(fopen_s(&file, szLogFile, "a+") != 0) {
 				m_queue.CancelReadLock(pOutput);
 				continue;
@@ -295,7 +300,7 @@ void CLog::Run()
 			}
 			m_queue.ReadUnlock();
 		}
-		Sleep(10);
+		Sleep(3);
 	}
 	m_event.Resume();
 }

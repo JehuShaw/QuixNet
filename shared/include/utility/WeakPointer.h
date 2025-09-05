@@ -5,10 +5,10 @@
  * Created on 2013_10_2, 10:32
  */
 
-#ifndef WEAKPOINTER_H_
-#define	WEAKPOINTER_H_
+#ifndef WEAKPOINTER_H
+#define	WEAKPOINTER_H
 
-#include "Common.h"
+#include <stdint.h>
 #include <stdio.h>
 #include <stdexcept>
 #include "AutoPointer.h"
@@ -43,13 +43,13 @@ public:
     //copy control members to manage the use count and pointers
     CWeakPointer(const CWeakPointer& orig):p(NULL),counter(NULL) {
 
-		if(this == &orig) {
+		if (this == &orig) {
 			return;
 		}
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-        if(NULL != orig.counter){
-            this->p = orig.p;
-            this->counter = orig.counter;
+		thd::CScopedReadLock rLockOrig(orig.rwticket);
+        if (NULL != orig.counter){
+            p = orig.p;
+            counter = orig.counter;
 			atomic_inc(&orig.counter->weak);
         }
     }
@@ -57,24 +57,24 @@ public:
     template<class T2>
     CWeakPointer(const CWeakPointer<T2>& orig):p(NULL),counter(NULL) {
 
-		if((intptr_t)this == (intptr_t)&orig) {
+		if ((intptr_t)this == (intptr_t)&orig) {
 			return;
 		}
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-        if(IsBase(orig.p)) {
+		thd::CScopedReadLock rLockOrig(orig.rwticket);
+        if (IsBase(orig.p)) {
             if(NULL != orig.counter){
-                this->p = dynamic_cast<T*>(orig.p);
-                this->counter = orig.counter;
+                p = dynamic_cast<T*>(orig.p);
+                counter = orig.counter;
 				atomic_inc(&orig.counter->weak);
             }
-        } else if(IsChild<T2>(this->p)) {
+        } else if (IsChild<T2>(p)) {
             T* pChild = dynamic_cast<T*>(orig.p);
-            if(NULL == pChild) {
+            if (NULL == pChild) {
                 return;
             }
-            if(NULL != orig.counter){
-                this->p = pChild;
-                this->counter = orig.counter;
+            if (NULL != orig.counter) {
+                p = pChild;
+                counter = orig.counter;
 				atomic_inc(&orig.counter->weak);
             }
         }
@@ -82,10 +82,10 @@ public:
 
 	CWeakPointer(const CAutoPointer<T>& orig):p(NULL),counter(NULL) {
 
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-		if(NULL != orig.counter){
-			this->p = orig.p;
-			this->counter = orig.counter;
+		thd::CScopedReadLock rLockOrig(orig.rwticket);
+		if (NULL != orig.counter) {
+			p = orig.p;
+			counter = orig.counter;
 			atomic_inc(&orig.counter->weak);
 		}
 	}
@@ -93,246 +93,250 @@ public:
 	template<class T2>
 	CWeakPointer(const CAutoPointer<T2>& orig):p(NULL),counter(NULL) {
 
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
+		thd::CScopedReadLock rLockOrig(orig.rwticket);
 		if(IsBase(orig.p)) {
-			if(NULL != orig.counter){
-				this->p = dynamic_cast<T*>(orig.p);
-				this->counter = orig.counter;
+			if(NULL != orig.counter) {
+				p = dynamic_cast<T*>(orig.p);
+				counter = orig.counter;
 				atomic_inc(&orig.counter->weak);
 			}
-		} else if(IsChild<T2>(this->p)) {
+		} else if(IsChild<T2>(p)) {
 			T* pChild = dynamic_cast<T*>(orig.p);
-			if(NULL == pChild) {
+			if (NULL == pChild) {
 				return;
 			}
-			if(NULL != orig.counter){
-				this->p = pChild;
-				this->counter = orig.counter;
+			if (NULL != orig.counter) {
+				p = pChild;
+				counter = orig.counter;
 				atomic_inc(&orig.counter->weak);
 			}
 		}
 	}
 
     //dispose
-    ~CWeakPointer(){
-		thd::CScopedWriteLock scopedWriteLock(rwticket);
+    ~CWeakPointer() {
+		thd::CScopedWriteLock wLockThis(rwticket);
 		decr_use();
 	}
 
-    CWeakPointer& operator= (const CWeakPointer& orig){
-
-		thd::CScopedWriteLock scopedWriteLock(rwticket);
-		if(this == &orig) {
+    CWeakPointer& operator= (const CWeakPointer& right) {
+		if (this == &right) {
 			return *this;
 		}
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-		if(NULL != orig.counter){
-			atomic_inc(&orig.counter->weak);
+		thd::CScopedWriteLock wLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		if (NULL != right.counter) {
+			atomic_inc(&right.counter->weak);
 		}
 		decr_use();
-		this->p = orig.p;
-		this->counter = orig.counter;
+		p = right.p;
+		counter = right.counter;
 
         return *this;
     }
 
     template<class T2>
-    CWeakPointer& operator= (const CWeakPointer<T2>& orig) {
-
-		thd::CScopedWriteLock scopedWriteLock(rwticket);
-		if((intptr_t)this == (intptr_t)&orig) {
+    CWeakPointer& operator= (const CWeakPointer<T2>& right) {
+		if ((intptr_t)this == (intptr_t)&right) {
 			return *this;
 		}
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-        if(IsBase(orig.p)) {
-			if(NULL != orig.counter){
-				atomic_inc(&orig.counter->weak);
+		thd::CScopedWriteLock wLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+        if (IsBase(right.p)) {
+			if (NULL != right.counter) {
+				atomic_inc(&right.counter->weak);
 			}
 			decr_use();
-			this->p = dynamic_cast<T*>(orig.p);
-			this->counter = orig.counter;
+			p = dynamic_cast<T*>(right.p);
+			counter = right.counter;
 
-        } else if(IsChild<T2>(this->p)) {
-            T* pChild = dynamic_cast<T*>(orig.p);
-            if(NULL == pChild) {
+        } else if(IsChild<T2>(p)) {
+            T* pChild = dynamic_cast<T*>(right.p);
+            if (NULL == pChild) {
                 return *this;
             }
-			if(NULL != orig.counter){
-				atomic_inc(&orig.counter->weak);
+			if (NULL != right.counter) {
+				atomic_inc(&right.counter->weak);
 			}
 			decr_use();
-			this->p = pChild;
-			this->counter = orig.counter;
-
+			p = pChild;
+			counter = right.counter;
         }
 
         return *this;
     }
 
 
-	CWeakPointer& operator= (const CAutoPointer<T>& orig){
+	CWeakPointer& operator= (const CAutoPointer<T>& right) {
 
-		thd::CScopedWriteLock scopedWriteLock(rwticket);
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-		if(NULL != orig.counter){
-			atomic_inc(&orig.counter->weak);
+		thd::CScopedWriteLock wLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		if (NULL != right.counter) {
+			atomic_inc(&right.counter->weak);
 		}
 		decr_use();
-		this->p = orig.p;
-		this->counter = orig.counter;
+		p = right.p;
+		counter = right.counter;
 
 		return *this;
 	}
 
 	template<class T2>
-	CWeakPointer& operator= (const CAutoPointer<T2>& orig) {
+	CWeakPointer& operator= (const CAutoPointer<T2>& right) {
 
-		thd::CScopedWriteLock scopedWriteLock(rwticket);
-		thd::CScopedReadLock scopeReadLock(orig.rwticket);
-		if(IsBase(orig.p)) {
-			if(NULL != orig.counter){
-				atomic_inc(&orig.counter->weak);
+		thd::CScopedWriteLock wLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		if (IsBase(right.p)) {
+			if (NULL != right.counter) {
+				atomic_inc(&right.counter->weak);
 			}
 			decr_use();
-			this->p = dynamic_cast<T*>(orig.p);
-			this->counter = orig.counter;
+			p = dynamic_cast<T*>(right.p);
+			counter = right.counter;
 
-		} else if(IsChild<T2>(this->p)) {
-			T* pChild = dynamic_cast<T*>(orig.p);
-			if(NULL == pChild) {
+		} else if(IsChild<T2>(p)) {
+			T* pChild = dynamic_cast<T*>(right.p);
+			if (NULL == pChild) {
 				return *this;
 			}
-			if(NULL != orig.counter){
-				atomic_inc(&orig.counter->weak);
+			if (NULL != right.counter) {
+				atomic_inc(&right.counter->weak);
 			}
 			decr_use();
-			this->p = pChild;
-			this->counter = orig.counter;
-
+			p = pChild;
+			counter = right.counter;
 		}
 
 		return *this;
 	}
 
-    bool operator==(const CWeakPointer& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p == right.p;
+    bool operator==(const CWeakPointer& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+        return p == right.p;
     }
-    bool operator!=(const CWeakPointer& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p != right.p;
+    bool operator!=(const CWeakPointer& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+        return p != right.p;
     }
-    bool operator> (const CWeakPointer& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p > right.p;
+    bool operator> (const CWeakPointer& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+        return p > right.p;
     }
-    bool operator< (const CWeakPointer& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p < right.p;
-    }
-
-	bool operator==(const CAutoPointer<T>& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		return this->p == right.p;
-	}
-	bool operator!=(const CAutoPointer<T>& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		return this->p != right.p;
-	}
-	bool operator> (const CAutoPointer<T>& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		return this->p > right.p;
-	}
-	bool operator< (const CAutoPointer<T>& right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		return this->p < right.p;
-	}
-
-
-    bool operator==(T* const right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p == right;
-    }
-    bool operator!=(T* const right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p != right;
-    }
-    bool operator > (T* const right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p > right;
-    }
-    bool operator < (T* const right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return this->p < right;
+    bool operator< (const CWeakPointer& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+        return p < right.p;
     }
 
-    bool operator==(intptr_t right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return (intptr_t)this->p == right;
+	bool operator==(const CAutoPointer<T>& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		return p == right.p;
+	}
+	bool operator!=(const CAutoPointer<T>& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		return p != right.p;
+	}
+	bool operator> (const CAutoPointer<T>& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		return p > right.p;
+	}
+	bool operator< (const CAutoPointer<T>& right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		thd::CScopedReadLock rLockRight(right.rwticket);
+		return p < right.p;
+	}
+
+
+    bool operator==(const T* const right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return p == right;
     }
-    bool operator!=(intptr_t right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return (intptr_t)this->p != right;
+    bool operator!=(const T* const right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return p != right;
     }
-    bool operator > (intptr_t right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return (intptr_t)this->p > right;
+    bool operator > (const T* const right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return p > right;
     }
-    bool operator < (intptr_t right ) const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-        return (intptr_t)this->p < right;
+    bool operator < (const T* const right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return p < right;
+    }
+
+    bool operator==(intptr_t right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return (intptr_t)p == right;
+    }
+    bool operator!=(intptr_t right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return (intptr_t)p != right;
+    }
+    bool operator > (intptr_t right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return (intptr_t)p > right;
+    }
+    bool operator < (intptr_t right) const {
+		thd::CScopedReadLock rLockThis(rwticket);
+        return (intptr_t)p < right;
     }
 
 	T* operator->() {
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		if(NULL != this->counter && this->counter->use > 0){
-			return this->p;
+		thd::CScopedReadLock rLockThis(rwticket);
+		if(NULL != counter && counter->use > 0){
+			return p;
 		}
 		throw invalid_ptr_weak_<T>("unbound Parameter");
 	}
 
-    const T* operator->() const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		if(NULL != this->counter && this->counter->use > 0){
-			return this->p;
+    const T* operator->() const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		if(NULL != counter && counter->use > 0){
+			return p;
 		}
 		throw invalid_ptr_weak_<T>("unbound Parameter");
     }
 
 	T& operator*() {
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		if(NULL != this->counter && this->counter->use > 0){
-			return *this->p;
+		thd::CScopedReadLock rLockThis(rwticket);
+		if(NULL != counter && counter->use > 0){
+			return *p;
 		}
 		throw invalid_ptr_weak_<T>("unbound Parameter");
 	}
 
-    const T& operator*() const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		if(NULL != this->counter && this->counter->use > 0){
-			return *this->p;
+    const T& operator*() const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		if(NULL != counter && counter->use > 0){
+			return *p;
 		}
         throw invalid_ptr_weak_<T>("unbound Parameter");
     }
 
-	inline bool IsInvalid() const{
-		thd::CScopedReadLock scopedReadLock(rwticket);
-		if(NULL == this->counter) {
+	inline bool IsInvalid() const {
+		thd::CScopedReadLock rLockThis(rwticket);
+		if(NULL == counter) {
 			return true;
 		}
-		if(this->counter->use < 1) {
+		if(counter->use < 1) {
 			return true;
 		}
 		return false;
 	}
 
 	CAutoPointer<T> GetStrong() {
-		thd::CScopedReadLock scopedReadLock(rwticket);
+		thd::CScopedReadLock rLockThis(rwticket);
 		CAutoPointer<T> autoPointer;
-		if(NULL != this->counter
-			&& this->counter->use > 0) {
-			autoPointer.counter = this->counter;
-			autoPointer.p = this->p;
+		if(NULL != counter
+			&& counter->use > 0) {
+			autoPointer.counter = counter;
+			autoPointer.p = p;
 
 			atomic_inc(&autoPointer.counter->use);
 		}
@@ -365,14 +369,14 @@ private:
     PtrCounter* counter;
 	thd::CSpinRWLock rwticket;
     void decr_use(){
-        if(NULL != this->counter){
-            if(atomic_dec(&this->counter->weak) == 0){
+        if(NULL != counter){
+            if(atomic_dec(&counter->weak) == 0){
 
-				if(this->counter->use < 1 
-                    && !this->counter->deleting) 
+				if(counter->use < 1 
+                    && !counter->deleting) 
                 {
-					delete this->counter;
-					this->counter = NULL;
+					delete counter;
+					counter = NULL;
 				}
             }
         }
@@ -382,5 +386,5 @@ private:
 
 }
 
-#endif	/* WEAKPOINTER_H_ */
+#endif	/* WEAKPOINTER_H */
 

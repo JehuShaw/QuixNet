@@ -5,22 +5,39 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _CONTROLARGUMENT_H
-#define	_CONTROLARGUMENT_H
+#ifndef CONTROLARGUMENT_H
+#define	CONTROLARGUMENT_H
 
 #include "AgentMethod.h"
 #include "worker.pb.h"
 
 class CControlArgument : public evt::ArgumentBase {
 public:
-	CControlArgument(const ::node::DataPacket& data) 
-		: m_data(data) {}
+	CControlArgument(const ::node::DataPacket& request,
+					 const util::CWeakPointer<CPlayerBase>& pPlayer,
+					 util::CWeakPointer<::node::DataPacket>& pResponse)
+		: m_request(request)
+		, m_pPlayer(pPlayer)
+		, m_pResponse(pResponse) {}
 
-	const ::node::DataPacket& GetData() const { return m_data; }
+	const ::node::DataPacket& GetRequest() const { return m_request; }
+
+	/**
+	 * get player
+	 */
+	const util::CWeakPointer<CPlayerBase>& GetPlayer() const {
+		return m_pPlayer;
+	}
+
+	inline void SetResponseData(const ::google::protobuf::Message& message) {
+		SerializeWorkerData(m_pResponse, message);
+	}
 
 private:
-	const ::node::DataPacket& m_data;
+	const ::node::DataPacket& m_request;
+	util::CWeakPointer<CPlayerBase> m_pPlayer;
+	util::CWeakPointer<::node::DataPacket> m_pResponse;
 };
 
-#endif	/* _CONTROLARGUMENT_H */
+#endif	/* CONTROLARGUMENT_H */
 

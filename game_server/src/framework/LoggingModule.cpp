@@ -24,7 +24,7 @@ CLoggingModule::CLoggingModule()
 	: CModule(LOGGING_MODEL_NAME), m_nServerId(0) 
 {
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
-	m_sepaTableStore.SetRawPointer(new CSepaTableStore((uint16_t)
+	m_sepaTableStore.SetRawPointer(new CSepaTableStore(
 		pConfig->GetInt(APPCONFIG_LOGGINGCACHEID)));
 	m_nServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 }
@@ -39,9 +39,9 @@ void CLoggingModule::OnRemove(){
 
 std::vector<int> CLoggingModule::ListNotificationInterests()
 {
-	std::vector<int> interests;
-    interests.push_back(N_CMD_NODE_REGISTER);
-	return interests;
+	return std::vector<int>({
+		N_CMD_NODE_REGISTER
+	});
 }
 
 IModule::InterestList CLoggingModule::ListProtocolInterests()
@@ -76,10 +76,10 @@ bool CLoggingModule::Trace(uint64_t nUserId, uint64_t nAccount, int nLogType, in
 		return false;
 	}
 
-	uint64_t nId = CGuidFactory::Pointer()->CreateGuid();
+	// uint64_t nId = CGuidFactory::Pointer()->CreateGuid();
 	util::CSeparatedStream stream(RECORD_SEPARATOR_CHAR);
 	stream
-		<< nId
+	//	<< nId
 		<< nAccount
 		<< nLogType
 		<< nActionType

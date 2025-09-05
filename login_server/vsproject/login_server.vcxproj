@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\shared\include\Common.h" />
+    <ClInclude Include="..\..\shared\include\ControlCMD.h" />
+    <ClInclude Include="..\..\shared\include\httpclient\CurlMultiMT.h" />
+    <ClInclude Include="..\..\shared\include\httpclient\HttpClientManager.h" />
+    <ClInclude Include="..\..\shared\include\httpclient\HttpRequest.h" />
+    <ClInclude Include="..\..\shared\include\module\INotificationBody.h" />
+    <ClInclude Include="..\..\shared\include\module\ModuleEnv.h" />
+    <ClInclude Include="..\..\shared\include\module\ModuleManager.h" />
+    <ClInclude Include="..\..\shared\include\network\BitStream.h" />
+    <ClInclude Include="..\..\shared\include\network\NetworkSync.h" />
+    <ClInclude Include="..\..\shared\include\network\NetworkTrace.h" />
+    <ClInclude Include="..\..\shared\include\network\NetworkTypes.h" />
+    <ClInclude Include="..\..\shared\include\network\ReceiveBuffer.h" />
+    <ClInclude Include="..\..\shared\include\network\SingleProducerConsumer.h" />
+    <ClInclude Include="..\..\shared\include\network\SmallBuffer.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPLinkInterface.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPPacketInterface.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPSocketBase.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPSocketBSD.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPSocketLinux.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPSocketWin.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPThreadInfo.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPThreadList.h" />
+    <ClInclude Include="..\..\shared\include\network\TCPThreadPool.h" />
+    <ClInclude Include="..\..\shared\include\ShareConfig.h" />
+    <ClInclude Include="..\..\shared\include\ShareDefines.h" />
+    <ClInclude Include="..\..\shared\include\ShareDll.h" />
+    <ClInclude Include="..\..\shared\include\ShareErrors.h" />
+    <ClInclude Include="..\..\shared\include\threading\AtomicCas.h" />
+    <ClInclude Include="..\..\shared\include\threading\AtomicLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\CircleQueue.h" />
+    <ClInclude Include="..\..\shared\include\threading\CondVar.h" />
+    <ClInclude Include="..\..\shared\include\threading\CriticalSection.h" />
+    <ClInclude Include="..\..\shared\include\threading\CThreads.h" />
+    <ClInclude Include="..\..\shared\include\threading\EnvLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\EnvLockHelper.h" />
+    <ClInclude Include="..\..\shared\include\threading\EnvRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\FastMutex.h" />
+    <ClInclude Include="..\..\shared\include\threading\IEnvLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\IEnvLockBase.h" />
+    <ClInclude Include="..\..\shared\include\threading\IEnvRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ILock.h" />
+    <ClInclude Include="..\..\shared\include\threading\IRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\IteratorBase.h" />
+    <ClInclude Include="..\..\shared\include\threading\LockFreeCircleQueue.h" />
+    <ClInclude Include="..\..\shared\include\threading\LockFreeNode.h" />
+    <ClInclude Include="..\..\shared\include\threading\LockFreeQueue.h" />
+    <ClInclude Include="..\..\shared\include\threading\MessageData.h" />
+    <ClInclude Include="..\..\shared\include\threading\Mutex.h" />
+    <ClInclude Include="..\..\shared\include\threading\OperationAsync.h" />
+    <ClInclude Include="..\..\shared\include\threading\OperationBase.h" />
+    <ClInclude Include="..\..\shared\include\threading\OperationIterate.h" />
+    <ClInclude Include="..\..\shared\include\threading\OperationSync.h" />
+    <ClInclude Include="..\..\shared\include\threading\ReadWriteLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\RecursiveRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ScopedEnvLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ScopedEnvRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ScopedLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\ScopedRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinEvent.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinRecursiveLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinRecursiveRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SpinRWLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\SysCurrentThreadId.h" />
+    <ClInclude Include="..\..\shared\include\threading\ThreadBase.h" />
+    <ClInclude Include="..\..\shared\include\threading\ThreadIndexManager.h" />
+    <ClInclude Include="..\..\shared\include\threading\Threading.h" />
+    <ClInclude Include="..\..\shared\include\threading\ThreadPool.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapControl.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapHelper.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapIterator.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapIteratorChild.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapIteratorParent.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapLock.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapObject.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapObjectHelper.h" />
+    <ClInclude Include="..\..\shared\include\threading\WrapRWLock.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\AgentMethod.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\CommandManager.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleEvent.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleEventArray.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleMultiEvent.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\SysTickCount.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimerEvent.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimerManager.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimerManagerHelper.h" />
+    <ClInclude Include="..\..\shared\include\timerevent\TimestampManager.h" />
+    <ClInclude Include="..\..\shared\include\utility\AreaOfInterest2D.h" />
+    <ClInclude Include="..\..\shared\include\utility\AreaOfInterest3D.h" />
+    <ClInclude Include="..\..\shared\include\utility\ArrayList.h" />
+    <ClInclude Include="..\..\shared\include\utility\ArrayMap.h" />
+    <ClInclude Include="..\..\shared\include\utility\AutoPointer.h" />
+    <ClInclude Include="..\..\shared\include\utility\BitSignSet.h" />
+    <ClInclude Include="..\..\shared\include\utility\CallBack.h" />
+    <ClInclude Include="..\..\shared\include\utility\CrashDump.h" />
+    <ClInclude Include="..\..\shared\include\utility\CsvParser.h" />
+    <ClInclude Include="..\..\shared\include\utility\DynamicBitset.h" />
+    <ClInclude Include="..\..\shared\include\utility\ExceptionManager.h" />
+    <ClInclude Include="..\..\shared\include\utility\GlobalIDFactory.h" />
+    <ClInclude Include="..\..\shared\include\utility\GuidFactory.h" />
+    <ClInclude Include="..\..\shared\include\utility\IObject.h" />
+    <ClInclude Include="..\..\shared\include\utility\IRankData.h" />
+    <ClInclude Include="..\..\shared\include\utility\IStream.h" />
+    <ClInclude Include="..\..\shared\include\utility\ITComparer.h" />
+    <ClInclude Include="..\..\shared\include\utility\ITPriorityQueue.h" />
+    <ClInclude Include="..\..\shared\include\utility\LocalIDFactory.h" />
+    <ClInclude Include="..\..\shared\include\utility\Log.h" />
+    <ClInclude Include="..\..\shared\include\utility\Md5.h" />
+    <ClInclude Include="..\..\shared\include\utility\ObjectSet.h" />
+    <ClInclude Include="..\..\shared\include\utility\PoolBase.h" />
+    <ClInclude Include="..\..\shared\include\utility\PrintStackTrace.h" />
+    <ClInclude Include="..\..\shared\include\utility\ProcessStatus.h" />
+    <ClInclude Include="..\..\shared\include\utility\RankSetMT.h" />
+    <ClInclude Include="..\..\shared\include\utility\ReferObject.h" />
+    <ClInclude Include="..\..\shared\include\utility\ScopedPointer.h" />
+    <ClInclude Include="..\..\shared\include\utility\SeparatedStream.h" />
+    <ClInclude Include="..\..\shared\include\utility\Singleton.h" />
+    <ClInclude Include="..\..\shared\include\utility\SkipList.h" />
+    <ClInclude Include="..\..\shared\include\utility\StoreStream.h" />
+    <ClInclude Include="..\..\shared\include\utility\StreamDataType.h" />
+    <ClInclude Include="..\..\shared\include\utility\StringResolved.h" />
+    <ClInclude Include="..\..\shared\include\utility\TimeSeries.h" />
+    <ClInclude Include="..\..\shared\include\utility\TinyJson.h" />
+    <ClInclude Include="..\..\shared\include\utility\TPriorityQueue.h" />
+    <ClInclude Include="..\..\shared\include\utility\TransferStream.h" />
+    <ClInclude Include="..\..\shared\include\utility\UniquePointer.h" />
+    <ClInclude Include="..\..\shared\include\utility\Utf8.h" />
+    <ClInclude Include="..\..\shared\include\utility\ValueStream.h" />
+    <ClInclude Include="..\..\shared\include\utility\WeakPointer.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxAllocator.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable0.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable0S.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1S.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1Store.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1StoreS.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2S.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2Store.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2StoreS.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTableIndex.h" />
+    <ClInclude Include="..\..\shared\include\utility\XqxTableIndexS.h" />
+    <ClInclude Include="..\..\third_party\json\assertions.h" />
+    <ClInclude Include="..\..\third_party\json\autolink.h" />
+    <ClInclude Include="..\..\third_party\json\config.h" />
+    <ClInclude Include="..\..\third_party\json\features.h" />
+    <ClInclude Include="..\..\third_party\json\forwards.h" />
+    <ClInclude Include="..\..\third_party\json\json.h" />
+    <ClInclude Include="..\..\third_party\json\json_batchallocator.h" />
+    <ClInclude Include="..\..\third_party\json\json_tool.h" />
+    <ClInclude Include="..\..\third_party\json\reader.h" />
+    <ClInclude Include="..\..\third_party\json\value.h" />
+    <ClInclude Include="..\..\third_party\json\version.h" />
+    <ClInclude Include="..\..\third_party\json\writer.h" />
+    <ClInclude Include="..\..\third_party\rpcz\application.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\application_options.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\broker_thread.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\callback.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\client_connection.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\client_request_callback.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\clock.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\common.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\connection.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\connection_manager.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\connection_manager_ptr.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\connection_manager_status.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\event_id_generator.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\internal_commands.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\logging.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\reactor.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\remote_response_wrapper.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\rpcz.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\rpcz.pb.h" />
+    <ClInclude Include="..\..\third_party\rpcz\rpc_channel.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\rpc_channel_impl.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\rpc_controller.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\rpc_service.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\server.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\server_function.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\server_impl.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\service.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\sync_event.hpp" />
+    <ClInclude Include="..\..\third_party\rpcz\zmq_utils.hpp" />
+    <ClInclude Include="..\..\third_party\stacktrace\Array.h" />
+    <ClInclude Include="..\..\third_party\stacktrace\MapFile.h" />
+    <ClInclude Include="..\..\third_party\stacktrace\MapFileEntry.h" />
+    <ClInclude Include="..\..\third_party\stacktrace\StackTrace.h" />
+    <ClInclude Include="..\..\third_party\stacktrace\TextFile.h" />
+    <ClInclude Include="..\..\third_party\tinyxml\tinystr.h" />
+    <ClInclude Include="..\..\third_party\tinyxml\tinyxml.h" />
+    <ClInclude Include="..\src\framework\AppConfig.h" />
+    <ClInclude Include="..\src\framework\BodyBitStream.h" />
+    <ClInclude Include="..\src\framework\BodyMessage.h" />
+    <ClInclude Include="..\src\framework\broadcast_packet.pb.h" />
+    <ClInclude Include="..\src\framework\cache.pb.h" />
+    <ClInclude Include="..\src\framework\cache.rpcz.h" />
+    <ClInclude Include="..\src\framework\CacheChannel.h" />
+    <ClInclude Include="..\src\framework\CacheModule.h" />
+    <ClInclude Include="..\src\framework\CacheOperateHelper.h" />
+    <ClInclude Include="..\src\framework\ChannelManager.h" />
+    <ClInclude Include="..\src\framework\ControlArgument.h" />
+    <ClInclude Include="..\src\framework\controlcentre.pb.h" />
+    <ClInclude Include="..\src\framework\controlcentre.rpcz.h" />
+    <ClInclude Include="..\src\framework\ControlCentreModule.h" />
+    <ClInclude Include="..\src\framework\ControlCentreServiceImp.h" />
+    <ClInclude Include="..\src\framework\ControlCentreStubImp.h" />
+    <ClInclude Include="..\src\framework\ControlCentreStubImpEx.h" />
+    <ClInclude Include="..\src\framework\ControlEventManager.h" />
+    <ClInclude Include="..\src\framework\data_packet.pb.h" />
+    <ClInclude Include="..\src\framework\HttpThreadHold.h" />
+    <ClInclude Include="..\src\framework\ICacheValue.h" />
+    <ClInclude Include="..\src\framework\IChannelControl.h" />
+    <ClInclude Include="..\src\framework\IChannelValue.h" />
+    <ClInclude Include="..\src\framework\IncludeModule.h" />
+    <ClInclude Include="..\src\framework\interest_packet.pb.h" />
+    <ClInclude Include="..\src\framework\IServerRegister.h" />
+    <ClInclude Include="..\src\framework\LoginModule.h" />
+    <ClInclude Include="..\src\framework\LoginServer.h" />
+    <ClInclude Include="..\src\framework\LoginServiceImp.h" />
+    <ClInclude Include="..\src\framework\LoginWebRequest.h" />
+    <ClInclude Include="..\src\framework\MCResult.h" />
+    <ClInclude Include="..\src\framework\ModuleOperateHelper.h" />
+    <ClInclude Include="..\src\framework\msg_client_login.pb.h" />
+    <ClInclude Include="..\src\framework\msg_login.pb.h" />
+    <ClInclude Include="..\src\framework\msg_login_character.pb.h" />
+    <ClInclude Include="..\src\framework\msg_node_create_character.pb.h" />
+    <ClInclude Include="..\src\framework\msg_node_get_character.pb.h" />
+    <ClInclude Include="..\src\framework\msg_node_switch.pb.h" />
+    <ClInclude Include="..\src\framework\NodeDefines.h" />
+    <ClInclude Include="..\src\framework\PlayerBase.h" />
+    <ClInclude Include="..\src\framework\ProtoRpczServiceImpl.h" />
+    <ClInclude Include="..\src\framework\TemplateBase.h" />
+    <ClInclude Include="..\src\framework\void_packet.pb.h" />
+    <ClInclude Include="..\src\framework\worker.pb.h" />
+    <ClInclude Include="..\src\framework\worker.rpcz.h" />
+    <ClInclude Include="..\src\framework\WorkerChannel.h" />
+    <ClInclude Include="..\src\framework\WorkerModule.h" />
+    <ClInclude Include="..\src\framework\WorkerOperateHelper.h" />
+    <ClInclude Include="..\src\framework\WorkerServiceImp.h" />
+    <ClInclude Include="..\src\framework\WorkerServiceImpHelper.h" />
+    <ClInclude Include="..\src\IncludeTemplate.h" />
+    <ClInclude Include="..\src\LoginPlayer.h" />
+    <ClInclude Include="..\src\LoginServerRegister.h" />
+    <ClInclude Include="..\src\ServerRegisterHelper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\third_party\json\json_reader.cpp" />
+    <ClCompile Include="..\..\third_party\json\json_value.cpp" />
+    <ClCompile Include="..\..\third_party\json\json_writer.cpp" />
+    <ClCompile Include="..\..\third_party\rpcz\application.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\application_options.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\broker_thread.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\client_connection.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\clock.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\connection.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\connection_manager.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\event_id_generator.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\reactor.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\rpcz.pb.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\rpc_channel.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\rpc_channel_impl.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\rpc_controller.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\server.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\server_impl.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\sync_event.cc" />
+    <ClCompile Include="..\..\third_party\rpcz\zmq_utils.cc" />
+    <ClCompile Include="..\..\third_party\stacktrace\MapFile.cpp" />
+    <ClCompile Include="..\..\third_party\stacktrace\MapFileEntry.cpp" />
+    <ClCompile Include="..\..\third_party\stacktrace\StackTrace.cpp" />
+    <ClCompile Include="..\..\third_party\stacktrace\TextFile.cpp" />
+    <ClCompile Include="..\..\third_party\tinyxml\tinystr.cpp" />
+    <ClCompile Include="..\..\third_party\tinyxml\tinyxml.cpp" />
+    <ClCompile Include="..\..\third_party\tinyxml\tinyxmlerror.cpp" />
+    <ClCompile Include="..\..\third_party\tinyxml\tinyxmlparser.cpp" />
+    <ClCompile Include="..\src\framework\broadcast_packet.pb.cc" />
+    <ClCompile Include="..\src\framework\cache.pb.cc" />
+    <ClCompile Include="..\src\framework\cache.rpcz.cc" />
+    <ClCompile Include="..\src\framework\CacheModule.cpp" />
+    <ClCompile Include="..\src\framework\controlcentre.pb.cc" />
+    <ClCompile Include="..\src\framework\controlcentre.rpcz.cc" />
+    <ClCompile Include="..\src\framework\ControlCentreModule.cpp" />
+    <ClCompile Include="..\src\framework\ControlCentreServiceImp.cpp" />
+    <ClCompile Include="..\src\framework\ControlEventManager.cpp" />
+    <ClCompile Include="..\src\framework\data_packet.pb.cc" />
+    <ClCompile Include="..\src\framework\HttpThreadHold.cpp" />
+    <ClCompile Include="..\src\framework\interest_packet.pb.cc" />
+    <ClCompile Include="..\src\framework\LoginModule.cpp" />
+    <ClCompile Include="..\src\framework\LoginServer.cpp" />
+    <ClCompile Include="..\src\framework\LoginServiceImp.cpp" />
+    <ClCompile Include="..\src\framework\LoginWebRequest.cpp" />
+    <ClCompile Include="..\src\framework\main.cpp" />
+    <ClCompile Include="..\src\framework\msg_client_login.pb.cc" />
+    <ClCompile Include="..\src\framework\msg_login.pb.cc" />
+    <ClCompile Include="..\src\framework\msg_login_character.pb.cc" />
+    <ClCompile Include="..\src\framework\msg_node_create_character.pb.cc" />
+    <ClCompile Include="..\src\framework\msg_node_get_character.pb.cc" />
+    <ClCompile Include="..\src\framework\msg_node_switch.pb.cc" />
+    <ClCompile Include="..\src\framework\NodeDefines.cpp" />
+    <ClCompile Include="..\src\framework\ProtoRpczServiceImpl.cpp" />
+    <ClCompile Include="..\src\framework\TemplateBase.cpp" />
+    <ClCompile Include="..\src\framework\void_packet.pb.cc" />
+    <ClCompile Include="..\src\framework\worker.pb.cc" />
+    <ClCompile Include="..\src\framework\worker.rpcz.cc" />
+    <ClCompile Include="..\src\framework\WorkerModule.cpp" />
+    <ClCompile Include="..\src\framework\WorkerServiceImp.cpp" />
+    <ClCompile Include="..\src\LoginServerRegister.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\third_party\json\json_internalarray.inl" />
+    <None Include="..\..\third_party\json\json_internalmap.inl" />
+    <None Include="..\..\third_party\json\json_valueiterator.inl" />
+    <None Include="..\..\third_party\json\version.h.in" />
+    <None Include="..\src\App.config" />
+    <None Include="..\src\templatefiles.csv" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{025945B9-6E0F-46D2-831C-A071B731D0A6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>loginserver</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>LoginServer</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../bin/win/x32/$(Configuration)/</OutDir>
+    <IntDir>../build/win/x32/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../bin/win/x64/$(Configuration)/</OutDir>
+    <IntDir>../build/win/x64/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../bin/win/x32/$(Configuration)/</OutDir>
+    <IntDir>../build/win/x32/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../bin/win/x64/$(Configuration)/</OutDir>
+    <IntDir>../build/win/x64/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARE_DLL;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../shared/include;../../shared/include/utility;../../shared/include/module;../../shared/include/network;../../shared/include/threading;../../shared/include/timerevent;../../shared/include/httpclient;../../third_party;../../third_party/boost/win/x32/include/boost-1_78;../../third_party/protobuf/win/x32/include;../../third_party/curl/win/x32/include;../../third_party/zeromq/win/x32/include;../../third_party/cppzmq/include;../../third_party/rpcz;../../third_party/json;../src;../src/framework;../src/template</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../../third_party/boost/win/x32/lib/libboost_chrono-vc143-mt-gd-x32-1_78.lib;../../third_party/boost/win/x32/lib/libboost_date_time-vc143-mt-gd-x32-1_78.lib;../../third_party/boost/win/x32/lib/libboost_system-vc143-mt-gd-x32-1_78.lib;../../third_party/boost/win/x32/lib/libboost_thread-vc143-mt-gd-x32-1_78.lib;../../third_party/protobuf/win/x32/lib/libprotobufd.lib;../../third_party/zeromq/win/x32/lib/libzmq-mt-gd-4_0_10.lib;../../shared/lib/win/x32/Debug/Shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)..\src\App.config $(TargetDir) /y
+xcopy $(ProjectDir)..\src\templatefiles.csv $(TargetDir) /y
+xcopy $(ProjectDir)..\src\resource $(TargetDir)resource /y /e /i
+xcopy $(ProjectDir)..\..\shared\bin\win\x32\Debug\Shared.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\shared\bin\win\x32\Debug\Shared.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\curl\win\x32\bin\libcurl-d.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x32\lib\libmysql.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x32\lib\libmysql.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\zeromq\win\x32\bin\libzmq-mt-gd-4_0_10.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\zeromq\win\x32\lib\libzmq-mt-gd-4_0_10.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\protobuf\win\x32\bin\libprotobufd.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libcrypto-1_1.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libcrypto-1_1.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libssl-1_1.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libssl-1_1.pdb $(TargetDir) /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARE_DLL;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../shared/include;../../shared/include/utility;../../shared/include/module;../../shared/include/network;../../shared/include/threading;../../shared/include/timerevent;../../shared/include/httpclient;../../third_party;../../third_party/boost/win/x64/include/boost-1_78;../../third_party/protobuf/win/x64/include;../../third_party/zeromq/win/x64/include;../../third_party/curl/win/x64/include;../../third_party/cppzmq/include;../../third_party/rpcz;../../third_party/json;../src;../src/framework;../src/template</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../../third_party/boost/win/x64/lib/libboost_chrono-vc143-mt-gd-x64-1_78.lib;../../third_party/boost/win/x64/lib/libboost_date_time-vc143-mt-gd-x64-1_78.lib;../../third_party/boost/win/x64/lib/libboost_system-vc143-mt-gd-x64-1_78.lib;../../third_party/boost/win/x64/lib/libboost_thread-vc143-mt-gd-x64-1_78.lib;../../third_party/protobuf/win/x64/lib/libprotobufd.lib;../../third_party/zeromq/win/x64/lib/libzmq-mt-gd-4_0_10.lib;../../shared/lib/win/x64/Debug/Shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)..\src\App.config $(TargetDir) /y
+xcopy $(ProjectDir)..\src\templatefiles.csv $(TargetDir) /y
+xcopy $(ProjectDir)..\src\resource $(TargetDir)resource /y /e /i
+xcopy $(ProjectDir)..\..\shared\bin\win\x64\Debug\Shared.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\shared\bin\win\x64\Debug\Shared.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\curl\win\x64\bin\libcurl-d.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x64\lib\libmysql.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x64\lib\libmysql.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\zeromq\win\x64\bin\libzmq-mt-gd-4_0_10.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\zeromq\win\x64\lib\libzmq-mt-gd-4_0_10.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\protobuf\win\x64\bin\libprotobufd.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libcrypto-1_1-x64.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libcrypto-1_1-x64.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libssl-1_1-x64.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libssl-1_1-x64.pdb $(TargetDir) /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARE_DLL;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../shared/include;../../shared/include/utility;../../shared/include/module;../../shared/include/network;../../shared/include/threading;../../shared/include/timerevent;../../shared/include/httpclient;../../third_party;../../third_party/boost/win/x32/include/boost-1_78;../../third_party/protobuf/win/x32/include;../../third_party/zeromq/win/x32/include;../../third_party/curl/win/x32/include;../../third_party/cppzmq/include;../../third_party/rpcz;../../third_party/json;../src;../src/framework;../src/template</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../../third_party/boost/win/x32/lib/libboost_chrono-vc143-mt-x32-1_78.lib;../../third_party/boost/win/x32/lib/libboost_date_time-vc143-mt-x32-1_78.lib;../../third_party/boost/win/x32/lib/libboost_system-vc143-mt-x32-1_78.lib;../../third_party/boost/win/x32/lib/libboost_thread-vc143-mt-x32-1_78.lib;../../third_party/protobuf/win/x32/lib/libprotobuf.lib;../../third_party/zeromq/win/x32/lib/libzmq-mt-4_0_10.lib;../../shared/lib/win/x32/Release/Shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)..\src\App.config $(TargetDir) /y
+xcopy $(ProjectDir)..\src\templatefiles.csv $(TargetDir) /y
+xcopy $(ProjectDir)..\src\resource $(TargetDir)resource /y /e /i
+xcopy $(ProjectDir)..\..\shared\bin\win\x32\Release\Shared.dll $(TargetDir) /y
+if exist $(ProjectDir)..\..\shared\bin\win\x32\Release\Shared.pdb xcopy $(ProjectDir)..\..\shared\bin\win\x32\Release\Shared.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\curl\win\x32\bin\libcurl.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x32\lib\libmysql.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x32\lib\libmysql.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\zeromq\win\x32\bin\libzmq-mt-4_0_10.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\protobuf\win\x32\bin\libprotobuf.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libcrypto-1_1.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libcrypto-1_1.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libssl-1_1.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x32\bin\libssl-1_1.pdb $(TargetDir) /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;SHARE_DLL;PROTOBUF_USE_DLLS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>../../shared/include;../../shared/include/utility;../../shared/include/module;../../shared/include/network;../../shared/include/threading;../../shared/include/timerevent;../../shared/include/httpclient;../../third_party;../../third_party/boost/win/x64/include/boost-1_78;../../third_party/protobuf/win/x64/include;../../third_party/zeromq/win/x64/include;../../third_party/curl/win/x64/include;../../third_party/cppzmq/include;../../third_party/rpcz;../../third_party/json;../src;../src/framework;../src/template</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../../third_party/boost/win/x64/lib/libboost_chrono-vc143-mt-x64-1_78.lib;../../third_party/boost/win/x64/lib/libboost_date_time-vc143-mt-x64-1_78.lib;../../third_party/boost/win/x64/lib/libboost_system-vc143-mt-x64-1_78.lib;../../third_party/boost/win/x64/lib/libboost_thread-vc143-mt-x64-1_78.lib;../../third_party/protobuf/win/x64/lib/libprotobuf.lib;../../third_party/zeromq/win/x64/lib/libzmq-mt-4_0_10.lib;../../shared/lib/win/x64/Release/Shared.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy $(ProjectDir)..\src\App.config $(TargetDir) /y
+xcopy $(ProjectDir)..\src\templatefiles.csv $(TargetDir) /y
+xcopy $(ProjectDir)..\src\resource $(TargetDir)resource /y /e /i
+xcopy $(ProjectDir)..\..\shared\bin\win\x64\Release\Shared.dll $(TargetDir) /y
+if exist $(ProjectDir)..\..\shared\bin\win\x64\Release\Shared.pdb xcopy $(ProjectDir)..\..\shared\bin\win\x64\Release\Shared.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\curl\win\x64\bin\libcurl.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x64\lib\libmysql.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\mysql\win\x64\lib\libmysql.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\zeromq\win\x64\bin\libzmq-mt-4_0_10.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\protobuf\win\x64\bin\libprotobuf.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libcrypto-1_1-x64.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libcrypto-1_1-x64.pdb $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libssl-1_1-x64.dll $(TargetDir) /y
+xcopy $(ProjectDir)..\..\third_party\openssl\win\x64\bin\libssl-1_1-x64.pdb $(TargetDir) /y</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

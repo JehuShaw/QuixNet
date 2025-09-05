@@ -5,25 +5,25 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#ifndef _CHANNELVALUESET_H_
-#define _CHANNELVALUESET_H_
+#ifndef CHANNELVALUESET_H
+#define CHANNELVALUESET_H
 
 #include "IChannelValue.h"
 
 class CFindChannelValue : public IChannelValue {
 public:
-	CFindChannelValue(uint16_t serverId) : m_serverId(serverId) {}
-	virtual uint16_t GetServerId() const { return m_serverId; }
+	CFindChannelValue(uint32_t serverId) : m_serverId(serverId) {}
+	virtual uint32_t GetServerId() const { return m_serverId; }
 	virtual const std::string& GetEndPoint() const { throw std::runtime_error("Method const std::string& GetEndPoint() not implemented."); }
 	virtual uint16_t GetServerType() const { throw std::runtime_error("Method uint16_t GetServerType() not implemented."); }
 
 protected:
 	virtual void SetEndPoint(const std::string& strValue) { throw std::runtime_error("Method SetEndPoint(const std::string& strValue) not implemented."); }
-	virtual void SetServerId(uint16_t nValue) { throw std::runtime_error("Method SetServerId(uint16_t nValue) not implemented."); }
+	virtual void SetServerId(uint32_t nValue) { throw std::runtime_error("Method SetServerId(uint32_t nValue) not implemented."); }
 	virtual void SetServerType(uint16_t nValue) { throw std::runtime_error("Method SetServerType(uint16_t nValue) not implemented."); }
 
 private:
-	uint16_t m_serverId;
+	uint32_t m_serverId;
 };
 
 struct IChannelValueCompare
@@ -44,4 +44,4 @@ struct IChannelValueCompare
 
 typedef std::set<CAutoPointer<IChannelValue>, struct IChannelValueCompare > CHANNEL_VALUE_SET_T;
 
-#endif /* _CHANNELVALUESET_H_ */
+#endif /* CHANNELVALUESET_H */

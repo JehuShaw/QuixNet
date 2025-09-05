@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <string.h>
 
-#ifdef _WIN32
+#if defined( _WIN32 ) || defined( _WIN64 )
 	#include <stdlib.h>
 	#include <memory.h>
 	#include <stdio.h>
@@ -42,12 +42,8 @@ inline static void ReverseBytes(char *input, int length){
 
 using namespace util;
 
-bool util::CTransferStream::s_bInitTypeOperator = false;
-struct util::CTransferStream::TypeOperatorSet util::CTransferStream::s_typeOperators[STREAM_DATA_SIZE];
-
 CTransferStream::CTransferStream()
 {
-	InitTypeOperator();
 	m_isLittleEndian = IsLocalLittleEndian();
 	m_writeOffset = 0;
 	m_allocBitSize = TRANSFERSTREAM_STACK_ALLOCA_SIZE * 8;
@@ -58,7 +54,6 @@ CTransferStream::CTransferStream()
 
 CTransferStream::CTransferStream(uint32_t initByteSize)
 {
-	InitTypeOperator();
 	m_isLittleEndian = IsLocalLittleEndian();
 	m_writeOffset = 0;
 	m_readOffset = 0;
@@ -77,7 +72,6 @@ CTransferStream::CTransferStream(uint32_t initByteSize)
 
 CTransferStream::CTransferStream(const char* data, uint32_t lengthInBytes, bool copyData)
 {
-	InitTypeOperator();
 	m_isLittleEndian = IsLocalLittleEndian();
 	m_writeOffset = MUL8(lengthInBytes);
 	m_readOffset = 0;
@@ -106,7 +100,6 @@ CTransferStream::CTransferStream(const char* data, uint32_t lengthInBytes, bool 
 
 CTransferStream::CTransferStream(const std::string& strData, bool copyData)
 {
-	InitTypeOperator();
 	const char* data = strData.c_str();
 	uint32_t lengthInBytes = strData.length();
 	m_isLittleEndian = IsLocalLittleEndian();
@@ -137,8 +130,6 @@ CTransferStream::CTransferStream(const std::string& strData, bool copyData)
 
 CTransferStream::CTransferStream(const CTransferStream& orig)
 {
-	InitTypeOperator();
-
 	m_isLittleEndian = IsLocalLittleEndian();
 	m_writeOffset = orig.m_writeOffset;
 	m_readOffset = 0;
@@ -325,6 +316,18 @@ CTransferStream& CTransferStream::operator<<(const std::string& input)
 }
 
 #endif
+
+CTransferStream& CTransferStream::operator<<(const tiny::Json& input)
+{
+	std::string temp(input.WriteJson());
+	uint16_t len = (uint16_t)temp.size();
+	*this << len;
+
+	if (len > 0) {
+		WriteBytes(temp.data(), len);
+	}
+	return *this;
+}
 
 //////////////////////////////////////////////////////////////////////////
 void CTransferStream::ReadByType(char& output, uint8_t nType)
@@ -2485,391 +2488,6 @@ void util::CTransferStream::WriteStringSetFromString(const char* input, int leng
 }
 //////////////////////////////////////////////////////////////////////////
 
-void util::CTransferStream::InitTypeOperator()
-{
-	if(s_bInitTypeOperator) {
-		return;
-	}
-	s_bInitTypeOperator = true;
-
-	s_typeOperators[STREAM_DATA_NIL].m_pReadToString = NULL;
-	s_typeOperators[STREAM_DATA_NIL].m_pWriteFromString = NULL;
-
-	s_typeOperators[STREAM_DATA_CHAR].m_pReadToString = &util::CTransferStream::ReadCharToString;
-	s_typeOperators[STREAM_DATA_CHAR].m_pWriteFromString = &util::CTransferStream::WriteCharFromString;
-
-	s_typeOperators[STREAM_DATA_CHAR_NULL].m_pReadToString = &util::CTransferStream::ReadCharToString;
-	s_typeOperators[STREAM_DATA_CHAR_NULL].m_pWriteFromString = &util::CTransferStream::WriteCharFromString;
-
-	s_typeOperators[STREAM_DATA_BOOL].m_pReadToString = &util::CTransferStream::ReadBoolToString;
-	s_typeOperators[STREAM_DATA_BOOL].m_pWriteFromString = &util::CTransferStream::WriteBoolFromString;
-
-	s_typeOperators[STREAM_DATA_BOOL_NULL].m_pReadToString = &util::CTransferStream::ReadBoolToString;
-	s_typeOperators[STREAM_DATA_BOOL_NULL].m_pWriteFromString = &util::CTransferStream::WriteBoolFromString;
-
-	s_typeOperators[STREAM_DATA_UINT8].m_pReadToString = &util::CTransferStream::ReadUInt8ToString;
-	s_typeOperators[STREAM_DATA_UINT8].m_pWriteFromString = &util::CTransferStream::WriteUInt8FromString;
-
-	s_typeOperators[STREAM_DATA_UINT8_NULL].m_pReadToString = &util::CTransferStream::ReadUInt8ToString;
-	s_typeOperators[STREAM_DATA_UINT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt8FromString;
-
-	s_typeOperators[STREAM_DATA_UINT16].m_pReadToString = &util::CTransferStream::ReadUInt16ToString;
-	s_typeOperators[STREAM_DATA_UINT16].m_pWriteFromString = &util::CTransferStream::WriteUInt16FromString;
-
-	s_typeOperators[STREAM_DATA_UINT16_NULL].m_pReadToString = &util::CTransferStream::ReadUInt16ToString;
-	s_typeOperators[STREAM_DATA_UINT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt16FromString;
-
-	s_typeOperators[STREAM_DATA_UINT32].m_pReadToString = &util::CTransferStream::ReadUInt32ToString;
-	s_typeOperators[STREAM_DATA_UINT32].m_pWriteFromString = &util::CTransferStream::WriteUInt32FromString;
-
-	s_typeOperators[STREAM_DATA_UINT32_NULL].m_pReadToString = &util::CTransferStream::ReadUInt32ToString;
-	s_typeOperators[STREAM_DATA_UINT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt32FromString;
-
-	s_typeOperators[STREAM_DATA_UINT64].m_pReadToString = &util::CTransferStream::ReadUInt64ToString;
-	s_typeOperators[STREAM_DATA_UINT64].m_pWriteFromString = &util::CTransferStream::WriteUInt64FromString;
-
-	s_typeOperators[STREAM_DATA_UINT64_NULL].m_pReadToString = &util::CTransferStream::ReadUInt64ToString;
-	s_typeOperators[STREAM_DATA_UINT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt64FromString;
-
-	s_typeOperators[STREAM_DATA_INT8].m_pReadToString = &util::CTransferStream::ReadInt8ToString;
-	s_typeOperators[STREAM_DATA_INT8].m_pWriteFromString = &util::CTransferStream::WriteInt8FromString;
-
-	s_typeOperators[STREAM_DATA_INT8_NULL].m_pReadToString = &util::CTransferStream::ReadInt8ToString;
-	s_typeOperators[STREAM_DATA_INT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt8FromString;
-
-	s_typeOperators[STREAM_DATA_INT16].m_pReadToString = &util::CTransferStream::ReadInt16ToString;
-	s_typeOperators[STREAM_DATA_INT16].m_pWriteFromString = &util::CTransferStream::WriteInt16FromString;
-
-	s_typeOperators[STREAM_DATA_INT16_NULL].m_pReadToString = &util::CTransferStream::ReadInt16ToString;
-	s_typeOperators[STREAM_DATA_INT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt16FromString;
-
-	s_typeOperators[STREAM_DATA_INT32].m_pReadToString = &util::CTransferStream::ReadInt32ToString;
-	s_typeOperators[STREAM_DATA_INT32].m_pWriteFromString = &util::CTransferStream::WriteInt32FromString;
-
-	s_typeOperators[STREAM_DATA_INT32_NULL].m_pReadToString = &util::CTransferStream::ReadInt32ToString;
-	s_typeOperators[STREAM_DATA_INT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt32FromString;
-
-	s_typeOperators[STREAM_DATA_INT64].m_pReadToString = &util::CTransferStream::ReadInt64ToString;
-	s_typeOperators[STREAM_DATA_INT64].m_pWriteFromString = &util::CTransferStream::WriteInt64FromString;
-
-	s_typeOperators[STREAM_DATA_INT64_NULL].m_pReadToString = &util::CTransferStream::ReadInt64ToString;
-	s_typeOperators[STREAM_DATA_INT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt64FromString;
-
-	s_typeOperators[STREAM_DATA_FLOAT].m_pReadToString = &util::CTransferStream::ReadFloatToString;
-	s_typeOperators[STREAM_DATA_FLOAT].m_pWriteFromString = &util::CTransferStream::WriteFloatFromString;
-
-	s_typeOperators[STREAM_DATA_FLOAT_NULL].m_pReadToString = &util::CTransferStream::ReadFloatToString;
-	s_typeOperators[STREAM_DATA_FLOAT_NULL].m_pWriteFromString = &util::CTransferStream::WriteFloatFromString;
-
-	s_typeOperators[STREAM_DATA_DOUBLE].m_pReadToString = &util::CTransferStream::ReadDoubleToString;
-	s_typeOperators[STREAM_DATA_DOUBLE].m_pWriteFromString = &util::CTransferStream::WriteDoubleFromString;
-
-	s_typeOperators[STREAM_DATA_DOUBLE_NULL].m_pReadToString = &util::CTransferStream::ReadDoubleToString;
-	s_typeOperators[STREAM_DATA_DOUBLE_NULL].m_pWriteFromString = &util::CTransferStream::WriteDoubleFromString;
-
-	s_typeOperators[STREAM_DATA_STD_STRING].m_pReadToString = &util::CTransferStream::ReadStringToString;
-	s_typeOperators[STREAM_DATA_STD_STRING].m_pWriteFromString = &util::CTransferStream::WriteStringFromString;
-
-	s_typeOperators[STREAM_DATA_STD_STRING_NULL].m_pReadToString = &util::CTransferStream::ReadStringToString;
-	s_typeOperators[STREAM_DATA_STD_STRING_NULL].m_pWriteFromString = &util::CTransferStream::WriteStringFromString;
-
-	s_typeOperators[STREAM_DATA_C_STRING].m_pReadToString = &util::CTransferStream::ReadStringToString;
-	s_typeOperators[STREAM_DATA_C_STRING].m_pWriteFromString = &util::CTransferStream::WriteStringFromString;
-
-	s_typeOperators[STREAM_DATA_C_STRING_NULL].m_pReadToString = &util::CTransferStream::ReadStringToString;
-	s_typeOperators[STREAM_DATA_C_STRING_NULL].m_pWriteFromString = &util::CTransferStream::WriteStringFromString;
-	////////////////////////////
-	s_typeOperators[STREAM_DATA_VECTOR_BOOL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_BOOL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_BOOL_NULL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_BOOL_NULL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT8].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT8].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT8_NULL].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT16].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT16].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT16_NULL].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT32].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT32].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT32_NULL].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT64].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT64].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_UINT64_NULL].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_UINT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT8].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT8].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT8_NULL].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT16].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT16].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT16_NULL].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT32].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT32].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT32_NULL].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT64].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT64].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_INT64_NULL].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_INT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_FLOAT].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_FLOAT].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_FLOAT_NULL].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_FLOAT_NULL].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_DOUBLE].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_DOUBLE].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_DOUBLE_NULL].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_DOUBLE_NULL].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_STRING].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_STRING].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-
-	s_typeOperators[STREAM_DATA_VECTOR_STRING_NULL].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_VECTOR_STRING_NULL].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-	///////////////////////////////
-	s_typeOperators[STREAM_DATA_SET_BOOL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_SET_BOOL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_BOOL_NULL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_SET_BOOL_NULL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT8].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT8].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT8_NULL].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT16].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT16].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT16_NULL].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT32].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT32].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT32_NULL].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT64].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT64].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_UINT64_NULL].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_SET_UINT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT8].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT8].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT8_NULL].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT16].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT16].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT16_NULL].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT32].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT32].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT32_NULL].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT64].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT64].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_INT64_NULL].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_SET_INT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_FLOAT].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_SET_FLOAT].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_FLOAT_NULL].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_SET_FLOAT_NULL].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_DOUBLE].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_SET_DOUBLE].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_DOUBLE_NULL].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_SET_DOUBLE_NULL].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_STRING].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_SET_STRING].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-
-	s_typeOperators[STREAM_DATA_SET_STRING_NULL].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_SET_STRING_NULL].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-	////////////////////////////
-	s_typeOperators[STREAM_DATA_LIST_BOOL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_LIST_BOOL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_BOOL_NULL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_LIST_BOOL_NULL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT8].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT8].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT8_NULL].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT16].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT16].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT16_NULL].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT32].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT32].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT32_NULL].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT64].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT64].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_UINT64_NULL].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_LIST_UINT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT8].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT8].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT8_NULL].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT16].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT16].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT16_NULL].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT32].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT32].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT32_NULL].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT64].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT64].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_INT64_NULL].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_LIST_INT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_FLOAT].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_LIST_FLOAT].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_FLOAT_NULL].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_LIST_FLOAT_NULL].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_DOUBLE].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_LIST_DOUBLE].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_DOUBLE_NULL].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_LIST_DOUBLE_NULL].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_STRING].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_LIST_STRING].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-
-	s_typeOperators[STREAM_DATA_LIST_STRING_NULL].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_LIST_STRING_NULL].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-	/////////////////////////////
-	s_typeOperators[STREAM_DATA_ARRAY_BOOL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_BOOL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_BOOL_NULL].m_pReadToString = &util::CTransferStream::ReadBoolSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_BOOL_NULL].m_pWriteFromString = &util::CTransferStream::WriteBoolSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT8].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT8].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT8_NULL].m_pReadToString = &util::CTransferStream::ReadUInt8SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT16].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT16].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT16_NULL].m_pReadToString = &util::CTransferStream::ReadUInt16SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT32].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT32].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT32_NULL].m_pReadToString = &util::CTransferStream::ReadUInt32SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT64].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT64].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_UINT64_NULL].m_pReadToString = &util::CTransferStream::ReadUInt64SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_UINT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteUInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT8].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT8].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT8_NULL].m_pReadToString = &util::CTransferStream::ReadInt8SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT8_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt8SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT16].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT16].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT16_NULL].m_pReadToString = &util::CTransferStream::ReadInt16SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT16_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt16SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT32].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT32].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT32_NULL].m_pReadToString = &util::CTransferStream::ReadInt32SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT32_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt32SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT64].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT64].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_INT64_NULL].m_pReadToString = &util::CTransferStream::ReadInt64SetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_INT64_NULL].m_pWriteFromString = &util::CTransferStream::WriteInt64SetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_FLOAT].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_FLOAT].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_FLOAT_NULL].m_pReadToString = &util::CTransferStream::ReadFloatSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_FLOAT_NULL].m_pWriteFromString = &util::CTransferStream::WriteFloatSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_DOUBLE].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_DOUBLE].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_DOUBLE_NULL].m_pReadToString = &util::CTransferStream::ReadDoubleSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_DOUBLE_NULL].m_pWriteFromString = &util::CTransferStream::WriteDoubleSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_STRING].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_STRING].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-
-	s_typeOperators[STREAM_DATA_ARRAY_STRING_NULL].m_pReadToString = &util::CTransferStream::ReadStringSetToString;
-	s_typeOperators[STREAM_DATA_ARRAY_STRING_NULL].m_pWriteFromString = &util::CTransferStream::WriteStringSetFromString;
-}
-
-//////////////////////////////////////////////////////////////////////////
-
 // Read the native types from the front of the buffer
 // Write the native types to the end of the buffer
 CTransferStream& CTransferStream::operator>>(std::vector<bool>::reference output)
@@ -3063,6 +2681,23 @@ CTransferStream& CTransferStream::operator>>(std::string& output)
 }
 
 #endif
+
+CTransferStream& CTransferStream::operator>>(tiny::Json& output)
+{
+	output.Clear();
+
+	uint16_t len = 0;
+	*this >> len;
+	if (len < 1) {
+		return *this;
+	}
+
+	char szBuf[TS_STRING_MAX_SIZE];
+	ReadBytes(szBuf, len);
+	szBuf[len] = '\0';
+	output.ReadJson(szBuf);
+	return *this;
+}
 
 // Sets the read pointer back to the beginning of your data.
 void CTransferStream::ResetReadPointer(void)
@@ -3475,4 +3110,519 @@ void CTransferStream::AssertCopyData(void)
 		}
 	}
 }
+
+// struct TypeOperatorSet {
+//	void (util::CTransferStream::*m_pReadToString)(std::string& output);
+//	void (util::CTransferStream::*m_pWriteFromString)(const char* input, int length);
+// };
+struct util::CTransferStream::TypeOperatorSet util::CTransferStream::s_typeOperators[STREAM_DATA_SIZE] = {
+	{	// s_typeOperators[STREAM_DATA_NIL]
+		NULL,
+		NULL,
+	},
+	{	// s_typeOperators[STREAM_DATA_CHAR]
+		&util::CTransferStream::ReadCharToString,
+		&util::CTransferStream::WriteCharFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_CHAR_NULL]
+		&util::CTransferStream::ReadCharToString,
+		&util::CTransferStream::WriteCharFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_BOOL]
+		&util::CTransferStream::ReadBoolToString,
+		&util::CTransferStream::WriteBoolFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_BOOL_NULL]
+		&util::CTransferStream::ReadBoolToString,
+		&util::CTransferStream::WriteBoolFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT8]
+		&util::CTransferStream::ReadInt8ToString,
+		&util::CTransferStream::WriteInt8FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT8_NULL]
+		&util::CTransferStream::ReadInt8ToString,
+		&util::CTransferStream::WriteInt8FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT8]
+		&util::CTransferStream::ReadUInt8ToString,
+		&util::CTransferStream::WriteUInt8FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT8_NULL]
+		&util::CTransferStream::ReadUInt8ToString,
+		&util::CTransferStream::WriteUInt8FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT16]
+		&util::CTransferStream::ReadInt16ToString,
+		&util::CTransferStream::WriteInt16FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT16_NULL]
+		&util::CTransferStream::ReadInt16ToString,
+		&util::CTransferStream::WriteInt16FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT16]
+		&util::CTransferStream::ReadUInt16ToString,
+		&util::CTransferStream::WriteUInt16FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT16_NULL]
+		&util::CTransferStream::ReadUInt16ToString,
+		&util::CTransferStream::WriteUInt16FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT32]
+		&util::CTransferStream::ReadInt32ToString,
+		&util::CTransferStream::WriteInt32FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT32_NULL]
+		&util::CTransferStream::ReadInt32ToString,
+		&util::CTransferStream::WriteInt32FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT32]
+		&util::CTransferStream::ReadUInt32ToString,
+		&util::CTransferStream::WriteUInt32FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT32_NULL]
+		&util::CTransferStream::ReadUInt32ToString,
+		&util::CTransferStream::WriteUInt32FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_FLOAT]
+		&util::CTransferStream::ReadFloatToString,
+		&util::CTransferStream::WriteFloatFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_FLOAT_NULL]
+		&util::CTransferStream::ReadFloatToString,
+		&util::CTransferStream::WriteFloatFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT64]
+		&util::CTransferStream::ReadInt64ToString,
+		&util::CTransferStream::WriteInt64FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_INT64_NULL]
+		&util::CTransferStream::ReadInt64ToString,
+		&util::CTransferStream::WriteInt64FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT64]
+		&util::CTransferStream::ReadUInt64ToString,
+		&util::CTransferStream::WriteUInt64FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_UINT64_NULL]
+		&util::CTransferStream::ReadUInt64ToString,
+		&util::CTransferStream::WriteUInt64FromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_DOUBLE]
+		&util::CTransferStream::ReadDoubleToString,
+		&util::CTransferStream::WriteDoubleFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_DOUBLE_NULL]
+		&util::CTransferStream::ReadDoubleToString,
+		&util::CTransferStream::WriteDoubleFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_STD_STRING]
+		&util::CTransferStream::ReadStringToString,
+		&util::CTransferStream::WriteStringFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_STD_STRING_NULL]
+		&util::CTransferStream::ReadStringToString,
+		&util::CTransferStream::WriteStringFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_C_STRING]
+		&util::CTransferStream::ReadStringToString,
+		&util::CTransferStream::WriteStringFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_C_STRING_NULL]
+		&util::CTransferStream::ReadStringToString,
+		&util::CTransferStream::WriteStringFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_BOOL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_BOOL_NULL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT8]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT8_NULL]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT8]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT8_NULL]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT16]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT16_NULL]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT16]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT16_NULL]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT32]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT32_NULL]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT32]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT32_NULL]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_FLOAT]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_FLOAT_NULL]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT64]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_INT64_NULL]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT64]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_UINT64_NULL]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_DOUBLE]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_DOUBLE_NULL]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_STRING]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_VECTOR_STRING_NULL]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_BOOL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_BOOL_NULL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT8]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT8_NULL]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT8]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT8_NULL]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT16]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT16_NULL]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT16]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT16_NULL]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT32]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT32_NULL]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT32]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT32_NULL]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_FLOAT]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_FLOAT_NULL]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT64]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_INT64_NULL]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT64]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_UINT64_NULL]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_DOUBLE]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_DOUBLE_NULL]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_STRING]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_SET_STRING_NULL]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_BOOL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_BOOL_NULL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT8]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT8_NULL]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT8]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT8_NULL]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT16]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT16_NULL]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT16]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT16_NULL]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT32]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT32_NULL]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT32]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT32_NULL]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_FLOAT]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_FLOAT_NULL]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT64]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_INT64_NULL]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT64]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_UINT64_NULL]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_DOUBLE]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_DOUBLE_NULL]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_STRING]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_LIST_STRING_NULL]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_BOOL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_BOOL_NULL]
+		&util::CTransferStream::ReadBoolSetToString,
+		&util::CTransferStream::WriteBoolSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT8]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT8_NULL]
+		&util::CTransferStream::ReadInt8SetToString,
+		&util::CTransferStream::WriteInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT8]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT8_NULL]
+		&util::CTransferStream::ReadUInt8SetToString,
+		&util::CTransferStream::WriteUInt8SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT16]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT16_NULL]
+		&util::CTransferStream::ReadInt16SetToString,
+		&util::CTransferStream::WriteInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT16]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT16_NULL]
+		&util::CTransferStream::ReadUInt16SetToString,
+		&util::CTransferStream::WriteUInt16SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT32]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT32_NULL]
+		&util::CTransferStream::ReadInt32SetToString,
+		&util::CTransferStream::WriteInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT32]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT32_NULL]
+		&util::CTransferStream::ReadUInt32SetToString,
+		&util::CTransferStream::WriteUInt32SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_FLOAT]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_FLOAT_NULL]
+		&util::CTransferStream::ReadFloatSetToString,
+		&util::CTransferStream::WriteFloatSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT64]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_INT64_NULL]
+		&util::CTransferStream::ReadInt64SetToString,
+		&util::CTransferStream::WriteInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT64]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_UINT64_NULL]
+		&util::CTransferStream::ReadUInt64SetToString,
+		&util::CTransferStream::WriteUInt64SetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_DOUBLE]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_DOUBLE_NULL]
+		&util::CTransferStream::ReadDoubleSetToString,
+		&util::CTransferStream::WriteDoubleSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_STRING]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_ARRAY_STRING_NULL]
+		&util::CTransferStream::ReadStringSetToString,
+		&util::CTransferStream::WriteStringSetFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_TINY_JSON]
+		&util::CTransferStream::ReadStringToString,
+		&util::CTransferStream::WriteStringFromString,
+	},
+	{	// s_typeOperators[STREAM_DATA_TINY_JSON_NULL]
+		&util::CTransferStream::ReadStringToString,
+		&util::CTransferStream::WriteStringFromString,
+	}
+};
 

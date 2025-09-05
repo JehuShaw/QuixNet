@@ -5,8 +5,8 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _MASTERSERVERREGISTER_H_
-#define	_MASTERSERVERREGISTER_H_
+#ifndef MASTERSERVERREGISTER_H
+#define	MASTERSERVERREGISTER_H
 
 #include "WeakPointer.h"
 #include "AgentMethod.h"
@@ -26,9 +26,9 @@ public:
 
 	void RegisterCommand();
 
-	void RegistModule();
+	void RegisterModule();
 
-	void UnregistModule();
+	void UnregisterModule();
 
 private:
     static int CommandSendMail(const util::CWeakPointer<evt::ArgumentBase>& arg);
@@ -36,9 +36,9 @@ private:
 	static int CommandRestart(const util::CWeakPointer<evt::ArgumentBase>& arg);
 	static int CommandShutdown(const util::CWeakPointer<evt::ArgumentBase>& arg);
 	static int CommandErase(const util::CWeakPointer<evt::ArgumentBase>& arg);
-	static int CommandPlay(const util::CWeakPointer<evt::ArgumentBase>& arg);
+	static int CommandBegin(const util::CWeakPointer<evt::ArgumentBase>& arg);
 	static int CommandStop(const util::CWeakPointer<evt::ArgumentBase>& arg);
 };
 
-#endif	/* _MASTERSERVERREGISTER_H_ */
+#endif	/* MASTERSERVERREGISTER_H */
 

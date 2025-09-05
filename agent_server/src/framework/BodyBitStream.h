@@ -5,7 +5,8 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#pragma once
+#ifndef BODYBITSTREAM_H
+#define BODYBITSTREAM_H
 
 #include "Common.h"
 #include "INotificationBody.h"
@@ -22,7 +23,8 @@ public:
      * reset body data;
      */
     virtual void ResetBody() {
-		this->BitStream::Reset();
+		this->BitStream::SetReadOffset(0);
 	}
 };
 
+#endif /* BODYBITSTREAM_H */

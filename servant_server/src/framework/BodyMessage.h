@@ -5,7 +5,8 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#pragma once
+#ifndef BODYMESSAGE_H
+#define	BODYMESSAGE_H
 
 #include "Common.h"
 #include "INotificationBody.h"
@@ -56,3 +57,4 @@ private:
     util::CWeakPointer<CPlayerBase> m_player;
 };
 
+#endif /* BODYMESSAGE_H */

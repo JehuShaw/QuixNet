@@ -1,6 +1,6 @@
 
-#ifndef __UTF8_H__ 
-#define __UTF8_H__ 
+#ifndef UTF8_H
+#define UTF8_H
 
 #include "Common.h"
 #include <string>
@@ -55,8 +55,8 @@ namespace util {
 	SHARED_DLL_DECL void UTF8StrLen(castr str,unsigned int &size,unsigned int &rawSize,unsigned int count= (unsigned int)-1); 
 	SHARED_DLL_DECL xchar UTF8Value(custr str); 
  
-	extern SHARED_DLL_DECL cuchar gUTFBytes[256]; 
-	extern SHARED_DLL_DECL cuchar gFirstByteMark[7]; 
+	extern SHARED_DLL_DECL cuchar gUTFBytes[256];
+	extern SHARED_DLL_DECL cuchar gFirstByteMark[7];
 	extern SHARED_DLL_DECL const unsigned long gUTFOffsets[6]; 
  
  
@@ -234,4 +234,4 @@ namespace util {
 	typedef UTF8ReverseBidirectionalIterator<UTF8ConstIterator> utf8_const_reverse_iterator; 
 } 
  
-#endif //__UTF8_H__ 
+#endif // UTF8_H 

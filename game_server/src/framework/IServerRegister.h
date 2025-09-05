@@ -5,8 +5,8 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _ISERVERREGISTER_H_
-#define	_ISERVERREGISTER_H_
+#ifndef ISERVERREGISTER_H
+#define	ISERVERREGISTER_H
 
 class IServerRegister
 {
@@ -19,11 +19,11 @@ public:
 
     virtual void RegisterCommand() = 0;
 
-	virtual void RegistModule() = 0;
+	virtual void RegisterModule() = 0;
 
-	virtual void UnregistModule() = 0;
+	virtual void UnregisterModule() = 0;
 
 };
 
-#endif	/* _ISERVERREGISTER_H_ */
+#endif	/* ISERVERREGISTER_H */
 

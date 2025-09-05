@@ -5,7 +5,8 @@
  * Created on 2014_4_5 AM 23:37
  */
 
-#pragma once
+#ifndef CONTROLCENTRESTUBIMPEX_H
+#define CONTROLCENTRESTUBIMPEX_H
 
 #include <map>
 #include "controlcentre.rpcz.h"
@@ -16,6 +17,7 @@
 #include "SpinRWLock.h"
 #include "json/json.h"
 #include "Singleton.h"
+#include "Log.h"
 
 class CControlCentreStubImpEx
 	: public util::Singleton<CControlCentreStubImpEx>
@@ -27,7 +29,7 @@ public:
 		const std::string& connect,
 		const std::string& serverName,
 		const std::string& endPoint,
-		uint16_t serverId,
+		uint32_t serverId,
 		uint16_t serverRegion,
 		const std::string& projectName,
         const std::string& acceptAddress,
@@ -35,8 +37,14 @@ public:
 		int deadline_ms = CALL_DEADLINE_MS)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
+
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return CSR_FAIL;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
 		::node::RegisterRequest request;
 
 		request.set_servername(serverName);
@@ -51,8 +59,9 @@ public:
 		if(!processPath.empty()) {
 			request.set_processpath(processPath);
 		}
+		request.set_agentsize((uint32_t)-1);
 
-		::node::OperateResponse response;
+		::node::RegisterResponse response;
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(deadline_ms);
 		controlCentre_stub.RegisterModule(request, &response, &controller, NULL);
@@ -63,19 +72,25 @@ public:
 	int UnregisterServer(
 		const std::string& connect,
 		const std::string& serverName,
-		uint16_t serverId,
+		uint32_t serverId,
 		int deadline_ms = CALL_DEADLINE_MS)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
+
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return CSR_FAIL;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
 		::node::RemoveRequest request;
 
 		request.set_servername(serverName);
 		request.set_serverid(serverId);
 		request.set_servertype(NODE_REGISTER_TYPE);
 
-		::node::OperateResponse response;
+		::node::RemoveResponse response;
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(deadline_ms);
 		controlCentre_stub.RemoveModule(request, &response, &controller, NULL);
@@ -83,16 +98,22 @@ public:
 		return response.result();
 	}
 
-	bool KeepRegister(
+	int KeepRegister(
 		const std::string& connect,
 		const std::string& serverName,
-		uint16_t serverId,
+		uint32_t serverId,
 		int32_t serverStatus,
 		uint32_t serverLoad)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
+
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return CSR_FAIL;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
 		::node::KeepRegisterRequest request;
 
 		request.set_servername(serverName);
@@ -103,6 +124,7 @@ public:
 		std::string strState;
 		GetState(strState);
 		request.set_serverstate(strState);
+		request.set_agentsize((uint32_t)-1);
 
 		::node::KeepRegisterResponse response;
 		rpcz::rpc_controller controller;
@@ -110,20 +132,27 @@ public:
 		controlCentre_stub.KeepRegister(request, &response, &controller, NULL);
 		controller.wait();
 		if(controller.ok()) {
-			return response.reregister();
+			return response.result();
 		}
-		return false;
+		return CSR_TIMEOUT;
 	}
 
 	inline void GetLowLoadNode(
 		const std::string& inConnect,
 		const std::string& inServerName,
-		std::string& outAcceptAddress,
-		uint16_t& outServerRegion)
+		uint16_t& outServerRegion,
+		std::string* pOutAcceptAddress,
+		std::string* pOutEndPoint)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(inConnect), false);
+
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(inConnect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", inConnect.c_str());
+			return;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
 		::node::LowLoadNodeRequest request;
 		request.set_servername(inServerName);
 		::node::LowLoadNodeResponse response;
@@ -131,19 +160,31 @@ public:
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
 		controlCentre_stub.GetLowLoadNode(request, &response, &controller, NULL);
 		controller.wait();
-		outAcceptAddress = response.acceptaddress();
 		outServerRegion = response.serverregion();
+		if(NULL != pOutAcceptAddress) {
+			*pOutAcceptAddress = response.acceptaddress();
+		}
+		if(NULL != pOutEndPoint) {
+			*pOutEndPoint = response.endpoint();
+		}
 	}
 
 	inline void GetLowLoadByRegion(
 		const std::string& inConnect,
 		const std::string& inServerName,
 		const uint16_t inServerRegion,
-		std::string& outAcceptAddress)
+		std::string* pOutAcceptAddress,
+		std::string* pOutEndPoint)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(inConnect), false);
+
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(inConnect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", inConnect.c_str());
+			return;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
 		::node::RegionLowLoadRequest request;
 		request.set_servername(inServerName);
 		request.set_serverregion(inServerRegion);
@@ -152,18 +193,29 @@ public:
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
 		controlCentre_stub.GetRegionLowLoad(request, &response, &controller, NULL);
 		controller.wait();
-		outAcceptAddress = response.acceptaddress();
+		if(NULL != pOutAcceptAddress) {
+			*pOutAcceptAddress = response.acceptaddress();
+		}
+		if(NULL != pOutEndPoint) {
+			*pOutEndPoint = response.endpoint();
+		}
 	}
 
     inline void UserLogin(
         const std::string& connect,
         const std::string& serverName,
-        uint16_t serverId,
+        uint32_t serverId,
         uint64_t userId)
     {
         CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        ::node::ControlCentreService_Stub controlCentre_stub(
-            &*pChlMgr->GetRpczChannel(connect), false);
+
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return;
+		}
+
+        ::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
         ::node::UserLoginRequest request;
         request.set_servername(serverName);
         request.set_serverid(serverId);
@@ -181,8 +233,13 @@ public:
         uint64_t userId)
     {
         CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        ::node::ControlCentreService_Stub controlCentre_stub(
-            &*pChlMgr->GetRpczChannel(connect), false);
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return;
+		}
+
+        ::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
         ::node::UserLogoutRequest request;
         request.set_servername(serverName);
         request.set_userid(userId);
@@ -193,95 +250,261 @@ public:
         controller.wait();
     }
 
-	inline eServerError CreateUserId(
+	inline eServerError GetUsers(
 		const std::string& connect,
 		uint64_t account,
-		uint64_t& outUserId,
-		uint32_t& outServerRegion,
-		std::string& outCreateTime)
+		::node::GetUserResponse& outResponse)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
-		::node::CreateIdRequest request;
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return SERVER_ERROR_NOTFOUND_CHANNEL;
+		}
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		::node::GetUserRequest request;
 		request.set_account(account);
-		::node::CreateIdResponse response;
+
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
-		controlCentre_stub.CreateUserId(request, &response, &controller, NULL);
+		controlCentre_stub.GetUsers(request, &outResponse, &controller, NULL);
 		controller.wait();
-		outUserId = response.userid();
-		outServerRegion = response.serverregion();
-		outCreateTime = response.createtime();
 
-		return (eServerError)response.result();
+		return (eServerError)outResponse.result();
 	}
 
-	inline eServerError CheckUserId(
+	inline eServerError CreateUser(
 		const std::string& connect,
 		uint64_t account,
-		uint64_t& outUserId,
-		std::string& outCreateTime,
-		uint32_t& outServerRegion,
-		uint64_t& outCas)
+		::node::CreateUserResponse& outResponse,
+		uint32_t mapId,
+		uint32_t maxSize = 0)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
-		::node::CheckIdRequest request;
-		request.set_account(account);
-		::node::CheckIdResponse response;
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return SERVER_ERROR_NOTFOUND_CHANNEL;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		
+		::node::CreateUserRequest inRequest;
+		inRequest.set_account(account);
+		inRequest.set_mapid(mapId);
+		inRequest.set_maxsize(maxSize);
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
-		controlCentre_stub.CheckUserId(request, &response, &controller, NULL);
+		controlCentre_stub.CreateUser(inRequest, &outResponse, &controller, NULL);
 		controller.wait();
-		outUserId = response.userid();
-		outCreateTime = response.createtime();
-		outServerRegion = response.serverregion();
-		outCas = response.cas();
 
-		return (eServerError)response.result();
+		return (eServerError)outResponse.result();
 	}
 
-	inline eServerError UpdateUserRegion(
+	inline eServerError CheckUser(
 		const std::string& connect,
-		uint64_t account,
-		uint32_t serverRegion,
-		uint64_t cas)
+		uint64_t userId,
+		::node::CheckUserResponse& outResponse)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
-		::node::UpdateRegionRequest request;
-		request.set_account(account);
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return SERVER_ERROR_NOTFOUND_CHANNEL;
+		}
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		::node::CheckUserRequest request;
+		request.set_userid(userId);
+		
+		rpcz::rpc_controller controller;
+		controller.set_deadline_ms(CALL_DEADLINE_MS);
+		controlCentre_stub.CheckUser(request, &outResponse, &controller, NULL);
+		controller.wait();
+
+		return (eServerError)outResponse.result();
+	}
+
+	inline eServerError UpdateUser(
+		const std::string& connect,
+		uint64_t userId,
+		uint32_t mapId,
+		uint32_t serverRegion = 0,
+		bool bLogin = false)
+	{
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return SERVER_ERROR_NOTFOUND_CHANNEL;
+		}
+
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		::node::UpdateUserRequest request;
+		request.set_userid(userId);
+		request.set_mapid(mapId);
 		request.set_serverregion(serverRegion);
-		request.set_cas(cas);
-		::node::UpdateRegionResponse response;
+		request.set_login(bLogin);
+		::node::UpdateUserResponse response;
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
-		controlCentre_stub.UpdateUserRegion(request, &response, &controller, NULL);
+		controlCentre_stub.UpdateUser(request, &response, &controller, NULL);
 		controller.wait();
 
 		return (eServerError)response.result();
 	}
 
-	inline eServerError CacheServerStore(
+	inline eServerError DeleteUser(
 		const std::string& connect,
-		const ::node::CacheStoreRequest& request)
+		uint64_t userId)
 	{
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		::node::ControlCentreService_Stub controlCentre_stub(
-			&*pChlMgr->GetRpczChannel(connect), false);
-
-		::node::CacheStoreResponse response;
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return SERVER_ERROR_NOTFOUND_CHANNEL;
+		}
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		::node::DeleteUserRequest request;
+		request.set_userid(userId);
+		::node::DeleteUserResponse response;
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
-		controlCentre_stub.CacheServerStore(request, &response, &controller, NULL);
+		controlCentre_stub.DeleteUser(request, &response, &controller, NULL);
 		controller.wait();
 
 		return (eServerError)response.result();
 	}
 
+	inline std::string GetEndPointFromServant(
+		const std::string& connect,
+		uint32_t serverId)
+	{
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return std::string();
+		}
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+
+		::node::EndPointRequest request;
+		request.set_serverid(serverId);
+		::node::EndPointResponse response;
+		rpcz::rpc_controller controller;
+		controller.set_deadline_ms(CALL_DEADLINE_MS);
+		controlCentre_stub.GetEndPointFromServant(request, &response, &controller, NULL);
+		controller.wait();
+
+		return response.endpoint();
+	}
+
+	inline std::string SeizeServerReturnIP(
+		const std::string& connect,
+		const std::string& serverName,
+		uint64_t userId,
+		bool bLogin)
+	{
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return std::string();
+		}
+		
+		::node::SeizeRequest request;
+		request.set_userid(userId);
+		request.set_servername(serverName);
+		request.set_login(bLogin);
+
+		::node::SeizeResponse response;
+		rpcz::rpc_controller controller;
+		controller.set_deadline_ms(CALL_DEADLINE_MS);
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		controlCentre_stub.SeizeServer(request, &response, &controller, NULL);
+		controller.wait();
+
+		return response.acceptaddress();
+	}
+
+	inline void SeizeServerReturnID(
+		uint32_t& outAgentId,
+		uint32_t& outMapId,
+		const std::string& connect,
+		const std::string& serverName,
+		uint64_t userId,
+		bool bLogin)
+	{
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return;
+		}
+
+		::node::SeizeRequest request;
+		request.set_userid(userId);
+		request.set_servername(serverName);
+		request.set_login(bLogin);
+
+		::node::SeizeResponse response;
+		rpcz::rpc_controller controller;
+		controller.set_deadline_ms(CALL_DEADLINE_MS);
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		controlCentre_stub.SeizeServer(request, &response, &controller, NULL);
+		controller.wait();
+
+		outAgentId = response.serverid();
+		outMapId = response.mapid();
+	}
+
+	inline eServerError FreeServer(
+		const std::string& connect,
+		uint64_t userId,
+		bool bLogout)
+	{
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return SERVER_ERROR_NOTFOUND_CHANNEL;
+		}
+
+		::node::FreeRequest request;
+		request.set_userid(userId);
+		request.set_logout(bLogout);
+
+		::node::FreeResponse freeResponse;
+		rpcz::rpc_controller controller;
+		controller.set_deadline_ms(CALL_DEADLINE_MS);
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		controlCentre_stub.FreeServer(request, &freeResponse, &controller, NULL);
+		controller.wait();
+
+		return (eServerError)freeResponse.result();
+	}
+
+	inline uint64_t GenerateGuid(const std::string& connect)
+	{
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<rpcz::rpc_channel> pChannel(pChlMgr->GetRpczChannel(connect));
+		if (pChannel.IsInvalid()) {
+			OutputError("pChannel.IsInvalid() %s ", connect.c_str());
+			return ID_NULL;
+		}
+
+		::node::ControlCentreVoid request;
+		::node::GuidResponse guidResponse;
+
+		rpcz::rpc_controller controller;
+		controller.set_deadline_ms(CALL_DEADLINE_MS);
+		::node::ControlCentreService_Stub controlCentre_stub(pChannel.operator->(), false);
+		controlCentre_stub.GenerateGuid(request, &guidResponse, &controller, NULL);
+		controller.wait();
+
+		return guidResponse.id();
+	}
+
+	/////////////////////////////////////////////////////////////////////////////
 	inline void AddInfoMethod(std::string strName,
 		util::CAutoPointer<evt::MethodRSBase> pInfoMethod) {
 
@@ -335,3 +558,4 @@ private:
 	thd::CSpinRWLock m_rwInfoLock;
 };
 
+#endif /* CONTROLCENTRESTUBIMPEX_H */

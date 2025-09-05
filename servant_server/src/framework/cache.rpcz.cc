@@ -21,52 +21,13 @@ void rpcz_protobuf_AssignDesc_cache_2eproto() {
 
 namespace {
 
-GOOGLE_PROTOBUF_DECLARE_ONCE(protobuf_AssignDescriptors_once_);
+::google::protobuf::internal::once_flag protobuf_AssignDescriptors_once_;
 inline void protobuf_AssignDescriptorsOnce() {
-  ::google::protobuf::GoogleOnceInit(&protobuf_AssignDescriptors_once_,
+  ::google::protobuf::internal::call_once(protobuf_AssignDescriptors_once_,
                  &rpcz_protobuf_AssignDesc_cache_2eproto);
 }
 
-void protobuf_RegisterTypes(const ::std::string&) {
-  protobuf_AssignDescriptorsOnce();
-}
-
 }  // namespace
-
-void rpcz_protobuf_ShutdownFile_cache_2eproto() {
-}
-
-void rpcz_protobuf_AddDesc_cache_2eproto() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::node::protobuf_AddDesc_void_5fpacket_2eproto();
-  ::node::protobuf_AddDesc_interest_5fpacket_2eproto();
-  ::node::protobuf_AddDesc_data_5fpacket_2eproto();
-  ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\013cache.proto\022\004node\032\021void_packet.proto\032\025"
-    "interest_packet.proto\032\021data_packet.proto"
-    "\"c\n\tMCRequest\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \001("
-    "\014\022\r\n\005flags\030\003 \001(\r\022\016\n\006expiry\030\004 \001(\r\022\013\n\003cas\030"
-    "\005 \001(\004\022\016\n\006result\030\006 \001(\005\"y\n\014CacheRequest\022\037\n"
-    "\006values\030\001 \003(\0132\017.node.MCRequest\022\013\n\003key\030\002 "
-    "\001(\t\022\014\n\004data\030\003 \001(\014\022\016\n\006offset\030\004 \001(\r\022\r\n\005cou"
-    "nt\030\005 \001(\r\022\016\n\006result\030\006 \001(\005\"[\n\rCacheRespons"
-    "e\022\037\n\006values\030\001 \003(\0132\017.node.MCRequest\022\013\n\003ke"
-    "y\030\002 \001(\t\022\014\n\004data\030\003 \001(\014\022\016\n\006result\030\004 \001(\0052\204\002"
-    "\n\014CacheService\0228\n\022HandleNotification\022\020.n"
-    "ode.DataPacket\032\020.node.DataPacket\0224\n\016Hand"
-    "leProtocol\022\020.node.DataPacket\032\020.node.Data"
-    "Packet\022C\n\031ListNotificationInterests\022\020.no"
-    "de.VoidPacket\032\024.node.InterestPacket\022\?\n\025L"
-    "istProtocolInterests\022\020.node.VoidPacket\032\024"
-    ".node.InterestPacket", 660);
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
-    "cache.proto", &protobuf_RegisterTypes);
-  ::google::protobuf::internal::OnShutdown(&rpcz_protobuf_ShutdownFile_cache_2eproto);
-}
 
 // ===================================================================
 

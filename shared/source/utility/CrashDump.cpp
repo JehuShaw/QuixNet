@@ -1,4 +1,4 @@
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 
 #include "CrashDump.h"
 #include <signal.h>
@@ -12,8 +12,7 @@
 
 namespace Frame
 {
-	CrashDump *CrashDump::s_pSelf = NULL;
-	char *CrashDump::s_pDumpBuff = NULL;
+	SHARED_DLL_DECL CrashDump *CrashDump::s_pSelf = NULL;
 	LPTOP_LEVEL_EXCEPTION_FILTER CrashDump::s_previousFilter = NULL;
 	LPTOP_LEVEL_EXCEPTION_FILTER CrashDump::s_CBFilter = NULL;
 
@@ -33,20 +32,12 @@ namespace Frame
 		if (NULL == s_pSelf) {
 			s_pSelf = new CrashDump(CBFilter, minidumptype);
 		}
-
-		// 用于准备生成dump 的内存空间
-		if (NULL == s_pDumpBuff) {
-			s_pDumpBuff = new char[1024 * 1024 * 10];
-		}
-
 		return s_pSelf;
 	}
 
 	void CrashDump::End() {
-		if (NULL != s_pSelf) {
-			delete s_pSelf;
-			s_pSelf = NULL;
-		}
+		delete s_pSelf;
+		s_pSelf = NULL;
 	}
 
 	CrashDump::CrashDump(LPTOP_LEVEL_EXCEPTION_FILTER CBFilter/* = NULL*/, MINIDUMP_TYPE minidumptype/* = MiniDumpNormal*/) {
@@ -112,27 +103,19 @@ namespace Frame
 	}
 
 	CrashDump::~CrashDump() {
-		if (NULL != s_previousFilter) {
-			SetUnhandledExceptionFilter(s_previousFilter) ;
-			s_previousFilter = NULL;
-			s_CBFilter = NULL;
-		}
+		SymCleanup(GetCurrentProcess());
+		
+		SetUnhandledExceptionFilter(s_previousFilter) ;
+		s_previousFilter = NULL;
+		s_CBFilter = NULL;
 
 
 #if _MSC_VER >= 1400  // MSVC 2005/8
-		if (NULL != s_previous_iph)
-		{
-			_set_invalid_parameter_handler(s_previous_iph);
-			s_previous_iph = NULL;
-		}
+		_set_invalid_parameter_handler(s_previous_iph);
+		s_previous_iph = NULL;
 #endif  // _MSC_VER >= 1400
-		if (NULL != s_previous_pch)
-		{
-			_set_purecall_handler(s_previous_pch);
-			s_previous_pch = NULL;
-		}
-
-		s_pSelf = NULL;
+		_set_purecall_handler(s_previous_pch);
+		s_previous_pch = NULL;
 	}
 
 
@@ -156,11 +139,6 @@ namespace Frame
 	}
 
 	INT CrashDump::CreateMiniDump(LPEXCEPTION_POINTERS ExceptionInfo) {
-		if (NULL != s_pDumpBuff) {
-			// 释放空间，用于dump生成
-			delete s_pDumpBuff;
-			s_pDumpBuff = NULL;
-		}
 
 		LONG ret = EXCEPTION_EXECUTE_HANDLER; 
 		if (ExceptionInfo == NULL) {
@@ -240,11 +218,16 @@ namespace Frame
 
 		// Initialize stack frame.
 		memset(&StackFrame, 0, sizeof(StackFrame));
-		StackFrame.AddrPC.Offset		= ExceptionInfo->ContextRecord->Eip;
+#if defined(_WIN64)
+		DWORD64 nOffset = ExceptionInfo->ContextRecord->Rip;
+#else
+		DWORD nOffset = ExceptionInfo->ContextRecord->Eip;
+#endif
+		StackFrame.AddrPC.Offset		= nOffset;
 		StackFrame.AddrPC.Mode			= AddrModeFlat;
-		StackFrame.AddrFrame.Offset		= ExceptionInfo->ContextRecord->Ebp;
+		StackFrame.AddrFrame.Offset		= nOffset;
 		StackFrame.AddrFrame.Mode		= AddrModeFlat;
-		StackFrame.AddrStack.Offset		= ExceptionInfo->ContextRecord->Esp;
+		StackFrame.AddrStack.Offset		= nOffset;
 		StackFrame.AddrStack.Mode		= AddrModeFlat;
 		StackFrame.AddrBStore.Mode		= AddrModeFlat;
 		StackFrame.AddrReturn.Mode		= AddrModeFlat;
@@ -383,7 +366,8 @@ namespace Frame
 	}
 
 	void CrashDump::terminator() {
-		int* hsz = NULL; *hsz = 0; 
+		// int* hsz = NULL; *hsz = 0;
+		abort();
 	}
 
 	LPTOP_LEVEL_EXCEPTION_FILTER CrashDump::GetPreviousFilter() const {

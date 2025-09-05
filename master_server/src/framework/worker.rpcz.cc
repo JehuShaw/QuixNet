@@ -21,49 +21,13 @@ void rpcz_protobuf_AssignDesc_worker_2eproto() {
 
 namespace {
 
-GOOGLE_PROTOBUF_DECLARE_ONCE(protobuf_AssignDescriptors_once_);
+::google::protobuf::internal::once_flag protobuf_AssignDescriptors_once_;
 inline void protobuf_AssignDescriptorsOnce() {
-  ::google::protobuf::GoogleOnceInit(&protobuf_AssignDescriptors_once_,
+  ::google::protobuf::internal::call_once(protobuf_AssignDescriptors_once_,
                  &rpcz_protobuf_AssignDesc_worker_2eproto);
 }
 
-void protobuf_RegisterTypes(const ::std::string&) {
-  protobuf_AssignDescriptorsOnce();
-}
-
 }  // namespace
-
-void rpcz_protobuf_ShutdownFile_worker_2eproto() {
-}
-
-void rpcz_protobuf_AddDesc_worker_2eproto() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::node::protobuf_AddDesc_void_5fpacket_2eproto();
-  ::node::protobuf_AddDesc_interest_5fpacket_2eproto();
-  ::node::protobuf_AddDesc_data_5fpacket_2eproto();
-  ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014worker.proto\022\004node\032\021void_packet.proto\032"
-    "\025interest_packet.proto\032\021data_packet.prot"
-    "o2\322\003\n\rWorkerService\0224\n\016HandleProtocol\022\020."
-    "node.DataPacket\032\020.node.DataPacket\0228\n\022Han"
-    "dleNotification\022\020.node.DataPacket\032\020.node"
-    ".DataPacket\022\?\n\025ListProtocolInterests\022\020.n"
-    "ode.VoidPacket\032\024.node.InterestPacket\022C\n\031"
-    "ListNotificationInterests\022\020.node.VoidPac"
-    "ket\032\024.node.InterestPacket\0222\n\014SendToClien"
-    "t\022\020.node.DataPacket\032\020.node.DataPacket\0221\n"
-    "\013CloseClient\022\020.node.DataPacket\032\020.node.Da"
-    "taPacket\0222\n\014SendToWorker\022\020.node.DataPack"
-    "et\032\020.node.DataPacket\0220\n\nKickLogged\022\020.nod"
-    "e.DataPacket\032\020.node.DataPacket", 550);
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
-    "worker.proto", &protobuf_RegisterTypes);
-  ::google::protobuf::internal::OnShutdown(&rpcz_protobuf_ShutdownFile_worker_2eproto);
-}
 
 // ===================================================================
 
@@ -103,10 +67,34 @@ void WorkerService::ListNotificationInterests(const ::node::VoidPacket&,
               "Method ListNotificationInterests() not implemented.");
 }
 
+void WorkerService::KickLogged(const ::node::DataPacket&,
+                         ::rpcz::reply< ::node::DataPacket> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method KickLogged() not implemented.");
+}
+
 void WorkerService::SendToClient(const ::node::DataPacket&,
                          ::rpcz::reply< ::node::DataPacket> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
               "Method SendToClient() not implemented.");
+}
+
+void WorkerService::BroadcastToClient(const ::node::BroadcastRequest&,
+                         ::rpcz::reply< ::node::VoidPacket> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method BroadcastToClient() not implemented.");
+}
+
+void WorkerService::SendToPlayer(const ::node::ForwardRequest&,
+                         ::rpcz::reply< ::node::DataPacket> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method SendToPlayer() not implemented.");
+}
+
+void WorkerService::PostToPlayer(const ::node::ForwardRequest&,
+                         ::rpcz::reply< ::node::VoidPacket> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method PostToPlayer() not implemented.");
 }
 
 void WorkerService::CloseClient(const ::node::DataPacket&,
@@ -115,16 +103,16 @@ void WorkerService::CloseClient(const ::node::DataPacket&,
               "Method CloseClient() not implemented.");
 }
 
+void WorkerService::CloseAllClients(const ::node::BroadcastRequest&,
+                         ::rpcz::reply< ::node::VoidPacket> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method CloseAllClients() not implemented.");
+}
+
 void WorkerService::SendToWorker(const ::node::DataPacket&,
                          ::rpcz::reply< ::node::DataPacket> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
               "Method SendToWorker() not implemented.");
-}
-
-void WorkerService::KickLogged(const ::node::DataPacket&,
-                         ::rpcz::reply< ::node::DataPacket> reply) {
-  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
-              "Method KickLogged() not implemented.");
 }
 
 void WorkerService::call_method(const ::google::protobuf::MethodDescriptor* method,
@@ -153,22 +141,42 @@ void WorkerService::call_method(const ::google::protobuf::MethodDescriptor* meth
           ::rpcz::reply< ::node::InterestPacket>(channel));
       break;
     case 4:
-      SendToClient(
+      KickLogged(
           *::google::protobuf::down_cast<const ::node::DataPacket*>(&request),
           ::rpcz::reply< ::node::DataPacket>(channel));
       break;
     case 5:
-      CloseClient(
+      SendToClient(
           *::google::protobuf::down_cast<const ::node::DataPacket*>(&request),
           ::rpcz::reply< ::node::DataPacket>(channel));
       break;
     case 6:
-      SendToWorker(
+      BroadcastToClient(
+          *::google::protobuf::down_cast<const ::node::BroadcastRequest*>(&request),
+          ::rpcz::reply< ::node::VoidPacket>(channel));
+      break;
+    case 7:
+      SendToPlayer(
+          *::google::protobuf::down_cast<const ::node::ForwardRequest*>(&request),
+          ::rpcz::reply< ::node::DataPacket>(channel));
+      break;
+    case 8:
+      PostToPlayer(
+          *::google::protobuf::down_cast<const ::node::ForwardRequest*>(&request),
+          ::rpcz::reply< ::node::VoidPacket>(channel));
+      break;
+    case 9:
+      CloseClient(
           *::google::protobuf::down_cast<const ::node::DataPacket*>(&request),
           ::rpcz::reply< ::node::DataPacket>(channel));
       break;
-    case 7:
-      KickLogged(
+    case 10:
+      CloseAllClients(
+          *::google::protobuf::down_cast<const ::node::BroadcastRequest*>(&request),
+          ::rpcz::reply< ::node::VoidPacket>(channel));
+      break;
+    case 11:
+      SendToWorker(
           *::google::protobuf::down_cast<const ::node::DataPacket*>(&request),
           ::rpcz::reply< ::node::DataPacket>(channel));
       break;
@@ -195,8 +203,16 @@ const ::google::protobuf::Message& WorkerService::GetRequestPrototype(
     case 5:
       return ::node::DataPacket::default_instance();
     case 6:
-      return ::node::DataPacket::default_instance();
+      return ::node::BroadcastRequest::default_instance();
     case 7:
+      return ::node::ForwardRequest::default_instance();
+    case 8:
+      return ::node::ForwardRequest::default_instance();
+    case 9:
+      return ::node::DataPacket::default_instance();
+    case 10:
+      return ::node::BroadcastRequest::default_instance();
+    case 11:
       return ::node::DataPacket::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -221,8 +237,16 @@ const ::google::protobuf::Message& WorkerService::GetResponsePrototype(
     case 5:
       return ::node::DataPacket::default_instance();
     case 6:
-      return ::node::DataPacket::default_instance();
+      return ::node::VoidPacket::default_instance();
     case 7:
+      return ::node::DataPacket::default_instance();
+    case 8:
+      return ::node::VoidPacket::default_instance();
+    case 9:
+      return ::node::DataPacket::default_instance();
+    case 10:
+      return ::node::VoidPacket::default_instance();
+    case 11:
       return ::node::DataPacket::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -327,12 +351,33 @@ void WorkerService_Stub::ListNotificationInterests(const ::node::VoidPacket& req
     throw ::rpcz::rpc_error(rpc_controller);
   }
 }
-void WorkerService_Stub::SendToClient(const ::node::DataPacket& request,
+void WorkerService_Stub::KickLogged(const ::node::DataPacket& request,
                               ::node::DataPacket* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
                         WorkerService::descriptor()->method(4),
+                        request, response, rpc_controller, done);
+}
+void WorkerService_Stub::KickLogged(const ::node::DataPacket& request,
+                              ::node::DataPacket* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(4),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void WorkerService_Stub::SendToClient(const ::node::DataPacket& request,
+                              ::node::DataPacket* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(5),
                         request, response, rpc_controller, done);
 }
 void WorkerService_Stub::SendToClient(const ::node::DataPacket& request,
@@ -341,7 +386,70 @@ void WorkerService_Stub::SendToClient(const ::node::DataPacket& request,
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
   channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(4),
+                        WorkerService::descriptor()->method(5),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void WorkerService_Stub::BroadcastToClient(const ::node::BroadcastRequest& request,
+                              ::node::VoidPacket* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(6),
+                        request, response, rpc_controller, done);
+}
+void WorkerService_Stub::BroadcastToClient(const ::node::BroadcastRequest& request,
+                              ::node::VoidPacket* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(6),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void WorkerService_Stub::SendToPlayer(const ::node::ForwardRequest& request,
+                              ::node::DataPacket* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(7),
+                        request, response, rpc_controller, done);
+}
+void WorkerService_Stub::SendToPlayer(const ::node::ForwardRequest& request,
+                              ::node::DataPacket* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(7),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void WorkerService_Stub::PostToPlayer(const ::node::ForwardRequest& request,
+                              ::node::VoidPacket* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(8),
+                        request, response, rpc_controller, done);
+}
+void WorkerService_Stub::PostToPlayer(const ::node::ForwardRequest& request,
+                              ::node::VoidPacket* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(8),
                         request, response, &rpc_controller, NULL);
   rpc_controller.wait();
   if (!rpc_controller.ok()) {
@@ -353,7 +461,7 @@ void WorkerService_Stub::CloseClient(const ::node::DataPacket& request,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(5),
+                        WorkerService::descriptor()->method(9),
                         request, response, rpc_controller, done);
 }
 void WorkerService_Stub::CloseClient(const ::node::DataPacket& request,
@@ -362,7 +470,28 @@ void WorkerService_Stub::CloseClient(const ::node::DataPacket& request,
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
   channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(5),
+                        WorkerService::descriptor()->method(9),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void WorkerService_Stub::CloseAllClients(const ::node::BroadcastRequest& request,
+                              ::node::VoidPacket* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(10),
+                        request, response, rpc_controller, done);
+}
+void WorkerService_Stub::CloseAllClients(const ::node::BroadcastRequest& request,
+                              ::node::VoidPacket* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        WorkerService::descriptor()->method(10),
                         request, response, &rpc_controller, NULL);
   rpc_controller.wait();
   if (!rpc_controller.ok()) {
@@ -374,7 +503,7 @@ void WorkerService_Stub::SendToWorker(const ::node::DataPacket& request,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(6),
+                        WorkerService::descriptor()->method(11),
                         request, response, rpc_controller, done);
 }
 void WorkerService_Stub::SendToWorker(const ::node::DataPacket& request,
@@ -383,28 +512,7 @@ void WorkerService_Stub::SendToWorker(const ::node::DataPacket& request,
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
   channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(6),
-                        request, response, &rpc_controller, NULL);
-  rpc_controller.wait();
-  if (!rpc_controller.ok()) {
-    throw ::rpcz::rpc_error(rpc_controller);
-  }
-}
-void WorkerService_Stub::KickLogged(const ::node::DataPacket& request,
-                              ::node::DataPacket* response,
-                              ::rpcz::rpc_controller* rpc_controller,
-                              ::rpcz::closure* done) {
-  channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(7),
-                        request, response, rpc_controller, done);
-}
-void WorkerService_Stub::KickLogged(const ::node::DataPacket& request,
-                              ::node::DataPacket* response,
-                              long deadline_ms) {
-  ::rpcz::rpc_controller rpc_controller;
-  rpc_controller.set_deadline_ms(deadline_ms);
-  channel_->call_method(service_name_,
-                        WorkerService::descriptor()->method(7),
+                        WorkerService::descriptor()->method(11),
                         request, response, &rpc_controller, NULL);
   rpc_controller.wait();
   if (!rpc_controller.ok()) {

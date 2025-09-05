@@ -5,8 +5,8 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _LOGGINGMODULE_H
-#define	_LOGGINGMODULE_H
+#ifndef LOGGINGMODULE_H
+#define	LOGGINGMODULE_H
 
 #include "ModuleManager.h"
 #include "Singleton.h"
@@ -41,5 +41,5 @@ private:
 	int m_nServerId;
 };
 
-#endif	/* _LOGGINGMODULE_H */
+#endif	/* LOGGINGMODULE_H */
 

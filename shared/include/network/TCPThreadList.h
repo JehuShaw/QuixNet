@@ -6,10 +6,10 @@
  * Created on 2014.01.17
  */
 
-#ifndef TCPTHREADLIST_H_
-#define TCPTHREADLIST_H_
+#ifndef TCPTHREADLIST_H
+#define TCPTHREADLIST_H
 
-#if !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ))
+#if !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 ))
 
 #include "TCPThreadInfo.h"
 #include "SpinLock.h"
@@ -97,9 +97,9 @@ namespace ntwk
 
 }
 
-#endif /* !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )) */
+#endif /* !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 )) */
 
-#endif /* TCPTHREADLIST_H_ */
+#endif /* TCPTHREADLIST_H */
 
 
 

@@ -1,6 +1,6 @@
 
-#ifndef __SKIPLIST_H_
-#define __SKIPLIST_H_
+#ifndef SKIPLIST_RANK_H
+#define SKIPLIST_RANK_H
 
 #include<stdlib.h>
 
@@ -820,4 +820,4 @@ bool CSkipList<KeyType, ValueType>::GetMidMoreNodes(NodeRankType* outNodes, unsi
 
 }
 
-#endif /* __SKIPLIST_H_ */
+#endif /* SKIPLIST_RANK_H */

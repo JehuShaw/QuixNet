@@ -4,9 +4,10 @@
  *
  */
 
-#ifndef __SCOPEDLOCK_H_
-#define __SCOPEDLOCK_H_
+#ifndef SCOPEDLOCK_H
+#define SCOPEDLOCK_H
 
+#include <stddef.h>
 #include "ILock.h"
 
 namespace thd {
@@ -19,25 +20,36 @@ class CScopedLock
    * immediately.
    */
   explicit CScopedLock(ILock& lock) throw()
-    : m_lock(lock)
+    : m_lock(&lock)
   {
-    m_lock.Lock();
+    m_lock->Lock();
   }
 
   explicit CScopedLock(const ILock& lock) throw()
-	  : m_lock(const_cast<ILock&>(lock))
+	  : m_lock(const_cast<ILock*>(&lock))
   {
-	  m_lock.Lock();
+	  m_lock->Lock();
   }
 
   /** Destructor. Unlocks the Lock. */
-  ~CScopedLock() throw()
+  ~CScopedLock() noexcept
   {
-    m_lock.Unlock();
+	  if (m_lock == NULL) {
+		  return;
+	  }
+	  m_lock->Unlock();
+  }
+
+  void Unlock() throw() {
+	  if (m_lock == NULL) {
+		  return;
+	  }
+	  m_lock->Unlock();
+	  m_lock = NULL;
   }
 
 private:
-  ILock& m_lock;
+  ILock* m_lock;
 
   CScopedLock(const CScopedLock& orig);
   CScopedLock& operator=(const CScopedLock &orig);
@@ -46,6 +58,6 @@ private:
 }; // namespace thd
 
 
-#endif // __SCOPEDLOCK_H_
+#endif // SCOPEDLOCK_H
 
 /* end of header file */

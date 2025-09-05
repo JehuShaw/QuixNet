@@ -5,8 +5,8 @@
  * Created on 2014_6_25, 21:20
  */
 
-#ifndef _SEPATABLESTORE_H
-#define _SEPATABLESTORE_H
+#ifndef SEPATABLESTORE_H
+#define SEPATABLESTORE_H
 
 #include <vector>
 #include "Common.h"
@@ -16,10 +16,10 @@
 class CSepaTableStore
 {
 public:
-	CSepaTableStore(uint16_t u16CacheId);
+	CSepaTableStore(uint32_t uCacheId);
 	~CSepaTableStore();
 
-	static int LoadMaxTableSize(uint16_t u16CacheId, const char* szSPMaxTableSize);
+	static int LoadMaxTableSize(uint32_t uCacheId, const char* szSPMaxTableSize);
 
 	bool LoadTables(long nMaxTableSize, const char* szSPExistTables);
 
@@ -27,8 +27,8 @@ public:
 
 	bool Store(const char* szSPStore, uint64_t userId, const char* szContext, int nLength);
 
-	inline uint16_t GetCacheId() const {
-		return m_u16CacheId;
+	inline uint32_t GetCacheId() const {
+		return m_uCacheId;
 	}
 
 private:
@@ -71,7 +71,7 @@ private:
 	typedef std::vector<bool> TABLE_STATUS_SET_T;
 	TABLE_STATUS_SET_T m_tableStatus;
 	thd::CSpinRWLock m_rwLock;
-	uint16_t m_u16CacheId;
+	uint32_t m_uCacheId;
 	volatile long m_nMaxTableSize;
 };
 

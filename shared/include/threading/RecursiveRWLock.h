@@ -1,15 +1,13 @@
 
-#ifndef __RECURSIVERWLOCK_H_
-#define __RECURSIVERWLOCK_H_
+#ifndef RECURSIVERWLOCK_H
+#define RECURSIVERWLOCK_H
 
 #include "Common.h"
 #include "IRWLock.h"
 #include "CondVar.h"
 #include "Mutex.h"
 #include "SysCurrentThreadId.h"
-#include "XqxTable2S.h"
-#include "XqxTableIndexS.h"
-#include "XqxTable1Store.h"
+#include "XqxTable1StoreS.h"
 
 namespace thd {
 
@@ -46,9 +44,6 @@ public:
 	 */
 	bool TimedLockWrite(uint32_t msec) throw();
 
-	/** Release the write lock. */
-	void UnlockWrite() throw();
-
 	/** Acquire a read lock, blocking until the lock is acquired. */
 	void LockRead() throw();
 
@@ -62,8 +57,8 @@ public:
 	 */
 	bool TimedLockRead(uint32_t msec) throw();
 
-	/** Release the read lock. */
-	void UnlockRead() throw();
+	/** Release read or write lock. */
+	void Unlock() throw();
 
 	/** Upgrade the read lock. */
 	void UpgradeLockRead() throw();
@@ -76,7 +71,6 @@ public:
 	bool Using() throw();
 
 private:
-	static size_t& GetThreadIndex();
 	bool IncThreadReader();
 	bool DecThreadReader();
 	bool ClearThreadReader();
@@ -89,23 +83,20 @@ private:
 	CCondVar m_lockFree;
 
 private:
-	typedef util::CXqxTable1Store<int32_t> store_table_t;
-	typedef util::CXqxTable2S<store_table_t> thread_table_t;
-	typedef util::CXqxTableIndexS instc_table_t;
 
 	uint32_t m_threadId;
 	int32_t m_recursionCount;
-	size_t m_thisIdx;
-	static thread_table_t s_thdContext;
-	static instc_table_t s_instcIdxs;
+
+	typedef util::CXqxTable1StoreS<int32_t> store_table_t;
+	store_table_t m_thdContext;
 
 private:
 	CRecursiveRWLock(const CRecursiveRWLock& orig) {}
 	CRecursiveRWLock& operator=(const CRecursiveRWLock& right) { return *this; }
 };
 
-}; // namespace thd
+} // namespace thd
 
-#endif // __RECURSIVERWLOCK_H_
+#endif // RECURSIVERWLOCK_H
 
 /* end of source file */

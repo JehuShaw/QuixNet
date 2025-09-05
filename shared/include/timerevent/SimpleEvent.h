@@ -41,13 +41,13 @@ namespace evt
 	template<class T>
 	int SimpleEvent<T>::DispatchEvent(const T& id, const util::CWeakPointer<ArgumentBase>& arg){
         util::CAutoPointer<MethodRIP1Base> pMethod;
-        if(true) {
+        do {
 		    thd::CScopedReadLock scopedReadLock(rwTicket);
 		    typename event_map_t::iterator it(eventmap.find(const_cast<T&>(id)));
 		    if(it != eventmap.end()) {
 			    pMethod = it->second;
 		    }
-        }
+		} while (false);
 
         if(pMethod.IsInvalid()) {
             return FALSE;

@@ -4,7 +4,7 @@
  *
  */
 
-#if !defined(MODULEENV_H)
+#ifndef MODULEENV_H
 #define MODULEENV_H
 
 //! Other libs we depend on.
@@ -12,4 +12,4 @@
 #include "INotificationBody.h"
 #include "ModuleManager.h"
 
-#endif
+#endif /* MODULEENV_H */

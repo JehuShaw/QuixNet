@@ -5,8 +5,8 @@
  * Created on 2014_8_4, 16:00
  */
 
-#ifndef _CACHEDBTYPE_H
-#define	_CACHEDBTYPE_H
+#ifndef CACHEDBTYPE_H
+#define	CACHEDBTYPE_H
 
 enum eDBType {
 	DB_TYPE_TINYINT,
@@ -44,7 +44,7 @@ enum eDBType {
 };
 
 
-#endif /* _CACHEDBTYPE_H */
+#endif /* CACHEDBTYPE_H */
 
 
 

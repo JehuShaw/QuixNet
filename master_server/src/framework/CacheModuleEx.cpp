@@ -2,34 +2,16 @@
 #include "ShareDefines.h"
 
 
-CCacheModuleEx::CCacheModuleEx(void)
-	: CCacheModule()
-{
-}
-
 CCacheModuleEx::CCacheModuleEx(
 	const std::string& moduleName,
 	const std::string& endPoint,
-	uint16_t serverId)
+	uint32_t serverId,
+	bool routeServer,
+	uint64_t routeAddressId,
+	const ROUTE_USERIDS_T& routeUserIds)
 
-	: CCacheModule(moduleName, endPoint, serverId)
+	: CCacheModule(moduleName, endPoint, serverId, routeServer, routeAddressId, routeUserIds)
 {
-	this->moduleName = moduleName;
-}
-
-CCacheModuleEx::CCacheModuleEx(
-	const std::string& moduleName,
-	const std::string& endPoint,
-	uint16_t serverId,
-	const std::string& acceptAddress,
-	const std::string& processPath,
-	const std::string& projectName,
-	uint16_t serverRegion)
-
-	: CCacheModule(moduleName, endPoint, serverId,
-	acceptAddress, processPath, projectName, serverRegion)
-{
-	this->moduleName = moduleName;
 }
 
 bool CCacheModuleEx::FilterProtocolInterest(int nProtocal) {

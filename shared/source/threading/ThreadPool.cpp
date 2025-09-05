@@ -1,7 +1,11 @@
 #include "ThreadPool.h"
 #include "Log.h"
+#include "SpinLock.h"
+#include "ScopedLock.h"
 #include "CircleQueue.h"
 #include "SysTickCount.h"
+#include "ThreadIndexManager.h"
+#include "PoolBase.h"
 
 using namespace util;
 
@@ -9,33 +13,23 @@ using namespace util;
 #include <process.h>
 #endif
 
+#define MAX_IDLE_TIME 0xFFFFFFFFFFFFFFFF
+
 namespace thd {
 
-inline static int32_t AtomicDecUntilZero(volatile int32_t* pValue) {
-	int32_t Old;
-	int32_t New;
-	do {
-		Old = *pValue;
-		if(Old > 0) {
-			New = Old - 1;
-		} else {
-			return Old;
-		}
-	} while (atomic_cmpxchg(pValue, New, Old) != Old);
-	return Old;
-}
-
-union TicketLockTest
-{
-	uint32_t u;
-	struct
-	{
-		uint16_t ticket;
-		uint16_t users;
-	} s;
-};
-
-uint64_t Thread::lastAddTime = 0;
+	inline static int32_t AtomicDecUntilZero(volatile int32_t* pValue) {
+		int32_t Old;
+		int32_t New;
+		do {
+			Old = *pValue;
+			if (Old > 0) {
+				New = Old - 1;
+			} else {
+				return Old;
+			}
+		} while (atomic_cmpxchg(pValue, Old, New) != Old);
+		return Old;
+	}
 
 SHARED_DLL_DECL CThreadPool ThreadPool;
 
@@ -44,397 +38,458 @@ CThreadPool::CThreadPool()
 	, m_thdsToExit(0)
 	, m_thdsEaten(0)
 	, m_bShutdown(false)
+	, m_nCurSize(0)
+    , m_nOffset(-1)
 {
-	m_pActiveLock = new CSpinRWLock;
-	m_pFreeLock = new CSpinRWLock;
-	m_ptbQueue = new CCircleQueue<ThreadBase *>;
+	m_pArrLock = new CSpinLock;
+//	m_arrThreads = new Thread *[THREAD_MAX_SIZE];
+	
+	m_pTbQueue = new CCircleQueue<ThreadBase*, 128>;
 }
 
-CThreadPool::~CThreadPool()
-{
-	delete m_ptbQueue;
-	m_ptbQueue = NULL;
-	delete m_pFreeLock;
-	m_pFreeLock = NULL;
-	delete m_pActiveLock;
-	m_pActiveLock = NULL;
-}
+	CThreadPool::~CThreadPool()
+	{
+		delete m_pTbQueue;
+		m_pTbQueue = NULL;
 
-bool CThreadPool::ThreadExit(Thread * t)
-{
-	// do we have to kill off some threads?
-	if(AtomicDecUntilZero(&m_thdsToExit) > 0) {
-		// kill us.
-		if(THREAD_STATUS_FREE == t->thdStatus) {
-			CScopedWriteLock wrLock(*m_pFreeLock);
-			m_freeThreads.erase(t);
-		} else if(THREAD_STATUS_ACTIVE == t->thdStatus) {
-			EraseActiveThread(t);
+	//	delete[] m_arrThreads;
+		delete m_pArrLock;
+	}
+
+	bool CThreadPool::ThreadExit(Thread* t)
+	{
+		// Is there a thread that needs to be deleted?
+		if (AtomicDecUntilZero(&m_thdsToExit) > 0
+			|| THREAD_STATUS_TIMEOUT == t->thdStatus) {
+			// Remove the STL of the current thread
+			CThreadIndexManager::Pointer()->Remove();
+			// remove self.
+			atomic_inc(&m_thdsEaten);
+			EraseThread(t);
+#ifdef OPEN_THREAD_POOL_DEBUG
+			if (THREAD_STATUS_TIMEOUT == t->thdStatus) {
+				OutputDebug("Thread %u timeout erase. thdStatus = %d", t->thdController.GetId(), t->thdStatus);
+			} else {
+				OutputDebug("Thread %u thdsToExit erase. thdStatus = %d", t->thdController.GetId(), t->thdStatus);
+			}
+#endif
+			delete t;
+			return true;
 		}
-		delete t;
-		return false;
-	}
 
-	// timeout auto remove
-	if(THREAD_STATUS_TIMEOUT == t->thdStatus) {
-		delete t;
-		return false;
-	}
-
-	// enter the "suspended" pool
-	atomic_inc(&m_thdsEaten);
-
-	bool bExist = false;
-	if(true) {
-		CScopedWriteLock wrLock(*m_pFreeLock);
-
-		// we're definitely no longer active
-		EraseActiveThread(t);
-		uint64_t curTime = GetSysTickCount();
-		t->startTime = curTime;
-		Thread::lastAddTime = curTime;
+		// enter the "suspended" pool
+		atomic_inc(&m_thdsEaten);
 		atomic_xchg8(&t->thdStatus, THREAD_STATUS_FREE);
-		std::pair<ThreadFreeSet::iterator, bool> pairIB(m_freeThreads.insert(t));
-		if(!pairIB.second) {
-			bExist = true;
-		}
-		uint32_t curThreadCount = m_freeThreads.size() + GetActiveThreadCount();
-		if(curThreadCount > m_reserveSize) {
-			ThreadFreeSet::const_iterator lastIt(m_freeThreads.end());
-			--lastIt;
-			Thread* lastThd = *lastIt;
-			if(t != lastThd && (curTime - lastThd->startTime) > THREAD_FREE_TIMEOUT) {
-				m_freeThreads.erase(lastIt);
-				atomic_xchg8(&lastThd->thdStatus, THREAD_STATUS_TIMEOUT);
-				if(!lastThd->thdController.Resume()) {
-					atomic_xchg8(&lastThd->thdStatus, THREAD_STATUS_FREE);
-					m_freeThreads.insert(m_freeThreads.end(), lastThd);
+		do {
+			CScopedLock lock(*m_pArrLock);
+			uint64_t curTime = GetSysTickCount();
+			// Move to idle area
+			if (t->index > -1 && t->index <= m_nOffset) {
+				if (t->index != m_nOffset) {
+					m_arrThreads[t->index] = m_arrThreads[m_nOffset];
+					m_arrThreads[m_nOffset]->index = t->index;
+					t->index = m_nOffset;
+					m_arrThreads[m_nOffset] = t;
+				}
+				t->idleTime = curTime;
+				--m_nOffset;
+			} else {
+				OutputError("CThreadPool::ThreadExit  No found !  index = %d m_nOffset = %d m_nCurSize = %d ", t->index, m_nOffset, m_nCurSize);
+			}
+			// Check timeout
+			int32_t lastIndex = m_nCurSize - 1;
+			if (m_nCurSize > m_reserveSize && m_nOffset < lastIndex) {
+				Thread* lastThd = m_arrThreads[lastIndex];
+				if (curTime - lastThd->idleTime > THREAD_FREE_TIMEOUT) {
+					atomic_xchg8(&lastThd->thdStatus, THREAD_STATUS_TIMEOUT);
+					if (!lastThd->thdController.Resume()) {
+					    atomic_xchg8(&lastThd->thdStatus, THREAD_STATUS_FREE);
+					}
 				}
 			}
-		}
-	}
+		} while (false);
 
-	if(bExist) {
-		OutputError("Thread %u duplicated", t->thdController.GetId());
-	}
 #ifdef OPEN_THREAD_POOL_DEBUG
-	OutputDebug("Thread %u entered the free pool.", t->thdController.GetId());
+		OutputDebug("Thread %u entered the free pool. thdStatus = %d", t->thdController.GetId(), t->thdStatus);
 #endif
-	return true;
-}
-
-Thread * CThreadPool::ActivateFromFree() throw()
-{
-	CScopedWriteLock wtLock(*m_pFreeLock);
-
-	if(m_freeThreads.empty()) {
-		return NULL;
-	}
-	Thread * t = NULL;
-	ThreadFreeSet::iterator itF(m_freeThreads.begin());
-	while(m_freeThreads.end() != itF) {
-
-		t = *itF;
-		if(NULL == t) {
-			m_freeThreads.erase(itF++);
-			continue;
-		}
-		// execute the task on this thread.
-		t->exeTarget = NULL;
-		// resume the thread, and it should start working.
-		if(t->thdController.Resume()) {
-			atomic_dec(&m_thdsEaten);
-
-			m_freeThreads.erase(itF++);
-			InsertActiveThread(t);
-
-			return t;
-		}
-		++itF;
-	}
-	return NULL;
-}
-
-void CThreadPool::ExecuteTask(ThreadBase * exeTarget)
-{
-	if(m_bShutdown) {
-		return;
+		return false;
 	}
 
-	if(NULL != exeTarget) {
-		thd::ThreadBase** pPTB = m_ptbQueue->WriteLock();
-		*pPTB = exeTarget;
-		m_ptbQueue->WriteUnlock();
-	}
-
-    Thread * t = ActivateFromFree();
-	// grab one from the pool, if we have any.
-	if(NULL == t)
+	Thread* CThreadPool::ActivateFromIdle() throw()
 	{
-		uint32_t threadCount = GetActiveThreadCount() + GetFreeThreadCount();
-		if(threadCount >= THREAD_MAX_SIZE) {
-			return;
-		}
-		// creating a new thread means it heads straight to its task.
-		// no need to resume it :)
-		t = StartThread();
-	}
-	else
-	{
-#ifdef OPEN_THREAD_POOL_DEBUG
-		OutputDebug("Thread %u left the thread pool.", t->thdController.GetId());
-#endif
-	}
-
-    if(NULL != t) {
-#ifdef OPEN_THREAD_POOL_DEBUG
-	// add the thread to the active set
-#ifdef WIN32
-	OutputDebug("Thread %u is now executing task at 0x%p.", t->thdController.GetId(), exeTarget);
-#else
-	OutputDebug("Thread %u is now executing task at %p.", t->thdController.GetId(), exeTarget);
-#endif
-#endif
-    }
-
-}
-
-void CThreadPool::Startup(int tCount/* = THREAD_RESERVE*/)
-{
-	int32_t def = tCount - m_reserveSize;
-	m_reserveSize = tCount;
-
-	memory_barrier();
-
-	for(int i= 0; i < def; ++i) {
-		StartThread();
-	}
-#ifdef OPEN_THREAD_POOL_DEBUG
-	OutputDebug("Startup, launched %u threads.", tCount);
-#endif
-}
-
-void CThreadPool::ShowStats()
-{
-	uint32_t activeCount = GetActiveThreadCount();
-	uint32_t freeCount = GetFreeThreadCount();
-	uint32_t requestCount = m_ptbQueue->Size() + activeCount;
-	uint32_t existCount = activeCount + freeCount;
-	float rate = 1.0f;
-	if(existCount > 0) {
-		rate = (float)requestCount * 100.0f / (float)existCount;
-	}
-	PrintDebug("============ ThreadPool Status =============");
-	PrintDebug("Active Threads: %u", activeCount);
-	PrintDebug("Suspended Threads: %u", freeCount);
-	PrintDebug("Requested-To-Existent Ratio: %.3f%% (%u/%u)", rate, requestCount, existCount);
-	PrintDebug("Eaten Count: %d (negative is bad!)", m_thdsEaten);
-	PrintDebug("============================================");
-}
-
-void CThreadPool::KillFreeThreads(const uint32_t count)
-{
-#ifdef OPEN_THREAD_POOL_DEBUG
-	OutputDebug("Killing %u excess threads.", count);
-#endif
-
-	CScopedReadLock rdLock(*m_pFreeLock);
-	Thread * t = NULL;
-	ThreadFreeSet::const_iterator itr(m_freeThreads.begin());
-	ThreadFreeSet::const_iterator end(m_freeThreads.end());
-	for(uint32_t i = 0; i < count && end != itr; ++i, ++itr)
-	{
-		t = *itr;
-		//t->exeTarget = NULL;
-		atomic_inc(&m_thdsToExit);
-		t->thdController.Resume();
-	}
-}
-
-void CThreadPool::Shutdown()
-{
-	atomic_xchg8(&m_bShutdown, true);
-
-	// exit all
-#ifdef OPEN_THREAD_POOL_DEBUG
-	OutputDebug("Shutting down %u threads.", GetActiveThreadCount() + GetFreeThreadCount());
-#endif
-	KillFreeThreads(GetFreeThreadCount());
-	atomic_xadd(&m_thdsToExit, GetActiveThreadCount());
-
-	if(true) {
-		CScopedReadLock rdLock(*m_pActiveLock);
-		ThreadActiveSet::iterator itr(m_activeThreads.begin());
-		for(; itr != m_activeThreads.end(); ++itr)
-		{
-			Thread *t = *itr;
-			if(t->exeTarget) {
-				t->exeTarget->OnShutdown();
-			} else {
-				t->thdController.Resume();
+		CScopedLock lock(*m_pArrLock);
+		for (int32_t i = m_nCurSize - 1; i > m_nOffset; --i) {
+			Thread* t = m_arrThreads[i];
+			if (THREAD_STATUS_FREE != t->thdStatus) {
+				continue;
+			}
+			// resume the thread, and it should start working.
+			if (t->thdController.Resume()) {
+				return t;
 			}
 		}
-	}// scoped
+		// empty array
+		return NULL;
+	}
 
-	for(int i = 0;; ++i) {
+	void CThreadPool::ExecuteTask(ThreadBase * exeTarget)
+	{
+		if (m_bShutdown) {
+			return;
+		}
 
-		bool IsActiveNoEmpty = !IsActiveThreadEmpty();
-		bool IsFreeNoEmpty = !IsFreeThreadEmpty();
-		if(IsActiveNoEmpty || IsFreeNoEmpty)
+		if (NULL != exeTarget) {
+			ThreadBase** ppThdBase = m_pTbQueue->WriteLock();
+			*ppThdBase = exeTarget;
+			m_pTbQueue->WriteUnlock();
+		}
+
+		Thread* t = ActivateFromIdle();
+		// grab one from the pool, if we have any.
+		if (NULL == t)
 		{
-			if(IsFreeNoEmpty)
+			if (GetThreadCount() >= THREAD_MAX_SIZE) {
+				return;
+			}
+			// creating a new thread means it heads straight to its task.
+			// no need to resume it :)
+			t = StartThread();
+		}
+#ifdef OPEN_THREAD_POOL_DEBUG
+		else {
+			OutputDebug("Thread %u left the thread pool.", t->thdController.GetId());
+		}
+
+		if (NULL != t) {
+			// add the thread to the active set
+#ifdef WIN32
+			OutputDebug("Thread %u is now executing task at 0x%p.", t->thdController.GetId(), exeTarget);
+#else
+			OutputDebug("Thread %u is now executing task at %p.", t->thdController.GetId(), exeTarget);
+#endif
+		}
+#endif
+
+	}
+
+	void CThreadPool::Startup(int32_t nCount/* = THREAD_RESERVE*/)
+	{
+		if (nCount >= THREAD_MAX_SIZE) {
+			OutputError("CThreadPool::Startup  No found !  nCount = %d THREAD_MAX_SIZE = %d ", nCount, THREAD_MAX_SIZE);
+			return;
+		}
+
+		int32_t def = nCount - m_reserveSize;
+		m_reserveSize = nCount;
+
+		memory_barrier();
+
+		for (int i = 0; i < def; ++i) {
+			StartThread();
+		}
+#ifdef OPEN_THREAD_POOL_DEBUG
+		OutputDebug("Startup, launched %u threads.", nCount);
+#endif
+	}
+
+	void CThreadPool::ShowStats()
+	{
+		uint32_t activeCount = GetActiveThreadCount();
+		uint32_t freeCount = GetIdleThreadCount();
+		uint32_t requestCount = m_pTbQueue->Size() + activeCount;
+		uint32_t existCount = activeCount + freeCount;
+		float rate = 1.0f;
+		if (existCount > 0) {
+			rate = (float)requestCount * 100.0f / (float)existCount;
+		}
+		PrintDebug("============ ThreadPool Status =============");
+		PrintDebug("Active Threads: %u", activeCount);
+		PrintDebug("Suspended Threads: %u", freeCount);
+		PrintDebug("Requested-To-Existent Ratio: %.3f%% (%u/%u)", rate, requestCount, existCount);
+		PrintDebug("Eaten Count: %d (negative is bad!)", m_thdsEaten);
+		PrintDebug("============================================");
+	}
+
+	void CThreadPool::KillIdleThreads(int32_t count)
+	{
+#ifdef OPEN_THREAD_POOL_DEBUG
+		OutputDebug("Killing %u excess threads.", count);
+#endif
+
+		CScopedLock lock(*m_pArrLock);
+		for (int32_t i = m_nOffset + 1,j = 0; j < count && i < m_nCurSize; ++i) {
+			Thread* t = m_arrThreads[i];
+			atomic_inc(&m_thdsToExit);
+			// resume the thread, and it should start working.
+			if (t->thdController.Resume()) {
+				++j;
+				continue;
+			}
+		}
+	}
+
+	void CThreadPool::Shutdown()
+	{
+		atomic_xchg8(&m_bShutdown, true);
+
+		// exit all
+#ifdef OPEN_THREAD_POOL_DEBUG
+		OutputDebug("Shutting down %u threads.", GetActiveThreadCount() + GetIdleThreadCount());
+#endif
+		KillIdleThreads(GetIdleThreadCount());
+		atomic_xadd(&m_thdsToExit, GetActiveThreadCount());
+
+		std::vector< Thread* > vecThreads;
+		GetActiveThreads(vecThreads);
+		for (int i = 0; i < static_cast<int>(vecThreads.size()); ++i) {
+			Thread* t = vecThreads[i];
+			ThreadBase* exeTarget = t->exeTarget;
+			if (NULL != exeTarget) {
+				exeTarget->OnShutdown();
+			}
+		}
+
+		do {
+			if (GetThreadCount() <= 0)
+			{
+				break;
+			}
+			if (GetIdleThreadCount() > 0)
 			{
 				/*if we are here then a thread in the free pool checked if it was being shut down just before CThreadPool::Shutdown() was called,
-				but called Suspend() just after KillFreeThreads(). All we need to do is to resume it.*/
-				CScopedReadLock rdLock(*m_pFreeLock);
-				Thread * t = NULL;
-				atomic_cmpxchg(&m_thdsToExit, (int32_t)m_freeThreads.size(), 0);
-				ThreadFreeSet::const_iterator itr(m_freeThreads.begin());
-				for(; itr != m_freeThreads.end(); ++itr)
-				{
-					t = *itr;
+				but called Suspend() just after KillIdleThreads(). All we need to do is to resume it.*/
+				CScopedLock lock(*m_pArrLock);
+				int32_t idleThreadCount = m_nCurSize - m_nOffset - 1;
+				atomic_cmpxchg(&m_thdsToExit, 0, idleThreadCount);
+				for (int32_t i = m_nOffset + 1; i < m_nCurSize; ++i) {
+					Thread* t = m_arrThreads[i];
 					t->thdController.Resume();
 				}
 			}
 #ifdef OPEN_THREAD_POOL_DEBUG
-			OutputDebug("%u active and %u free threads remaining...",
-                GetActiveThreadCount(), GetFreeThreadCount());
+			OutputDebug("%u active and %u free %d thdsEaten threads remaining...",
+				GetActiveThreadCount(), GetFreeThreadCount(), (int)m_thdsEaten);
+			do {
+				CScopedLock lock(*m_pArrLock);
+				for (int32_t i = 0; i <= m_nOffset; ++i) {
+					Thread* t = m_arrThreads[i];
+					OutputDebug("Thread %u bad active thread. thdStatus = %d ", t->thdController.GetId(), t->thdStatus);
+				}
+			} while (false);// scoped
 #endif
-            Sleep(1);
-			continue;
-		}
-		break;
+			Sleep(6);
+		} while (true);
 	}
-}
 
 // gets active thread count
-uint32_t CThreadPool::GetActiveThreadCount() {
-	CScopedReadLock rdLock(*m_pActiveLock);
-	return (uint32_t)m_activeThreads.size();
+int32_t CThreadPool::GetActiveThreadCount() {
+	CScopedLock lock(*m_pArrLock);
+	return m_nOffset + 1;
 }
 
 // gets free thread count
-uint32_t CThreadPool::GetFreeThreadCount() {
-	CScopedReadLock rdLock(*m_pFreeLock);
-	return (uint32_t)m_freeThreads.size();
+int32_t CThreadPool::GetIdleThreadCount() {
+	CScopedLock lock(*m_pArrLock);
+	return m_nCurSize - m_nOffset - 1;
 }
 
-void CThreadPool::InsertActiveThread(Thread* t)
-{
-	CScopedWriteLock wtLock(*m_pActiveLock);
-	atomic_xchg8(&t->thdStatus, THREAD_STATUS_ACTIVE);
-	m_activeThreads.insert(t);
+int32_t CThreadPool::GetThreadCount() {
+	CScopedLock lock(*m_pArrLock);
+	return m_nCurSize;
 }
 
-void CThreadPool::EraseActiveThread(Thread* t) {
-	CScopedWriteLock wtLock(*m_pActiveLock);
-	m_activeThreads.erase(t);
+bool CThreadPool::InsertActiveThread(Thread* t) {
+	CScopedLock lock(*m_pArrLock);
+	if (m_nCurSize >= THREAD_MAX_SIZE) {
+		return false;
+	}
+	if (m_nOffset + 1 < m_nCurSize) {
+		m_arrThreads[m_nCurSize] = m_arrThreads[m_nOffset + 1];
+		m_arrThreads[m_nCurSize]->index = m_nCurSize;
+		if (m_nCurSize > 0) {
+			m_arrThreads[m_nCurSize]->idleTime = m_arrThreads[m_nCurSize - 1]->idleTime;
+		}
+	}
+	t->index = m_nOffset + 1;
+	if (t->thdStatus != THREAD_STATUS_TIMEOUT) {
+		t->idleTime = MAX_IDLE_TIME;
+	}
+	m_arrThreads[t->index] = t;
+	++m_nOffset;
+	++m_nCurSize;
+	return true;
 }
 
-Thread * CThreadPool::StartThreadEx(ThreadBase* exeTarget) {
+void CThreadPool::GetActiveThreads(std::vector< Thread* >& vecThreads) {
+	CScopedLock lock(*m_pArrLock);
+	for (int32_t i = 0; i <= m_nOffset; ++i) {
+		vecThreads.push_back(m_arrThreads[i]);
+	}
+}
+
+void CThreadPool::EraseThread(Thread* t) {
+	CScopedLock lock(*m_pArrLock);
+	if (t->index > -1 && t->index <= m_nOffset) {
+		// active area
+		if (t->index != m_nOffset) {
+			m_arrThreads[t->index] = m_arrThreads[m_nOffset];
+			m_arrThreads[m_nOffset]->index = t->index;
+			t->index = m_nOffset;
+			m_arrThreads[m_nOffset] = t;
+		}
+		--m_nOffset;
+	} else if (t->index <= m_nOffset || t->index >= m_nCurSize) {
+		OutputError("CThreadPool::EraseThread  No found !  index = %d m_nOffset = %d m_nCurSize = %d ", t->index, m_nOffset, m_nCurSize);
+		return;
+	}
+	// idle area
+	if (t->index != m_nCurSize - 1) {
+		m_arrThreads[t->index] = m_arrThreads[m_nCurSize - 1];
+		m_arrThreads[t->index]->index = t->index;
+		t->index = m_nCurSize - 1;
+	}
+	m_arrThreads[m_nCurSize - 1] = NULL;
+	--m_nCurSize;
+}
+
+void CThreadPool::EraseIdleThread(Thread* t) {
+	CScopedLock lock(*m_pArrLock);
+	if (t->index <= m_nOffset || t->index >= m_nCurSize) {
+		OutputError("CThreadPool::EraseIdleThread  No found !  index = %d m_nOffset = %d m_nCurSize = %d ", t->index, m_nOffset, m_nCurSize);
+		return;
+	}
+	if (t->index != m_nCurSize - 1) {
+		m_arrThreads[t->index] = m_arrThreads[m_nCurSize - 1];
+		m_arrThreads[t->index]->index = t->index;
+		t->index = m_nCurSize - 1;
+		m_arrThreads[t->index] = t;
+	}
+	m_arrThreads[m_nCurSize - 1] = NULL;
+	--m_nCurSize;
+}
+	
+Thread* CThreadPool::StartThreadEx(ThreadBase* exeTarget) {
+
+	if (m_bShutdown) {
+		return NULL;
+	}
 
 	if(NULL != exeTarget) {
-		ThreadBase** pPTB = m_ptbQueue->WriteLock();
-		*pPTB = exeTarget;
-		m_ptbQueue->WriteUnlock();
+		ThreadBase** ppThdBase = m_pTbQueue->WriteLock();
+		*ppThdBase = exeTarget;
+		m_pTbQueue->WriteUnlock();
+	}
+
+	if (GetThreadCount() >= THREAD_MAX_SIZE) {
+		return ActivateFromIdle();
 	}
 
 	return StartThread();
 }
 
-bool CThreadPool::IsActiveThreadEmpty() {
-	CScopedReadLock rdLock(*m_pActiveLock);
-	return m_activeThreads.empty();
-}
-
-bool CThreadPool::IsFreeThreadEmpty() {
-	CScopedReadLock rdLock(*m_pFreeLock);
-	return m_freeThreads.empty();
-}
-
 /* this is the only platform-specific code. neat, huh! */
-#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ ) || defined ( _WIN64 )
 
 unsigned long WINAPI CThreadPool::thread_proc(void* param)
 {
-	Thread * t = (Thread*)param;
+	Thread* t = (Thread*)param;
+	atomic_xchg8(&t->thdStatus, THREAD_STATUS_ACTIVE);
 	// wait for init
-	for(int i = 0; TRUE == t->lockFlag; ++i) {
+	for(int i = 0; FALSE == t->initFlag; ++i) {
 		cpu_relax(i);
 	}
 
+	if (!thd::ThreadPool.InsertActiveThread(t)) {
+		ExitThread(0);
+		return 0;
+	}
 	atomic_dec(&thd::ThreadPool.m_thdsEaten);
-	thd::ThreadPool.InsertActiveThread(t);
 
-	ThreadBase ** pPTB = NULL;
+	ThreadBase** ppThdBase = NULL;
     uint32_t tid = t->thdController.GetId();
-    bool ht = (t->exeTarget != NULL);
 
 #ifdef OPEN_THREAD_POOL_DEBUG
 	OutputDebug("Thread %u started.", t->thdController.GetId());
 #endif
 	for(;;)
 	{
-		pPTB = ThreadPool.m_ptbQueue->ReadLock();
-		if(NULL != pPTB) {
-			t->exeTarget = *pPTB;
-			ThreadPool.m_ptbQueue->ReadUnlock();
+		ppThdBase = thd::ThreadPool.m_pTbQueue->ReadLock();
+		if (NULL != ppThdBase) {
+			t->exeTarget = *ppThdBase;
+			thd::ThreadPool.m_pTbQueue->ReadUnlock();
 		}
-
-		if(t->exeTarget != NULL)
-		{
-			if(t->exeTarget->OnRun()) {
+		
+		if (t->exeTarget != NULL) {
+			if (t->exeTarget->OnRun()) {
 				delete t->exeTarget;
 			}
 			t->exeTarget = NULL;
-
 		}
 
-		if(ThreadPool.m_ptbQueue->Size() > 0) {
+		if (thd::ThreadPool.m_pTbQueue->Size() > 0) {
 			continue;
 		}
 
-		if(!thd::ThreadPool.ThreadExit(t))
+		if(thd::ThreadPool.ThreadExit(t))
 		{
 #ifdef OPEN_THREAD_POOL_DEBUG
-			OutputDebug("Thread %u exiting.", tid);
+			OutputDebug("Thread Active %u exiting.", tid);
 #endif
 			break;
 		}
 		else
 		{
 #ifdef OPEN_THREAD_POOL_DEBUG
-			if(ht) {
-				OutputDebug("Thread %u waiting for a new task.", tid);
-			}
+			
+			OutputDebug("Thread %u waiting for a new task.", tid);
+			
 #endif
-			// enter "suspended" state. when we return, the threadpool will either tell us to fuk off, or to execute a new task.
-			t->thdController.Suspend();
+			if (thd::ThreadPool.m_pTbQueue->Size() < 1) {
+				// enter "suspended" state. when we return, the threadpool will either tell us to fuk off, or to execute a new task.
+				t->thdController.Suspend();
+			}
 			// after resuming, this is where we will end up. start the loop again, check for tasks, then go back to the threadpool.
+
+			atomic_xchg8(&t->thdStatus, THREAD_STATUS_ACTIVE);
+			thd::ThreadPool.EraseIdleThread(t);
+			if (thd::ThreadPool.m_bShutdown) {
+#ifdef OPEN_THREAD_POOL_DEBUG
+				OutputDebug("Thread Shutdown %u exiting.", tid);
+#endif
+				break;
+			} else {
+				if (!thd::ThreadPool.InsertActiveThread(t)) {
+					break;
+				}
+				atomic_dec(&thd::ThreadPool.m_thdsEaten);
+			}
 		}
 	}
 
 	// at this point the t pointer has already been freed, so we can just cleanly exit.
 	ExitThread(0);
+	return 0;
 }
 
-Thread * CThreadPool::StartThread() throw()
+Thread* CThreadPool::StartThread() throw()
 {
-	if(m_bShutdown) {
+	if (m_bShutdown) {
 		return NULL;
 	}
 
-	Thread * t = new Thread;
+	Thread* t = new util::WrapPoolIs<Thread>;
 	t->thdStatus = THREAD_STATUS_ACTIVE;
 	t->exeTarget = NULL;
-	atomic_xchg8(&t->lockFlag, TRUE);
+	t->idleTime = MAX_IDLE_TIME;
+	t->index = -1;
+	atomic_xchg8(&t->initFlag, FALSE);
 
 	HANDLE hThread = CreateThread(NULL, 0,
 		&thread_proc, (LPVOID)t, 0, NULL);
 
 	if(NULL != hThread) {
 		t->thdController.Setup(hThread);
-		atomic_xchg8(&t->lockFlag, FALSE);
+		atomic_xchg8(&t->initFlag, TRUE);
 		return t;
 	} else {
 		delete t;
@@ -446,69 +501,93 @@ Thread * CThreadPool::StartThread() throw()
 
 void * CThreadPool::thread_proc(void * param)
 {
-	Thread * t = (Thread*)param;
+	Thread* t = (Thread*)param;
+	atomic_xchg8(&t->thdStatus, THREAD_STATUS_ACTIVE);
 	// wait for init
-	for(int i = 0; TRUE == t->lockFlag; ++i) {
+	for(int i = 0; FALSE == t->initFlag; ++i) {
 		cpu_relax(i);
 	}
 
+	if (!thd::ThreadPool.InsertActiveThread(t)) {
+		pthread_exit(0);
+		return NULL;
+	}
 	atomic_dec(&thd::ThreadPool.m_thdsEaten);
-	thd::ThreadPool.InsertActiveThread(t);
 
-	ThreadBase ** pPTB = NULL;
+	ThreadBase** ppThdBase = NULL;
 	uint32_t tid = t->thdController.GetId();
 
 #ifdef OPEN_THREAD_POOL_DEBUG
-	    Log.Debug("ThreadPool", "Thread %u started.", tid);
+	OutputDebug("ThreadPool Thread %u started.", tid);
 #endif
 
 	for(;;)
 	{
-		pPTB = ThreadPool.m_ptbQueue->ReadLock();
-		if(NULL != pPTB) {
-			t->exeTarget = *pPTB;
-			ThreadPool.m_ptbQueue->ReadUnlock();
+		ppThdBase = thd::ThreadPool.m_pTbQueue->ReadLock();
+		if (NULL != ppThdBase) {
+			t->exeTarget = *ppThdBase;
+			thd::ThreadPool.m_pTbQueue->ReadUnlock();
 		}
-
-		if(t->exeTarget != NULL)
-		{
-			if(t->exeTarget->OnRun()) {
+		
+		if (t->exeTarget != NULL) {
+			if (t->exeTarget->OnRun()) {
 				delete t->exeTarget;
 			}
 			t->exeTarget = NULL;
 		}
 
-		if(ThreadPool.m_ptbQueue->Size() > 0) {
+		if (thd::ThreadPool.m_pTbQueue->Size() > 0) {
 			continue;
 		}
 
-		if(!ThreadPool.ThreadExit(t)) {
+		if(thd::ThreadPool.ThreadExit(t)) {
+#ifdef OPEN_THREAD_POOL_DEBUG
+			OutputDebug("Thread Active %u exiting.", tid);
+#endif
 			break;
 		} else {
-			// enter "suspended" state. when we return, the threadpool will either tell us to fuk off, or to execute a new task.
-			t->thdController.Suspend();
+			if (thd::ThreadPool.m_pTbQueue->Size() < 1) {
+				// enter "suspended" state. when we return, the threadpool will either tell us to fuk off, or to execute a new task.
+				t->thdController.Suspend();
+			}
 			// after resuming, this is where we will end up. start the loop again, check for tasks, then go back to the threadpool.
+
+			atomic_xchg8(&t->thdStatus, THREAD_STATUS_ACTIVE);
+			thd::ThreadPool.EraseIdleThread(t);
+			if (thd::ThreadPool.m_bShutdown) {
+#ifdef OPEN_THREAD_POOL_DEBUG
+				OutputDebug("Thread Shutdown %u exiting.", tid);
+#endif
+				break;
+			} else {
+				if (!thd::ThreadPool.InsertActiveThread(t)) {
+					break;
+				}
+				atomic_dec(&thd::ThreadPool.m_thdsEaten);
+			} 
 		}
 	}
 	pthread_exit(0);
+	return NULL;
 }
 
-Thread * CThreadPool::StartThread() throw()
+Thread* CThreadPool::StartThread() throw()
 {
 	if(m_bShutdown) {
 		return NULL;
 	}
 
-	Thread * t = new Thread;
+	Thread* t = new util::WrapPoolIs<Thread>;
 	t->thdStatus = THREAD_STATUS_ACTIVE;
 	t->exeTarget = NULL;
-	atomic_xchg8(&t->lockFlag, TRUE);
+	t->idleTime = MAX_IDLE_TIME;
+	t->index = -1;
+	atomic_xchg8(&t->initFlag, FALSE);
 
 	pthread_t target;
     if(pthread_create(&target, NULL, &thread_proc, (void*)t) == 0) {
 		t->thdController.Setup(target);
-		atomic_xchg8(&t->lockFlag, FALSE);
-		pthread_detach(target);
+		atomic_xchg8(&t->initFlag, TRUE);
 		return t;
 	} else {
 		delete t;

@@ -56,22 +56,21 @@ void CCacheServerRegister::RegisterCommand()
 {
 }
 
-void CCacheServerRegister::RegistModule()
+void CCacheServerRegister::RegisterModule()
 {
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	//register module
-	CControlCentreModule::PTR_T pCtrlCentreModule(
-		CControlCentreModule::Pointer());
+	CAutoPointer<CControlCentreModule> pCtrlCentreModule(
+		new CControlCentreModule(CONTROLCENTRE_MODULE_NAME));
 	pFacade->RegisterModule(pCtrlCentreModule);
 }
 
-void CCacheServerRegister::UnregistModule()
+void CCacheServerRegister::UnregisterModule()
 {
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	//unregister module
-	CControlCentreModule::PTR_T pCtrlCentreModule(
-		CControlCentreModule::Pointer());
-	pFacade->RemoveModule(pCtrlCentreModule->GetModuleName());
+	pFacade->RemoveModule(CONTROLCENTRE_MODULE_NAME);
+
 }
 
 

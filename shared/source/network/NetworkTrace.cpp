@@ -32,10 +32,11 @@ namespace ntwk
 			char szBuff[1024];
 			{
 				char szTemp[1024];
-				snprintf(szTemp,sizeof(szTemp)- 256,"%s [file:%s, function:%s, line:%ld]\n"
-					, message, __FILE__, __FUNCTION__, (long)__LINE__);
+				snprintf(szTemp,sizeof(szTemp) - 1,"%s [NetworkTrace.cpp]\n", message);
+				szTemp[1023] = '\0';
 				
-				vsnprintf(szBuff, sizeof(szBuff)-1, szTemp, args);
+				vsnprintf(szBuff, sizeof(szBuff) - 1, szTemp, args);
+				szBuff[1023] = '\0';
 			}
             (*g_nwTraceMethod)(szBuff);
             va_end(args);

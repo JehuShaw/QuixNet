@@ -5,12 +5,13 @@
  * Created on 2013年10月1日, 上午10:32
  */
 
-#ifndef SPINLOCK_H_
-#define	SPINLOCK_H_
+#ifndef SPINLOCK_H
+#define	SPINLOCK_H
 
 #include "Common.h"
 #include "AtomicLock.h"
 #include "SysTickCount.h"
+#include "ILock.h"
 
 namespace thd {
 
@@ -73,7 +74,7 @@ namespace thd {
 			return true;
 		}
 
-		bool TimedLock(uint32_t msec) throw() {
+		inline bool TimedLock(uint32_t msec) throw() {
 			return TimedLock(msec, GetSysTickCount());
 		}
 
@@ -93,7 +94,7 @@ namespace thd {
 			ucmp.s.users = me + 1;
 			uint32_t cmpnew = ucmp.u;
 
-			if(atomic_cmpxchg(&m_lock.u, cmpnew, cmp) == cmp) {
+			if(atomic_cmpxchg(&m_lock.u, cmp, cmpnew) == cmp) {
 				return true;
 			}
 			return false;
@@ -134,4 +135,4 @@ namespace thd {
 	};
 }
 
-#endif  // SPINLOCK_H_
+#endif  // SPINLOCK_H

@@ -1,6 +1,6 @@
 
-#ifndef __BITSTREAM_H__
-#define __BITSTREAM_H__
+#ifndef BITSTREAM_H
+#define BITSTREAM_H
 
 #include "Common.h"
 #include <string>
@@ -690,4 +690,4 @@ namespace ntwk
 	};	
 }
 
-#endif /*__BITSTREAM_H__*/
+#endif /* BITSTREAM_H */

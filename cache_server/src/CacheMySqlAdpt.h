@@ -5,10 +5,8 @@
  * Created on 2014_8_4, 16:00
  */
 
-#pragma once
-
-#ifndef _CACHEMYSQLADPT_H
-#define	_CACHEMYSQLADPT_H
+#ifndef CACHEMYSQLADPT_H
+#define	CACHEMYSQLADPT_H
 
 #include "Common.h"
 #include "CacheDBType.h"
@@ -19,7 +17,7 @@
 #define SQL_SP_COLUMNS_TYPE "CALL SP_COLUMNS_TYPE(\'%s\',\'%s\');"
 #define SQL_SP_DBSERVERS "CALL SP_SELECT_DBSERVERS(\'%s\');"
 
-#define SQL_INSERT_ROUTE "INSERT INTO `%s`.`%s` (`%s`) VALUES ("I64FMTD");"
+#define SQL_INSERT_ROUTE "INSERT INTO `%s`.`%s` (`%s`) VALUES (" I64FMTD ");"
 
 #define SQL_FIELD_START "`"
 #define SQL_FIELD_END "`"
@@ -48,7 +46,7 @@
 eDBType GetCacheDBTypeFromMySql(const std::string& strType);
 #define GetCacheDBType GetCacheDBTypeFromMySql
 
-#endif /* _CACHEMYSQLADPT_H */
+#endif /* CACHEMYSQLADPT_H */
 
 
 

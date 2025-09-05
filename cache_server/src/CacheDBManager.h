@@ -1,12 +1,12 @@
-/*
+/* 
  * File:   CacheDBManager.h
  * Author: Jehu Shaw
- *
+ * 
  * Created on 2014_8_4, 16:00
  */
 
-#ifndef _CACHEDBMANAGER_H
-#define	_CACHEDBMANAGER_H
+#ifndef CACHEDBMANAGER_H
+#define	CACHEDBMANAGER_H
 
 #include "NodeDefines.h"
 #include "AutoPointer.h"
@@ -18,6 +18,7 @@
 #include "CacheMySqlAdpt.h"
 #endif
 
+typedef std::vector<util::CAutoPointer<db::QueryResult> > DB_RESUTLT_VEC_T;
 
 class CContainerData {
 public:
@@ -121,7 +122,7 @@ public:
 	CCacheDBManager();
 	~CCacheDBManager();
 
-    void Init(uint16_t u16ServerId);
+    void Init();
 
     void Dispose();
 
@@ -150,6 +151,15 @@ public:
 		return it->second.GetDatabase();
     }
 
+	util::CAutoPointer<db::Database> GetRandomDatabase() {
+		thd::CScopedReadLock rLock(m_dbSerRwLock);
+		DB_SERVERS_T::const_iterator it(m_dbservers.begin());
+		if (m_dbservers.end() == it) {
+			return util::CAutoPointer<db::Database>();
+		}
+		return it->second.GetDatabase();
+	}
+
 	void SetAllDBServerState(eDBServerState eServerState);
 
 	void SetDBServerState(uint16_t u16DBId, eDBServerState eServerState);
@@ -168,7 +178,7 @@ public:
 		return SelectDBId(userId, it->second);
 	}
 
-	uint16_t GetDBIdByDirServId(uint16_t serverId) {
+	uint16_t GetDBIdByDirServId(uint32_t serverId) {
 
 		AppConfig::PTR_T pConfig(AppConfig::Pointer());
 		std::string strServIdTable(pConfig->GetString(APPCONFIG_DIRSERVCNTRNAME));
@@ -182,7 +192,7 @@ public:
 		return SelectDBId(serverId, it->second);
 	}
 
-	uint16_t GetDBIdByBalServId(uint16_t serverId) {
+	uint16_t GetDBIdByBalServId(uint32_t serverId) {
 
 		AppConfig::PTR_T pConfig(AppConfig::Pointer());
 		std::string strServIdTable(pConfig->GetString(APPCONFIG_BALSERVCNTRNAME));
@@ -220,7 +230,7 @@ public:
 		return u16DBId;
 	}
 
-	uint16_t GetMinLoadDBIdByBalServId(uint16_t serverId) {
+	uint16_t GetMinLoadDBIdByBalServId(uint32_t serverId) {
 
 		AppConfig::PTR_T pConfig(AppConfig::Pointer());
 		std::string strServIdTable(pConfig->GetString(APPCONFIG_BALSERVCNTRNAME));
@@ -244,7 +254,7 @@ public:
 		return u16DBId;
 	}
 
-	uint16_t GetMinLoadDBIdByDirServId(uint16_t serverId) {
+	uint16_t GetMinLoadDBIdByDirServId(uint32_t serverId) {
 
 		AppConfig::PTR_T pConfig(AppConfig::Pointer());
 		std::string strServIdTable(pConfig->GetString(APPCONFIG_DIRSERVCNTRNAME));
@@ -276,6 +286,12 @@ public:
 
 	static uint64_t GetMaskByTypeSize(int nTypeSize);
 
+	static bool IsDBString(int nDBType);
+
+	bool CheckKeyExist(const std::string& strSQL);
+
+	bool QueryFromAllDB(const std::string& strSQL, DB_RESUTLT_VEC_T* pResults);
+
 private:
     void LoadConfigOptions(util::CAutoPointer<db::Database>& pDatabase);
     void LoadContainers(util::CAutoPointer<db::Database>& pDatabase, const char* szDataDBName);
@@ -284,8 +300,8 @@ private:
 	void LoadDBServers(util::CAutoPointer<db::Database>& pDatabase, const char* szDataDBNames);
 	void GetColumnsType(
 		util::CAutoPointer<db::Database>& pDatabase,
-		DB_COLUMNS_TYPE_T& outColumnsType,
-		const std::string& strTableName,
+		DB_COLUMNS_TYPE_T& outColumnsType, 
+		const std::string& strTableName, 
 		const std::string& strDBName);
 	int GetDBType(const std::string& strType);
 
@@ -300,25 +316,25 @@ private:
 
 	util::CAutoPointer<db::Database> GetValidDb(uint16_t u16DBId);
 
-	uint16_t SelectDBId(uint64_t u64Route, const CContainerData& tableInfo);
-
+	uint16_t SelectDBId(uint64_t u64Route, const CContainerData& tableInfo); 
+	
 	uint16_t MinLoadDBId(uint64_t u64Route, const CContainerData& tableInfo);
 
 	bool SaveRoute(uint16_t u16DBId, const CContainerData& tableInfo, uint64_t u64Route);
 
 	void DisposeAllDBServer();
+
 private:
 	bool m_bInit;
-
+    
     char m_cSeparator;
     char m_cTableMapDelimiter;
-	uint16_t m_u16ServerId;
     DB_CONTAINERS_T m_containers;
 	DB_SERVERS_T m_dbservers;
 	thd::CSpinRWLock m_dbSerRwLock;
 };
 
-#endif /* _CACHEDBMANAGER_H */
+#endif /* CACHEDBMANAGER_H */
 
 
 

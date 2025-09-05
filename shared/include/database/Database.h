@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _DATABASE_H
-#define _DATABASE_H
+#ifndef DATABASE_H
+#define DATABASE_H
 
 #include <string>
 #include "CircleQueue.h"
@@ -317,7 +317,7 @@ public:
 	/************************************************************************/
 	/* Thread Stuff                                                         */
 	/************************************************************************/
-	bool Run();
+	virtual bool Run();
 
 	/************************************************************************/
 	/* Virtual Functions                                                    */
@@ -383,8 +383,8 @@ protected:
 	}
 	void TriggerRun();
 
-	thd::CCircleQueue<util::CAutoPointer<AsyncQueryBase> > m_queQuery;
-	thd::CCircleQueue<QueryStrBuffer> m_queExecute;
+	thd::CCircleQueue<util::CAutoPointer<AsyncQueryBase>, 32> m_queQuery;
+	thd::CCircleQueue<QueryStrBuffer, 32> m_queExecute;
 	////////////////////////////////////////////////////////
 	util::CAutoPointer<DatabaseConnection> * m_arrConnections;
 	int32_t m_nConnectionSize;
@@ -456,4 +456,4 @@ private:
 
 }
 
-#endif
+#endif  /* DATABASE_H */

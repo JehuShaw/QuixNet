@@ -14,12 +14,11 @@
 #include "worker.rpcz.h"
 #include "NodeChannel.h"
 #include "ModuleManager.h"
-#include "IChannelControl.h"
 
 class CServantModule: public mdl::CModule
 {
 public:
-	CServantModule(const char* name, uint16_t serverId);
+	CServantModule(const char* name, uint32_t serverId);
 	~CServantModule(void);
 
 	virtual void OnRegister();
@@ -56,7 +55,7 @@ private:
 		util::CWeakPointer<mdl::IResponse>& reply);
 
 private:
-	uint16_t m_serverId;
+	uint32_t m_serverId;
 };
 
 

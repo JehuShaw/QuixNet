@@ -2,16 +2,16 @@
 #include "LoginServer.h"
 
 CLoginServiceImp::CLoginServiceImp(
-	const std::string& strServerBind,
+	const std::string& endPoint,
 	const std::string& servantAddress,
 	const std::string& serverName,
-	uint16_t serverId,
+	uint32_t serverId,
 	CreatePlayerMethod createPlayerMethod /*= NULL*/, 
 	ListInterestsMethod listProtoMethod /*= NULL*/,
 	ListInterestsMethod listNotifMethod /*= NULL*/)
 
 	: CWorkerServiceImp(
-		strServerBind, servantAddress,
+		endPoint, servantAddress,
 		serverName, serverId, createPlayerMethod,
 		listProtoMethod, listNotifMethod)
 {

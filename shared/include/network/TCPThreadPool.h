@@ -6,10 +6,10 @@
  * Created on 2014.01.17
  */
 
-#ifndef _TCPTHREADPOOL_H__
-#define _TCPTHREADPOOL_H__
+#ifndef TCPTHREADPOOL_H
+#define TCPTHREADPOOL_H
 
-#if !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ))
+#if !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 ))
 
 #include "NetworkTrace.h"
 #include "TCPThreadList.h"
@@ -87,7 +87,7 @@ namespace ntwk
             /* if is leader. */
             if (th->GetIsLeader())
             {
-                NWTrace("[leader as exit] threadid:%d exit...", th->GetThreadId());
+                TRACE_MSG("[leader as exit] threadid:%d exit...", th->GetThreadId());
 
                 /* change to followers. */
                 th->ChangeToFollower();
@@ -105,7 +105,7 @@ namespace ntwk
             atomic_dec(&m_activityNum);
 
 #ifdef SHOW_EXIT_STATE
-            printf("suspendlist threadNum:%d, activityNum:%d, hasLeader:%d, exitNum:%d\n"
+			TRACE_MSG("suspendlist threadNum:%d, activityNum:%d, hasLeader:%d, exitNum:%d\n"
                 , m_suspendList.GetThreadNum(), m_activityNum, m_hasLeader, m_exitNum);
 #endif
 
@@ -140,7 +140,7 @@ namespace ntwk
     };
 
 }
-#endif	/* !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )) */
+#endif	/* !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 )) */
 
-#endif  /* _TCPTHREADPOOL_H__ */
+#endif  /* TCPTHREADPOOL_H */
 

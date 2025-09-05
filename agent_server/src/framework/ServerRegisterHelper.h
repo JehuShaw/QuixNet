@@ -5,12 +5,11 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#ifndef _SERVERREGISTERHELPER_H_
-#define _SERVERREGISTERHELPER_H_
+#ifndef SERVERREGISTERHELPER_H
+#define SERVERREGISTERHELPER_H
 
 #include "NodeDefines.h"
 #include "AgentServerRegister.h"
-
 
 //////////////////////////////////////////////////////////////////////////
 // Use by class CXXXServer
@@ -26,5 +25,5 @@ static util::CAutoPointer<IServerRegister> CreateServerRegister()
 	return util::CAutoPointer<CAgentServerRegister>(new CAgentServerRegister);
 }
 
-#endif /* _SERVERREGISTERHELPER_H_ */
+#endif /* SERVERREGISTERHELPER_H */
 

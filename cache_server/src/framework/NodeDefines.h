@@ -6,8 +6,8 @@
 
 // Configuration Header File
 
-#ifndef _NODEDEFINES_H
-#define _NODEDEFINES_H
+#ifndef NODEDEFINES_H
+#define NODEDEFINES_H
 
 #include "AppConfig.h"
 #include "ShareDefines.h"
@@ -25,20 +25,19 @@ extern int64_t g_recordExpireSec;
 
 #define CALL_REGISTER_MS 15000
 
-#define CALL_DEADLINE_MS 6000
+#define CALL_DEADLINE_MS 12000
 
 #define CALL_UNREGISTER_MS 8000
 
 #define TIMEOUT_MAX_TIMES_REMOVE_CHANNEL 100
 
+#define TIMEOUT_MAX_TIMES_REMOVE_SERVER 100
+
 // 3 second
-#define KEEP_REGISTER_INTERVAL 30
+#define KEEP_REGISTER_INTERVAL 300
 
 // 3 keep register times
 #define KEEP_REGISTER_TIMEOUT (KEEP_REGISTER_INTERVAL*3)
-
-// check CWorkerModule db delay time (0.1 second)
-#define WORKERMODULE_DELAY_TIME 40
 
 // reconnect memcache interval ms
 #define MEMCACHED_RECONNECT_INTERVAL_MS 30000
@@ -56,6 +55,7 @@ extern int64_t g_recordExpireSec;
 #define APPCONFIG_SERVERNAME "ServerName"
 #define APPCONFIG_SERVERREGION "ServerRegion"
 #define APPCONFIG_SERVERBIND "ServerBind"
+#define APPCONFIG_ENDPOINT "EndPoint"
 #define APPCONFIG_SERVANTCONNECT "ServantConnect"
 #define APPCONFIG_SERVERCONNECT "ServerConnect"
 #define APPCONFIG_RPCZTHREADS "RpczThreads"
@@ -72,7 +72,8 @@ extern int64_t g_recordExpireSec;
 #define APPCONFIG_BALSERVCNTRNAME "BalServCntrName"
 #define APPCONFIG_DIRSERVCNTRNAME "DirServCntrName"
 #define APPCONFIG_DATABASECONNECTION "DatabaseConnection"
+#define APPCONFIG_AGENTSERVERNAME "AgentServerName"
 //////////////////////////////////////////////////
 
-#endif  /*_NODEDEFINES_H*/
+#endif  /* NODEDEFINES_H */
 

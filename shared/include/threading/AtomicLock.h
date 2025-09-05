@@ -5,10 +5,10 @@
  * Created on 2013_10_1 10:32
  */
 
-#ifndef ATOMICLOCK_H_
-#define	ATOMICLOCK_H_
+#ifndef ATOMICLOCK_H
+#define	ATOMICLOCK_H
 
-#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 )
 
 //////////////////////////////////////////////////////////////////////////
 #include <intrin.h>
@@ -38,19 +38,19 @@ extern "C" __int64 __cdecl _InterlockedCompareExchange64(__int64 volatile *, __i
 //////////////////////////////////////////////////////////////////////////
 #define atomic_xchg(P, V) _InterlockedExchange((long volatile *)(P), (long)(V))
 #define atomic_xadd(P, V) _InterlockedExchangeAdd((long volatile *)(P), (long)(V))
-#define atomic_cmpxchg(P, N, O) _InterlockedCompareExchange((long volatile *)(P), (long)(N), (long)(O))
+#define atomic_cmpxchg(P, O, N) _InterlockedCompareExchange((long volatile *)(P), (long)(N), (long)(O))
 #define atomic_inc(P) _InterlockedIncrement((long volatile *)(P))
 #define atomic_dec(P) _InterlockedDecrement((long volatile *)(P))
 
 #define atomic_xchg16(P, V) _InterlockedExchange16((short volatile *)(P), (short)(V))
 #define atomic_xadd16(P, V) _InterlockedExchangeAdd16((short volatile *)(P), (short)(V))
-#define atomic_cmpxchg16(P, N, O) _InterlockedCompareExchange16((short volatile *)(P), (short)(N), (short)(O))
+#define atomic_cmpxchg16(P, O, N) _InterlockedCompareExchange16((short volatile *)(P), (short)(N), (short)(O))
 #define atomic_inc16(P) _InterlockedIncrement16((short volatile *)(P))
 #define atomic_dec16(P) _InterlockedDecrement16((short volatile *)(P))
 
 #define atomic_xchg8(P, V) _InterlockedExchange8((char volatile *)(P), (char)(V))
 #define atomic_xadd8(P, V) _InterlockedExchangeAdd8((char volatile *)(P), (char)(V))
-#define atomic_cmpxchg8(P, N, O) _InterlockedCompareExchange8((char volatile *)(P), (char)(N), (char)(O))
+#define atomic_cmpxchg8(P, O, N) _InterlockedCompareExchange8((char volatile *)(P), (char)(N), (char)(O))
 #define atomic_inc8(P) _InterlockedExchangeAdd8((char volatile *)(P), 1)
 #define atomic_dec8(P) _InterlockedExchangeAdd8((char volatile *)(P), -1)
 
@@ -60,7 +60,7 @@ extern "C" __int64 __cdecl _InterlockedCompareExchange64(__int64 volatile *, __i
 #define atomic_xchgptr(P, V) _InterlockedExchange((long volatile *)(P), (long)(V))
 #endif
 
-#define atomic_cmpxchg64(P, N, O) _InterlockedCompareExchange64((long long volatile *)(P), (long long)(N), (long long)(O))
+#define atomic_cmpxchg64(P, O, N) _InterlockedCompareExchange64((long long volatile *)(P), (long long)(N), (long long)(O))
 
 static __forceinline __int64 InterlockedIncre64(
     __int64 volatile *Addend)
@@ -93,7 +93,7 @@ static __forceinline __int64 InterlockedXChg64(__int64 volatile *Target, __int64
 
 #define atomic_xchg64(P, V) InterlockedXChg64((__int64 volatile *)(P), (__int64)(V))
 
-static __forceinline long atomic_or_fetch (volatile long *lock, long value)
+static __forceinline long InterlockedOrFetch (volatile long *lock, long value)
 {
     long old, newvalue;
     do {
@@ -103,8 +103,9 @@ static __forceinline long atomic_or_fetch (volatile long *lock, long value)
 
     return newvalue;
 }
+#define atomic_or_fetch(P, V) InterlockedOrFetch((volatile long *)(P), (long)(V))
 
-static __forceinline long atomic_and_fetch (volatile long *lock, long value)
+static __forceinline long InterlockedAndFetch (volatile long *lock, long value)
 {
     long old, newvalue;
     do {
@@ -114,6 +115,31 @@ static __forceinline long atomic_and_fetch (volatile long *lock, long value)
 
     return newvalue;
 }
+#define atomic_and_fetch(P, V) InterlockedAndFetch((volatile long *)(P), (long)(V))
+
+static __forceinline long InterlockedAddFetch (volatile long *lock, long value)
+{
+	long old, newvalue;
+	do {
+		old = *lock;
+		newvalue = old + value;
+	} while (_InterlockedCompareExchange(lock, newvalue, old) != old);
+
+	return newvalue;
+}
+#define atomic_add_fetch(P,V) InterlockedAddFetch((volatile long *)(P), (long)(V))
+
+static __forceinline long InterlockedSubFetch (volatile long *lock, long value)
+{
+	long old, newvalue;
+	do {
+		old = *lock;
+		newvalue = old - value;
+	} while (_InterlockedCompareExchange(lock, newvalue, old) != old);
+
+	return newvalue;
+}
+#define atomic_sub_fetch(P,V) InterlockedSubFetch((volatile long *)(P), (long)(V))
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -126,7 +152,12 @@ extern "C" void _ReadWriteBarrier();
 
 #endif
 
+#if defined(_WIN64)
+#define smt_pause _mm_pause
+#else
 #define smt_pause() __asm { rep nop }
+#endif
+
 
 inline void cpu_relax( unsigned k )
 {
@@ -167,26 +198,26 @@ inline void cpu_relax( unsigned k )
 
 #define atomic_xchg __sync_lock_test_and_set
 #define atomic_xadd __sync_fetch_and_add
-#define atomic_cmpxchg(P, N, O) (__sync_val_compare_and_swap((P), (O), (N)))
+#define atomic_cmpxchg(P, O, N) (__sync_val_compare_and_swap((P), (O), (N)))
 #define atomic_inc(P) __sync_add_and_fetch((P), 1)
 #define atomic_dec(P) __sync_sub_and_fetch((P), 1)
 
 #define atomic_xchg16 __sync_lock_test_and_set
 #define atomic_xadd16 __sync_fetch_and_add
-#define atomic_cmpxchg16(P, N, O) (__sync_val_compare_and_swap((P), (O), (N)))
+#define atomic_cmpxchg16(P, O, N) (__sync_val_compare_and_swap((P), (O), (N)))
 #define atomic_inc16(P) __sync_add_and_fetch((P), 1)
 #define atomic_dec16(P) __sync_sub_and_fetch((P), 1)
 
 #define atomic_xchg8 __sync_lock_test_and_set
 #define atomic_xadd8 __sync_fetch_and_add
-#define atomic_cmpxchg8(P, N, O) (__sync_val_compare_and_swap((P), (O), (N)))
+#define atomic_cmpxchg8(P, O, N) (__sync_val_compare_and_swap((P), (O), (N)))
 #define atomic_inc8(P) __sync_add_and_fetch((P), 1)
 #define atomic_dec8(P) __sync_sub_and_fetch((P), 1)
 
 #define atomic_xchgptr __sync_lock_test_and_set
 #define atomic_inc64(P) __sync_add_and_fetch((P), 1)
 #define atomic_xchg64 __sync_lock_test_and_set
-#define atomic_cmpxchg64(P, N, O) (__sync_val_compare_and_swap((P), (O), (N)))
+#define atomic_cmpxchg64(P, O, N) (__sync_val_compare_and_swap((P), (O), (N)))
 
 #define atomic_or_fetch __sync_or_and_fetch
 #define atomic_and_fetch __sync_and_and_fetch
@@ -234,4 +265,4 @@ inline void cpu_relax( unsigned k )
 //#endif
 #endif
 
-#endif  // ATOMICLOCK_H_
+#endif  // ATOMICLOCK_H

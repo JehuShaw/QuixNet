@@ -5,11 +5,11 @@
  * Created on 2010_9_17, 9:45
  */
 
-#ifndef _TIMERMANAGER_H
-#define	_TIMERMANAGER_H
+#ifndef TIMERMANAGER_H
+#define	TIMERMANAGER_H
 
 #include "Common.h"
-#include "CThreads.h"
+#include "ThreadBase.h"
 #include "TimerEvent.h"
 #include "SpinLock.h"
 #include "Singleton.h"
@@ -18,32 +18,57 @@ namespace evt
 {
 	const unsigned int MININUM_TIMEOUT_QUEUE_SIZE = 32;
 
-    class SHARED_DLL_DECL CTimerManager 
-		: private thd::CThread
-		, private CTimerEvent
+    class CTimerManager 
+		: private CTimerEvent
 		, public util::Singleton<CTimerManager> 
 	{
     public:
-		CTimerManager() : outgoingMessages(MININUM_TIMEOUT_QUEUE_SIZE), bExit(false) {}
+		CTimerManager() {}
 
 		~CTimerManager() {}
 
 		bool SetTimeout(id64_t id, unsigned int delay,
-			util::CAutoPointer<util::CallbackBase> method, bool bWaitResult = false,
-			bool bUniqueId = true, bool bWorkerThread = true) {
-				return CTimerEvent::SetTimeout(id, delay, method, bWaitResult, bUniqueId, bWorkerThread);
+			util::CAutoPointer<util::CallbackBase> method,
+			bool bWaitResult = false, bool bUniqueId = true, bool bWorkerThread = true,
+			uint64_t threadOrder = 0)
+		{
+			return CTimerEvent::SetTimeout(id, delay, method, bWaitResult, bUniqueId, bWorkerThread, threadOrder);
+		}
+
+		bool SetTimeoutOrder(id64_t id, unsigned int delay,
+			util::CAutoPointer<util::CallbackBase> method,
+			uint64_t threadOrder = 0)
+		{
+			return CTimerEvent::SetTimeout(id, delay, method, false, true, true, threadOrder);
 		}
 
 		bool SetInterval(id64_t id, unsigned int interval,
 			util::CAutoPointer<util::CallbackBase> method, unsigned int delay = 0,
-			bool bWaitResult = false, bool bUniqueId = true, bool bWorkerThread = true) {
-				return CTimerEvent::SetInterval(id, interval, method, delay, bWaitResult, bUniqueId, bWorkerThread);
+			bool bWaitResult = false, bool bUniqueId = true, bool bWorkerThread = true,
+			uint64_t threadOrder = 0)
+		{
+			return CTimerEvent::SetInterval(id, interval, method, delay, bWaitResult, bUniqueId, bWorkerThread, threadOrder);
+		}
+
+		bool SetIntervalOrder(id64_t id, unsigned int interval,
+			util::CAutoPointer<util::CallbackBase> method, unsigned int delay = 0,
+			uint64_t threadOrder = 0)
+		{
+			return CTimerEvent::SetInterval(id, interval, method, delay, false, true, true, threadOrder);
 		}
 
 		bool SetAtTime(id64_t id, const AtTime& atTime,
 			util::CAutoPointer<util::CallbackBase> method, bool bWaitResult = false,
-			bool bUniqueId = true, bool bWorkerThread = true) {
-				return CTimerEvent::SetAtTime(id, atTime, method, bWaitResult, bUniqueId, bWorkerThread);
+			bool bUniqueId = true, bool bWorkerThread = true, uint64_t threadOrder = 0)
+		{
+			return CTimerEvent::SetAtTime(id, atTime, method, bWaitResult, bUniqueId, bWorkerThread, threadOrder);
+		}
+
+		bool SetAtTimeOrder(id64_t id, const AtTime& atTime,
+			util::CAutoPointer<util::CallbackBase> method,
+			uint64_t threadOrder = 0)
+		{
+			return CTimerEvent::SetAtTime(id, atTime, method, false, true, true, threadOrder);
 		}
 
 		util::CAutoPointer<CTimer> GetTimer(id64_t id) {
@@ -62,39 +87,42 @@ namespace evt
 			return CTimerEvent::Remove(id, bWaitResult);
 		}
 
-		void Loop() {
+		inline void Loop() {
 			CTimerEvent::Loop();
 		}
 
 	private:
-		virtual bool Run();
+		class CCallbackArgument : public thd::ThreadBase, public util::PoolBase<CCallbackArgument> {
+		public:
+			CCallbackArgument(util::CAutoPointer<util::CallbackBase>& pMethod)
 
-		virtual void OnShutdown();
+				: m_pMethod(pMethod)
+			{}
 
-		virtual void OnTimeout(bool bWorkerThread, id64_t id, util::CAutoPointer<util::CallbackBase>& method);
-
-		void SetCallback(const util::CAutoPointer<util::CallbackBase>& method) {
-			util::CAutoPointer<util::CallbackBase>* pPt = outgoingMessages.WriteLock();
-			*pPt = method;
-			outgoingMessages.WriteUnlock();
-		}
-
-		bool GetCallback(util::CAutoPointer<util::CallbackBase>& outMethod) {
-			util::CAutoPointer<util::CallbackBase>* pPt = outgoingMessages.ReadLock();
-			if(NULL != pPt) {
-				outMethod = *pPt;
-				outgoingMessages.ReadUnlock();
+			virtual bool OnRun() {
+				m_pMethod->Invoke();
 				return true;
 			}
-			return false;
+
+			virtual void OnShutdown() {}
+
+		private:
+			util::CAutoPointer<util::CallbackBase> m_pMethod;
+		};
+
+		virtual void OnTimeout(
+			id64_t id,
+			util::CAutoPointer<util::CallbackBase>& pMethod,
+			bool bWorkerThread)
+		{
+			if (bWorkerThread) {
+				thd::ThreadPool.ExecuteTask(new CCallbackArgument(pMethod));
+			} else {
+				pMethod->Invoke();
+			}
 		}
-
-	private:
-		thd::CCircleQueue<util::CAutoPointer<util::CallbackBase> > outgoingMessages;
-
-		volatile bool bExit;
     };
     
 }
-#endif	/* _TIMERMANAGER_H */
+#endif	/* TIMERMANAGER_H */
 

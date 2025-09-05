@@ -5,8 +5,8 @@
  * Created on 2014_8_4, 16:00
  */
 
-#ifndef _CACHEDBSERVER_H
-#define	_CACHEDBSERVER_H
+#ifndef CACHEDBSERVER_H
+#define	CACHEDBSERVER_H
 
 #include "AutoPointer.h"
 #include "Database.h"
@@ -59,7 +59,7 @@ private:
 };
 
 
-#endif /* _CACHEDBSERVER_H */
+#endif /* CACHEDBSERVER_H */
 
 
 

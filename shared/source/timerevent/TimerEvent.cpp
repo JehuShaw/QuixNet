@@ -19,7 +19,7 @@ using namespace util;
 
 namespace evt {
 
-//#ifdef _WIN32
+//#if defined (_WIN32 ) || defined ( _WIN64 )
 //UINT_PTR ET::CTimerEvent::iTimerID(NULL);
 //#else
 //struct itimerval ET::CTimerEvent::ovalue;
@@ -29,7 +29,7 @@ namespace evt {
 /**
  * defined TimeKey
  */
-uint64_t CTimeKey::lastAdd(0);
+uint64_t CTimeKey::lastAdd = 0;
 
 //uint32_t volatile CTimerEvent::counter(0);
 //////////////////////////////////////////////////////////////////////////
@@ -141,7 +141,8 @@ CTimerEvent::~CTimerEvent() {
 
 bool CTimerEvent::SetTimeout(id64_t id, unsigned int delay,
 	CAutoPointer<CallbackBase> method, bool bWaitResult/* = false*/,
-    bool bUniqueId/* = true*/, bool bWorkerThread/* = true*/) {
+    bool bUniqueId/* = true*/, bool bWorkerThread/* = true*/,
+	uint64_t threadOrder/* = 0*/) {
 
     if(bDispose) {
         return false;
@@ -181,7 +182,7 @@ bool CTimerEvent::SetTimeout(id64_t id, unsigned int delay,
 bool CTimerEvent::SetInterval(id64_t id, unsigned int interval,
 	CAutoPointer<CallbackBase> method, unsigned int delay/* = 0*/,
 	bool bWaitResult/* = false*/, bool bUniqueId/* = true*/,
-	bool bWorkerThread/* = true*/) {
+	bool bWorkerThread/* = true*/, uint64_t threadOrder/* = 0*/) {
 
     if(bDispose) {
         return false;
@@ -230,7 +231,8 @@ bool CTimerEvent::SetInterval(id64_t id, unsigned int interval,
 
 bool CTimerEvent::SetAtTime(id64_t id, const sAtTime& atTime,
 	CAutoPointer<CallbackBase> method, bool bWaitResult/* = false*/,
-    bool bUniqueId/* = true*/, bool bWorkerThread/* = true*/) {
+    bool bUniqueId/* = true*/, bool bWorkerThread/* = true*/,
+	uint64_t threadOrder/* = 0*/) {
 
     if(bDispose) {
         return false;
@@ -353,7 +355,7 @@ bool CTimerEvent::Remove(id64_t id, bool bWaitResult/* = false*/) {
 	return true;
 }
 
-//#ifdef _WIN32
+//#if defined (_WIN32 ) || defined ( _WIN64 )
 //VOID CALLBACK CTimerEvent::TimerProc (HWND hwnd,
 //	UINT message, UINT iTimerID, DWORD dwTime) {
 //		atomic_inc(&counter);
@@ -367,7 +369,7 @@ bool CTimerEvent::Remove(id64_t id, bool bWaitResult/* = false*/) {
 //#endif
 
 //bool CTimerEvent::startTick(){
-//#ifdef _WIN32
+//#if defined (_WIN32 ) || defined ( _WIN64 )
 //	UINT wMsecInterval = 100;
 //	iTimerID = SetTimer(NULL, 0, wMsecInterval, &CTimerEvent::TimerProc);
 //	if(NULL == iTimerID) {
@@ -391,7 +393,7 @@ bool CTimerEvent::Remove(id64_t id, bool bWaitResult/* = false*/) {
 //}
 //
 //bool CTimerEvent::stopTick(){
-//#ifdef _WIN32
+//#if defined (_WIN32 ) || defined ( _WIN64 )
 //	return KillTimer(NULL, iTimerID) != FALSE;
 //#else
 //	struct itimerval value;
@@ -405,7 +407,7 @@ bool CTimerEvent::Remove(id64_t id, bool bWaitResult/* = false*/) {
 //}
 
 CAutoPointer<CTimer> CTimerEvent::InnerFindTimer(id64_t id, CAutoPointer<CallbackBase> method) {
-	timer_map_t::iterator it = timerMap.find(id.u64);
+	timer_map_t::iterator it(timerMap.find(id.u64));
 	if(timerMap.end() != it) {
 		if(method.IsInvalid()) {
 			return it->second;
@@ -425,8 +427,8 @@ CAutoPointer<CTimer> CTimerEvent::InnerFindTimer(id64_t id, CAutoPointer<Callbac
 
 bool CTimerEvent::InnerAddTimer(const CTimer& timer) {
 
-	timer_map_t::iterator it = timerMap.upper_bound(timer.id.u64);
-	timer_map_t::iterator preIt = timerMap.end();
+	timer_map_t::iterator it(timerMap.upper_bound(timer.id.u64));
+	timer_map_t::iterator preIt(timerMap.end());
 	if(timerMap.begin() != it) {
 		preIt = --it;
 	}
@@ -460,7 +462,7 @@ bool CTimerEvent::InnerAddTimer(const CTimer& timer) {
 
 bool CTimerEvent::InnerRemoveTimer(id64_t id) {
 
-	timer_map_t::iterator it = timerMap.find(id.u64);
+	timer_map_t::iterator it(timerMap.find(id.u64));
 	if(timerMap.end() != it) {
 		do{
 			timeoutList.erase(it->second);
@@ -685,7 +687,7 @@ void CTimerEvent::Loop()
 	}
 
 	if(!timeoutList.empty()) {
-		timeout_list_t::iterator it = timeoutList.begin();
+		timeout_list_t::iterator it(timeoutList.begin());
 		while(timeoutList.end() != it) {
 			CAutoPointer<CTimer> pTimer(*it);
 			if((pTimer->key.playtime + pTimer->key.delay) <= GetTick()) {
@@ -725,7 +727,7 @@ void CTimerEvent::Loop()
                     }
 				}
 
-				OnTimeout(pTimer->workerThread, pTimer->id, pTimer->method);
+				OnTimeout(pTimer->id, pTimer->method, pTimer->workerThread);
 				continue;
 			}
 			break;
@@ -734,7 +736,7 @@ void CTimerEvent::Loop()
 }
 
 uint64_t CTimerEvent::GetTick() {
-    return GetSysTickCount()/100;
+    return GetSysTickCount()/10;
 }
 
 uint32_t CTimerEvent::AtTimeIntervalFrom(
@@ -791,14 +793,14 @@ uint32_t CTimerEvent::AtTimeIntervalFrom(
 				if(difSecond < 0) {
 					difSecond += 60;
 				}
-				return (difHour*60*60 + difMinute*60 + difSecond)*10;
+				return (difHour*60*60 + difMinute*60 + difSecond)*100;
 			}
 		}
 		int difHour = 23 - tmNow.tm_hour;
 		int difMinute = 59 - tmNow.tm_min;
 		int difSecond = 60 - tmNow.tm_sec;
 		return (difWeek * 24 * 60 * 60 + nHour * 60 * 60 + nMinute * 60 + nSecond
-			+ difHour * 60 * 60 + difMinute * 60 + difSecond) * 10;
+			+ difHour * 60 * 60 + difMinute * 60 + difSecond) * 100;
 	} else {
 		// [year, month, day, hour, minute, second] loop
 		int nHour(0);
@@ -874,7 +876,7 @@ uint32_t CTimerEvent::AtTimeIntervalFrom(
 			int difMinute = 59 - tmNow.tm_min;
 			int difSecond = 60 - tmNow.tm_sec;
 			return (difDay * 24 * 60 * 60 + nHour*60*60 + nMinute * 60 + nSecond
-				+ difHour * 60 * 60 + difMinute * 60 + difSecond) * 10;
+				+ difHour * 60 * 60 + difMinute * 60 + difSecond) * 100;
 		} else {
 			int difHour = nHour - tmNow.tm_hour;
 			if(difHour > 0) {
@@ -894,15 +896,18 @@ uint32_t CTimerEvent::AtTimeIntervalFrom(
 			if(difSecond < 0) {
 				difSecond += 60;
 			}
-			return (difHour*60*60 + difMinute*60 + difSecond)*10;
+			return (difHour*60*60 + difMinute*60 + difSecond)*100;
 		}
 	}
 	return 0;
 }
 
-void CTimerEvent::OnTimeout(bool bWorkerThread, id64_t id, CAutoPointer<CallbackBase>& method)
+void CTimerEvent::OnTimeout(
+	id64_t id,
+	CAutoPointer<CallbackBase>& pMethod,
+	bool bWorkerThread)
 {
-	method->Invoke();
+	pMethod->Invoke();
 }
 
 } // end namespace evt

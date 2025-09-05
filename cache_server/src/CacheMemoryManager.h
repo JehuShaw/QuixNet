@@ -5,8 +5,8 @@
  * Created on 2014_8_4, 16:00
  */
 
-#ifndef _CACHEMEMORYMANAGER_H
-#define	_CACHEMEMORYMANAGER_H
+#ifndef CACHEMEMORYMANAGER_H
+#define	CACHEMEMORYMANAGER_H
 
 #include "NodeDefines.h"
 #include "AutoPointer.h"
@@ -17,7 +17,7 @@
 #include "ReferObject.h"
 #include "Singleton.h"
 
-#define CACHE_RECORD_UPDATE_INTERVAL 1
+#define CACHE_RECORD_UPDATE_INTERVAL 10
 
 
 struct CacheMemoryCompare
@@ -36,23 +36,19 @@ public:
 		: m_strKey(strKey) {
     }
 
-    virtual MCResult AddToDB(
-		bool bResetFlag = false)
+    virtual MCResult AddToDB()
 	{
         return (MCResult)0;
     }
 
 	virtual MCResult LoadFromDB(
-		bool bDBCas = true,
-		const int32_t* pInFlag = NULL,
-		int32_t* pOutFlag = NULL)
+		bool bDBCas = true)
 	{
         return (MCResult)0;
     }
 
     virtual MCResult UpdateToDB(
-		bool bDBCas = true,
-		bool bResetFlag = false)
+		bool bDBCas = true)
 	{
         return (MCResult)0;
     }
@@ -61,12 +57,20 @@ public:
         return (MCResult)0;
     }
 
+	virtual MCResult LoadCasFromDB() {
+		return (MCResult)0;
+	}
+
     virtual const std::string& GetKey() const {
         return m_strKey;
     }
 
 	virtual void SetValue(util::CTransferStream& inValue) {
     }
+
+	virtual uint64_t GetCas() const {
+		return 0;
+	}
 
 protected:
 	virtual int Index() const {
@@ -106,32 +110,30 @@ public:
 
     void Dispose(bool bUpdateToDb = true) throw();
 
-    bool AddCacheRecord(uint16_t u16DBID, const std::string& strKey, const std::string& strValue
-        , bool bAddToDb = true)
-    {
-        util::CAutoPointer<ICacheMemory> pCacheRecord(InsertMemoryRecord(u16DBID, strKey, strValue));
+	bool AddCacheRecord(uint16_t u16DBID, const std::string& strKey, const std::string& strValue,
+		uint64_t& outCas, bool bAddToDb = true)
+	{
+		util::CAutoPointer<ICacheMemory> pCacheRecord(InsertMemoryRecord(
+			u16DBID, strKey, strValue, outCas));
 
-        if(bAddToDb) {
-            return AddRecord(pCacheRecord);
-        }
-
+		if (bAddToDb) {
+			return AddRecord(pCacheRecord);
+		}
         return true;
     }
 
     int LoadCacheRecord(util::CAutoPointer<ICacheMemory>& outCacheRecord,
 		uint16_t u16DBID, const std::string& strKey,
-		bool bDBCas = true, uint64_t n64Cas = 0,
-		const int32_t* pInFlag = NULL,
-		int32_t* pOutFlag = NULL);
+		bool bDBCas = true, uint64_t n64Cas = 0);
 
-    bool RemoveCacheRecord(const std::string& strKey, bool bUpdateToDb = true, bool bResetFlag = true)
+    bool RemoveCacheRecord(const std::string& strKey, bool bUpdateToDb = true)
     {
         util::CAutoPointer<ICacheMemory> pCacheRecord(RemoveMemoryRecord(strKey));
         if(pCacheRecord.IsInvalid()) {
             return false;
         }
         if(bUpdateToDb) {
-            return CheckUpdateAndReloadRecord(pCacheRecord, bResetFlag);
+            return CheckUpdateAndReloadRecord(pCacheRecord);
         }
         return true;
     }
@@ -196,8 +198,7 @@ public:
 	}
 	
 	static bool CheckUpdateAndReloadRecord(
-		util::CAutoPointer<ICacheMemory> pCacheRecord,
-		bool bResetFlag = false) throw();
+		util::CAutoPointer<ICacheMemory> pCacheRecord) throw();
 
 private:
 	friend class CCacheMemory;
@@ -205,7 +206,8 @@ private:
     inline util::CAutoPointer<ICacheMemory> InsertMemoryRecord(
 		uint16_t u16DBID,
 		const std::string& strKey,
-        const std::string& strValue)
+        const std::string& strValue,
+		uint64_t& outCas)
     {
         thd::CScopedWriteLock wrLock(m_rwTicket);
 
@@ -235,6 +237,8 @@ private:
 
             pCacheRecord->SetValue(tsValues);
         }
+
+		outCas = pCacheRecord->GetCas();
         return pCacheRecord;
     }
 
@@ -310,9 +314,7 @@ private:
 
 	static int LoadRecord(
 		util::CAutoPointer<ICacheMemory> pCacheRecord,
-		bool bDBCas = true,
-		const int32_t* pInFlag = NULL,
-		int32_t* pOutFlag = NULL);
+		bool bDBCas = true);
 
 	static bool DeleteRecord(util::CAutoPointer<ICacheMemory> pCacheRecord);
 
@@ -333,7 +335,7 @@ private:
 	bool m_bInit;
 };
 
-#endif /* _CACHEMEMORYMANAGER_H */
+#endif /* CACHEMEMORYMANAGER_H */
 
 
 

@@ -1,6 +1,6 @@
 
-#ifndef __READWRITELOCK_H_
-#define __READWRITELOCK_H_
+#ifndef READWRITELOCK_H
+#define READWRITELOCK_H
 
 #include "Common.h"
 #include "IRWLock.h"
@@ -43,9 +43,6 @@ class SHARED_DLL_DECL CReadWriteLock : public IRWLock
    */
   bool TimedLockWrite(uint32_t msec) throw();
 
-  /** Release the write lock. */
-  void UnlockWrite() throw();
-
   /** Acquire a read lock, blocking until the lock is acquired. */
   void LockRead() throw();
 
@@ -59,8 +56,8 @@ class SHARED_DLL_DECL CReadWriteLock : public IRWLock
    */
   bool TimedLockRead(uint32_t msec) throw();
 
-  /** Release the read lock. */
-  void UnlockRead() throw();
+  /** Release read or write lock. */
+  void Unlock() throw();
 
   /** Upgrade the read lock. */
   void UpgradeLockRead() throw();
@@ -85,6 +82,6 @@ private:
 
 }; // namespace thd
 
-#endif // __READWRITELOCK_H_
+#endif // READWRITELOCK_H
 
 /* end of source file */

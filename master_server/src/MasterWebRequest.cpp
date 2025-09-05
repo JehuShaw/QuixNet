@@ -8,7 +8,7 @@ using namespace util;
 
 
 CMasterWebRequest::CMasterWebRequest(const char *pUrl,
-	unsigned int socketIdx, unsigned int account)
+	unsigned int socketIdx, uint64_t account)
 
 	: m_url(pUrl), m_socketIdx(socketIdx), m_account(account)
 {
@@ -21,12 +21,12 @@ CMasterWebRequest::~CMasterWebRequest()
 }
 
 CMasterWebRequest * CMasterWebRequest::Create(const char *pUrl,
-	unsigned int socketIdx, unsigned int account)
+	unsigned int socketIdx, uint64_t account)
 {
     return new CMasterWebRequest(pUrl, socketIdx, account);
 }
 
-void CMasterWebRequest::Release(CMasterWebRequest* pSession )
+void CMasterWebRequest::Release(CMasterWebRequest* pSession)
 {
     delete pSession;
 }
@@ -62,7 +62,7 @@ unsigned int CMasterWebRequest::OnData(const void *pData, unsigned int bytes)
 		argment.WriteBool(false);
 	}
 
-	argment.WriteUInt32(m_account);
+	argment.WriteUInt64(m_account);
     argment.WriteInt32(m_socketIdx);
 
     CAutoPointer<CArgBitStream> pArg(&argment, false);

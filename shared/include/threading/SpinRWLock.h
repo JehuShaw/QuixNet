@@ -5,18 +5,18 @@
  * Created on 2013年10月1日, 上午10:32
  */
 
-#ifndef __SPINRWLOCK_H_
-#define	__SPINRWLOCK_H_
+#ifndef SPINRWLOCK_H
+#define	SPINRWLOCK_H
 
 #include "SpinLock.h"
 #include "IRWLock.h"
 
 namespace thd {
 
-	class CSpinRWLock : private CSpinLock, public IRWLock {
+	class CSpinRWLock : public IRWLock {
 	public:
 		CSpinRWLock()
-			: CSpinLock()
+			: m_lock()
 			, m_readers(0)
 			, m_waitDone(0)
 		{
@@ -31,8 +31,8 @@ namespace thd {
 			}
 			// Wait all done.
 			for(int i = 0; CheckWaitDone(); ++i) {
-				if(!Lockable()) {
-					Unlock();
+				if(!m_lock.Lockable()) {
+					m_lock.Unlock();
 				}
 				if(m_readers) {
 					atomic_xchg(&m_readers, 0);
@@ -46,7 +46,7 @@ namespace thd {
 				return;
 			}
 			/* Get lock */
-			Lock();
+			m_lock.Lock();
 
 			/* Wait for readers to finish */
 			for(int i = 0; m_readers; ++i) {
@@ -61,7 +61,7 @@ namespace thd {
 			}
 			uint64_t startTime = GetSysTickCount();
 			/* Get lock */
-			if(!TimedLock(msec, startTime)) {
+			if(!m_lock.TimedLock(msec, startTime)) {
 				AtomicDecWaitDone();
 				return false;
 			}
@@ -80,14 +80,6 @@ namespace thd {
 			return true;
 		}
 
-		void UnlockWrite() throw() {
-			if(!AtomicIncWaitDone()) {
-				return;
-			}
-			Unlock();
-			AtomicDecWaitDone();
-		}
-
 		bool TryLockWrite() throw() {
 			if(!AtomicIncWaitDone()) {
 				return false;
@@ -99,14 +91,14 @@ namespace thd {
 			}
 
 			/* Try to get write lock */
-			if(!TryLock()) {
+			if(!m_lock.TryLock()) {
 				AtomicDecWaitDone();
 				return false;
 			}
 
 			if(m_readers) {
 				/* Oops, a reader started */
-				Unlock();
+				m_lock.Unlock();
 				AtomicDecWaitDone();
 				return false;
 			}
@@ -122,12 +114,12 @@ namespace thd {
 			}
 			while (true) {
 				/* Success? */
-				if(Lockable()) {
+				if(m_lock.Lockable()) {
 					/* Speculatively take read lock */
 					AtomicIncReader();
 
 					/* Success? */
-					if(Lockable()) {
+					if(m_lock.Lockable()) {
 						AtomicDecWaitDone();
 						return;
 					}
@@ -136,7 +128,7 @@ namespace thd {
 					AtomicDecReader();
 				}
 
-				for(int i = 0; !Lockable(); ++i) {
+				for(int i = 0; !m_lock.Lockable(); ++i) {
 					cpu_relax(i);
 				}
 			}
@@ -150,12 +142,12 @@ namespace thd {
 			uint64_t startTime = GetSysTickCount();
 			while (true) {
 				/* Success? */
-				if(Lockable()) {
+				if(m_lock.Lockable()) {
 					/* Speculatively take read lock */
 					AtomicIncReader();
 
 					/* Success? */
-					if(Lockable()) {
+					if(m_lock.Lockable()) {
 						AtomicDecWaitDone();
 						return true;
 					}
@@ -164,7 +156,7 @@ namespace thd {
 					AtomicDecReader();
 				}
 
-				for(int i = 0; !Lockable(); ++i) {
+				for(int i = 0; !m_lock.Lockable(); ++i) {
 					if((int64_t)(GetSysTickCount() - 
 						startTime) >= (int64_t)msec)
 					{
@@ -178,11 +170,15 @@ namespace thd {
 			return false;
 		}
 
-		void UnlockRead() throw() {
+		void Unlock() throw() {
 			if(!AtomicIncWaitDone()) {
 				return;
 			}
-			AtomicDecReader();
+			if (!m_lock.Lockable()) {
+				m_lock.Unlock();
+			} else {
+				AtomicDecReader();
+			}
 			AtomicDecWaitDone();
 		}
 
@@ -194,7 +190,7 @@ namespace thd {
 			AtomicIncReader();
 
 			/* Success? */
-			if(Lockable()) {
+			if(m_lock.Lockable()) {
 				AtomicDecWaitDone();
 				return true;
 			}
@@ -210,13 +206,13 @@ namespace thd {
 			if(!AtomicIncWaitDone()) {
 				return;
 			}
-			/* Try lock */	
-			for(int k = 0; !this->TryLock(); ++k) {
-				cpu_relax(k);
-			}
-
 			/* I'm no longer a reader */
 			AtomicDecReader();
+
+			/* Try lock */	
+			for(int k = 0; !m_lock.TryLock(); ++k) {
+				cpu_relax(k);
+			}
 
 			/* Wait for all other readers to finish */
 			for(int i = 0; m_readers; ++i) {
@@ -229,9 +225,12 @@ namespace thd {
 			if(!AtomicIncWaitDone()) {
 				return false;
 			}
+			/* I'm no longer a reader */
+			AtomicDecReader();
+
 			uint64_t startTime = GetSysTickCount();
 			/* Try lock */	
-			for(int k = 0; !this->TryLock(); ++k) {
+			for(int k = 0; !m_lock.TryLock(); ++k) {
 				if((int64_t)(GetSysTickCount() - 
 					startTime) >= (int64_t)msec)
 				{
@@ -240,9 +239,6 @@ namespace thd {
 				}
 				cpu_relax(k);
 			}
-
-			/* I'm no longer a reader */
-			AtomicDecReader();
 
 			/* Wait for all other readers to finish */
 			for(int i = 0; m_readers; ++i) {
@@ -263,7 +259,7 @@ namespace thd {
 				return false;
 			}
 			/* It is write lock ? */
-			if(Lockable()) {
+			if(m_lock.Lockable()) {
 				AtomicDecWaitDone();
 				return false;
 			}
@@ -272,13 +268,13 @@ namespace thd {
 			AtomicIncReader();
 
 			/* Release write lock. */
-			Unlock();
+			m_lock.Unlock();
 			AtomicDecWaitDone();
 			return true;
 		}
 
 		bool Using() throw() {
-			return !Lockable() || 0 != m_readers;
+			return !m_lock.Lockable() || 0 != m_readers;
 		}
 
 	private:
@@ -289,7 +285,7 @@ namespace thd {
 				if(readers == (uint32_t)-1) {
 					return;
 				}
-			} while (atomic_cmpxchg(&m_readers, readers + 1, readers) != readers);
+			} while (atomic_cmpxchg(&m_readers, readers, readers + 1) != readers);
 		}
 		inline void AtomicDecReader() throw() {
 			uint32_t readers;
@@ -298,7 +294,7 @@ namespace thd {
 				if(readers == 0) {
 					return;
 				}
-			} while (atomic_cmpxchg(&m_readers, readers - 1, readers) != readers);
+			} while (atomic_cmpxchg(&m_readers, readers, readers - 1) != readers);
 		}
 
 	private:
@@ -310,7 +306,7 @@ namespace thd {
 					return false;
 				}
 			} while (atomic_cmpxchg(&m_waitDone,
-				waitDone + 1, waitDone) != waitDone);
+				waitDone, waitDone + 1) != waitDone);
 			return true;
 		}
 		inline void AtomicDecWaitDone() throw() {
@@ -320,8 +316,8 @@ namespace thd {
 				if(waitDone == 0) {
 					return;
 				}
-			} while (atomic_cmpxchg(&m_waitDone, (waitDone < 0 ?
-				(waitDone + 1) : (waitDone - 1)), waitDone) != waitDone);
+			} while (atomic_cmpxchg(&m_waitDone, waitDone, 
+				(waitDone < 0 ? (waitDone + 1) : (waitDone - 1))) != waitDone);
 		}
 
 		inline bool AtomicSetWaitDone() throw() {
@@ -332,7 +328,7 @@ namespace thd {
 					return false;
 				}
 			} while (atomic_cmpxchg(&m_waitDone,
-				-(waitDone + 1), waitDone) != waitDone);
+				waitDone, -(waitDone + 1)) != waitDone);
 			return true;
 		}
 
@@ -340,6 +336,7 @@ namespace thd {
 			return (int32_t)m_waitDone != -1;
 		}
 
+		CSpinLock m_lock;
 		volatile uint32_t m_readers;
 		volatile int32_t m_waitDone;
 
@@ -349,4 +346,4 @@ namespace thd {
 	};
 }
 
-#endif  // __SPINRWLOCK_H_
+#endif  // SPINRWLOCK_H

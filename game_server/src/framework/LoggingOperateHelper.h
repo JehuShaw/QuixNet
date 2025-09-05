@@ -5,8 +5,8 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#ifndef _LOGGINGOPERATEHELPER_H
-#define _LOGGINGOPERATEHELPER_H
+#ifndef LOGGINGOPERATEHELPER_H
+#define LOGGINGOPERATEHELPER_H
 #include "NodeDefines.h"
 #include "LoggingModule.h"
 
@@ -32,5 +32,5 @@ INLINE bool TraceBudget(uint64_t nUserId, uint64_t nAccount, eLogBudgetType nAct
 		nParam7, nParam8, nParam9, szParam0, szParam1, szParam2, szParam3);
 }
 
-#endif /* _LOGGINGOPERATEHELPER_H */
+#endif /* LOGGINGOPERATEHELPER_H */
 

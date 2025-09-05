@@ -55,19 +55,19 @@ void CServantServerRegister::RegisterCommand()
 {
 }
 
-void CServantServerRegister::RegistModule()
+void CServantServerRegister::RegisterModule()
 {
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	//register module
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
-	uint16_t u16ServerId = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERID);
+	uint32_t uServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 
     CAutoPointer<CServantModule> pServantModule(
-		new CServantModule(SERVANT_MODEL_NAME, u16ServerId));
+		new CServantModule(SERVANT_MODEL_NAME, uServerId));
     pFacade->RegisterModule(pServantModule);
 }
 
-void CServantServerRegister::UnregistModule()
+void CServantServerRegister::UnregisterModule()
 {
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	//unregister module

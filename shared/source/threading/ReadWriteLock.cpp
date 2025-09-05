@@ -63,18 +63,6 @@ bool CReadWriteLock::TimedLockWrite(uint32_t msec) throw()
 	return true;
 }
 
-void CReadWriteLock::UnlockWrite() throw()
-{
-	m_mutex.Lock();
-	// unlock write lock
-	if(m_writerWriting > 0)
-	{
-		m_writerWriting = 0;
-		m_lockFree.NotifyAll();
-	}
-	m_mutex.Unlock();
-}
-
 /*
  */
 
@@ -123,12 +111,15 @@ bool CReadWriteLock::TimedLockRead(uint32_t msec) throw()
 /*
  */
 
-void CReadWriteLock::UnlockRead() throw()
+void CReadWriteLock::Unlock() throw()
 {
 	m_mutex.Lock();
-	// unlock read lock
-	if(m_readersReading > 0)
-	{
+	if (m_writerWriting > 0) {
+		// unlock write lock
+		m_writerWriting = 0;
+		m_lockFree.NotifyAll();
+	} else if(m_readersReading > 0) {
+		// unlock read lock
 		if(--m_readersReading == 0) {
 			m_lockFree.Notify();
 		}

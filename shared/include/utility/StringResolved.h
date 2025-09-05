@@ -5,12 +5,13 @@
  * Created on 2014_5_8, 14:09
  */
 
-#ifndef _STRINGRESOLVED_H
-#define _STRINGRESOLVED_H
+#ifndef STRINGRESOLVED_H
+#define STRINGRESOLVED_H
 
 #include <string>
 #include "Common.h"
 #include "SeparatedStream.h"
+#include "TinyJson.h"
 
 namespace util {
 
@@ -142,6 +143,16 @@ class CStringResolved
 				}
 			}
         }
+
+		void CastToType(tiny::Json& value, const std::string& str)
+		{
+			int pos = str.find("'");
+			while (pos != std::string::npos) {
+				const_cast<std::string&>(str).replace(pos, 1, "\"");
+				pos = str.find("'");
+			}
+			assert(value.ReadJson(str));
+		}
 
 		//////////////////////////////////////////////////////////////////////////
 		void CastToString(std::string& str, ...)
@@ -325,10 +336,15 @@ class CStringResolved
 			str = enclosure.Str();
 		}
 
+		void CastToString(std::string& str, const tiny::Json& value)
+		{
+			str = value.WriteJson();
+		}
+
 	private:
         char m_enclosure_delim;
 };
 
 }
 
-#endif /* _STRINGRESOLVED_H */
+#endif /* STRINGRESOLVED_H */

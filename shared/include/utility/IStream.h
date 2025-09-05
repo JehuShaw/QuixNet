@@ -1,6 +1,6 @@
 
-#ifndef __ISTREAM_H__
-#define __ISTREAM_H__
+#ifndef ISTREAM_H
+#define ISTREAM_H
 
 #include "Common.h"
 #include "StreamDataType.h"
@@ -2932,4 +2932,4 @@ namespace util
 
 }
 
-#endif /* __ISTREAM_H__ */
+#endif /* ISTREAM_H */

@@ -1,11 +1,12 @@
 /*
- * File:   MasterServiceImpEx.h
+ * File:   MasterServiceImp.h
  * Author: Jehu Shaw
  *
  * Created on 2014_4_5 AM 23:37
  */
 
-#pragma once
+#ifndef MASTERSERVERIMP_H
+#define	MASTERSERVERIMP_H
 
 #include <set>
 #include <string>
@@ -14,22 +15,17 @@
 #include "SpinRWLock.h"
 #include "ScopedRWLock.h"
 
-class DbEnv;
-
-class CMasterServiceImp: public ::node::ControlCentreService
+class CMasterServiceImp : public ::node::ControlCentreService
 {
 public:
 	CMasterServiceImp(
-		uint16_t serverId,
 		const std::string& strCurPath);
 
-	~CMasterServiceImp(void);
-
 	virtual void RegisterModule(const ::node::RegisterRequest& request,
-		::rpcz::reply< ::node::OperateResponse> response);
+		::rpcz::reply< ::node::RegisterResponse> response);
 
 	virtual void RemoveModule(const ::node::RemoveRequest& request,
-		::rpcz::reply< ::node::OperateResponse> response);
+		::rpcz::reply< ::node::RemoveResponse> response);
 
 	virtual void KeepRegister(const ::node::KeepRegisterRequest& request,
 		::rpcz::reply< ::node::KeepRegisterResponse> response);
@@ -49,62 +45,64 @@ public:
     virtual void GetNodeList(const ::node::NodeListRequest& request,
         ::rpcz::reply< ::node::NodeListResponse> response);
 
-	virtual void CreateUserId(const ::node::CreateIdRequest& request,
-		::rpcz::reply< ::node::CreateIdResponse> response);
+	virtual void GetUsers(const ::node::GetUserRequest& request,
+		::rpcz::reply< ::node::GetUserResponse> response);
 
-	virtual void CheckUserId(const ::node::CheckIdRequest& request,
-		::rpcz::reply< ::node::CheckIdResponse> response);
+	virtual void CreateUser(const ::node::CreateUserRequest& request,
+		::rpcz::reply< ::node::CreateUserResponse> response);
 
-	virtual void UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-		::rpcz::reply< ::node::UpdateRegionResponse> response);
+	virtual void CheckUser(const ::node::CheckUserRequest& request,
+		::rpcz::reply< ::node::CheckUserResponse> response);
 
-	virtual void CacheServerStore(const ::node::CacheStoreRequest& request,
-		::rpcz::reply< ::node::CacheStoreResponse> response);
+	virtual void UpdateUser(const ::node::UpdateUserRequest& request,
+		::rpcz::reply< ::node::UpdateUserResponse> response);
 
-	static bool IsServerAlive(uint16_t serverId, uint16_t serverType) {
-		uint32_t nKey = GetServerKey(serverId, serverType);
+	virtual void DeleteUser(const ::node::DeleteUserRequest& request,
+		::rpcz::reply< ::node::DeleteUserResponse> response);
+
+	virtual void SeizeServer(const ::node::SeizeRequest& request,
+		::rpcz::reply< ::node::SeizeResponse> response);
+
+	virtual void FreeServer(const ::node::FreeRequest& request,
+		::rpcz::reply< ::node::FreeResponse> response);
+
+	virtual void GenerateGuid(const ::node::ControlCentreVoid& request,
+		::rpcz::reply< ::node::GuidResponse> response);
+
+	static bool IsServerAlive(uint32_t serverId, uint16_t serverType) {
+		uint64_t nKey = GetServerKey(serverId, serverType);
 		return FindServerKey(nKey);
 	}
 
-	static uint16_t RouteGetServerId(const std::string& serverName, uint64_t userId);
+	static void SeizeServerLocal(
+		uint32_t& outAgentId,
+		uint32_t& outMapId,
+		uint64_t userId,
+		const std::string& agentServerName);
+
+	static void FreeServerLocal(uint64_t userId);
 
 	void OnServerPlay(void);
 
+	static void ClearAllTimer();
+
 private:
-	typedef union {
-		uint32_t u32;
-		struct
-		{
-			uint16_t serverId;
-			uint16_t serverType;
-		}h;
-	} server_key_t;
-
-	inline static uint32_t GetServerKey(uint16_t serverId, uint16_t serverType) {
-		server_key_t key;
-		key.h.serverId = serverId;
-		key.h.serverType = serverType;
-		return key.u32;
-	}
-
-	inline static bool InsertServerKey(uint32_t serverKey) {
+	inline static bool InsertServerKey(uint64_t serverKey) {
 		thd::CScopedWriteLock wrLock(m_wrLock);
 		std::pair<SERVER_ID_SET_T::iterator, bool> pairIB(
 		m_serverIds.insert(serverKey));
 		return pairIB.second;
 	}
 
-	inline static bool FindServerKey(uint32_t serverKey) {
+	inline static bool FindServerKey(uint64_t serverKey) {
 		thd::CScopedReadLock rdLock(m_wrLock);
 		return m_serverIds.end() != m_serverIds.find(serverKey);
 	}
 
-	inline static void EraseServerKey(uint32_t serverKey) {
+	inline static void EraseServerKey(uint64_t serverKey) {
 		thd::CScopedWriteLock wrLock(m_wrLock);
 		m_serverIds.erase(serverKey);
 	}
-
-	static void ClearAllTimer();
 
 private:
 	static void AddAllNode();
@@ -113,22 +111,15 @@ private:
 
 	static void KeepTimeoutCallback(
 		const std::string& serverName,
-		uint16_t& serverId,
+		uint32_t& serverId,
 		uint16_t& serverType,
 		volatile int32_t*& pCacheCount);
 
 private:
-	void RouteCreateTable(const std::string& serverName, uint16_t serverId);
-	void RouteDropTable(const std::string& serverName, uint16_t serverId);
-	void RouteInsertRecord(const std::string& serverName, uint64_t userId, uint16_t serverId);
-	void RouteRemoveRecord(const std::string& serverName, uint64_t userId);
-
-private:
-	typedef std::set<uint32_t> SERVER_ID_SET_T;
+	typedef std::set<uint64_t> SERVER_ID_SET_T;
 	static SERVER_ID_SET_T m_serverIds;
 	static thd::CSpinRWLock m_wrLock;
-	DbEnv* m_pDbEnv;
 	volatile int32_t m_cacheCount;
-	uint16_t m_serverId;
 };
 
+#endif /* MASTERSERVERIMP_H */

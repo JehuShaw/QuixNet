@@ -5,8 +5,8 @@
  * Created on 2014_6_25, 21:20
  */
 
-#ifndef _MASTERCMDMANAGER_H
-#define _MASTERCMDMANAGER_H
+#ifndef MASTERCMDMANAGER_H
+#define MASTERCMDMANAGER_H
 
 #include <string>
 #include "Common.h"
@@ -17,39 +17,55 @@ class CMasterCmdManager
 	: public util::Singleton<CMasterCmdManager>
 {
 public:
-	int SendByServId(uint16_t nServerId, int32_t nCmd) {
+	void Init(const std::string& agentServerName) {
+		m_agentServerName = agentServerName;
+	}
+
+	int SendByServId(uint32_t nServerId, int32_t nCmd) {
 		return CNodeModule::SendNodeMessage(nServerId, nCmd);
 	}
 
-	int SendByServId(uint16_t nServerId, int32_t nCmd, 
-		const ::google::protobuf::Message& message) {
-		return CNodeModule::SendNodeMessage(nServerId, nCmd, message);
+	int SendByServId(uint32_t nServerId, int32_t nCmd, 
+		const ::google::protobuf::Message& request) {
+		return CNodeModule::SendNodeMessage(nServerId, nCmd, request);
 	}
 
-	int SendByServId(uint16_t nServerId, int32_t nCmd,
-		const std::string& data) {
-		return CNodeModule::SendNodeMessage(nServerId, nCmd, data);
+	int SendByServId(uint32_t nServerId, int32_t nCmd,
+		const ::google::protobuf::Message& request,
+		::google::protobuf::Message& response) {
+		return CNodeModule::SendNodeMessage(nServerId, nCmd, request, response);
 	}
 
-	int SendByUserId(
-		const std::string& strServerName,
-		uint64_t nUserId, int32_t nCmd);
+	int SendByServId(uint32_t nServerId, int32_t nCmd,
+		const std::string& request,
+		std::string& response) {
+		return CNodeModule::SendNodeMessage(nServerId, nCmd, request, response);
+	}
+
+	int SendByUserId(uint64_t nUserId, int32_t nCmd);
 
 	int SendByUserId(
-		const std::string& strServerName,
 		uint64_t nUserId, int32_t nCmd,
 		const ::google::protobuf::Message& message);
 
 	int SendByUserId(
-		const std::string& strServerName,
 		uint64_t nUserId, int32_t nCmd,
-		const std::string& data);
+		const ::google::protobuf::Message& request,
+		::google::protobuf::Message& response);
 
-    int Restart(uint16_t nServerId);
+	int SendByUserId(
+		uint64_t nUserId, int32_t nCmd,
+		const std::string& request,
+		std::string &response);
 
-	int Shutdown(uint16_t nServerId);
+    int Restart(uint32_t nServerId);
 
-	int Erase(uint16_t nServerId);
+	int Shutdown(uint32_t nServerId);
+
+	int Erase(uint32_t nServerId);
+
+private:
+	std::string m_agentServerName;
 };
 
-#endif  // _MASTERCMDMANAGER_H
+#endif  // MASTERCMDMANAGER_H

@@ -5,8 +5,8 @@
  * Created on 2013年10月1日, 上午10:32
  */
 
-#ifndef __SPINRECURSIVELOCK_H_
-#define	__SPINRECURSIVELOCK_H_
+#ifndef SPINRECURSIVELOCK_H
+#define	SPINRECURSIVELOCK_H
 
 #include "Common.h"
 #include "AtomicLock.h"
@@ -139,7 +139,7 @@ namespace thd {
 			ucmp.s.users = me + 1;
 			uint32_t cmpnew = ucmp.u;
 
-			if(atomic_cmpxchg(&m_lock.u, cmpnew, cmp) == cmp) {
+			if(atomic_cmpxchg(&m_lock.u, cmp, cmpnew) == cmp) {
 				atomic_xchg(&m_threadId, threadId);
 				m_recursionCount = 1;
 				return true;
@@ -184,4 +184,4 @@ namespace thd {
 	};
 }
 
-#endif  // __SPINRECURSIVELOCK_H_
+#endif  // SPINRECURSIVELOCK_H

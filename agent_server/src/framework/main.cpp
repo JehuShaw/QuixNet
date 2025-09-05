@@ -6,7 +6,7 @@
  */
 
 #include "Common.h"
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 #include "ExceptionManager.h"
 #include "CrashDump.h"
 #include <conio.h>
@@ -29,6 +29,7 @@
 #include <bitset>
 #include <assert.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 
 #define CH_ESC 27
 #define CH_BACKSPACE 127
@@ -39,7 +40,6 @@
 #define CH_DOWN 66
 #define CH_LEFT 68
 #define CH_RIGHT 67
-
 
 void _inittcattr(void)
 {
@@ -102,7 +102,7 @@ int CommandHelp(const util::CWeakPointer<ArgumentBase>& arg) {
 }
 
 int CommandClear(const util::CWeakPointer<ArgumentBase>& arg) {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 	system("cls");
 #else
     //system("clear");
@@ -116,7 +116,7 @@ int CommandQuit(const util::CWeakPointer<ArgumentBase>& arg) {
 	return COMMAND_RESULT_EXIT;
 }
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 BOOL WINAPI ConsoleHandler(DWORD msgType) {
 	if(msgType == CTRL_CLOSE_EVENT) {
 		atomic_xchg8(&g_bExit, true);
@@ -130,6 +130,10 @@ BOOL WINAPI ConsoleHandler(DWORD msgType) {
 		atomic_xchg8(&g_bExit, true);
 	}
     return FALSE;
+}
+#else 
+void SignalHandler(int nSignalValue) {
+	atomic_xchg8(&g_bExit, true);
 }
 #endif
 
@@ -152,7 +156,7 @@ extern void LoadAppConfig();
 
 int main(int argc, char** argv) {
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 	Frame::CrashDump::Begin(UnknowExceptionHandler, MiniDumpWithFullMemory);
 
 	HWND hWnd = GetConsoleWindow();
@@ -169,6 +173,13 @@ int main(int argc, char** argv) {
 	SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandler, TRUE);
 #else
     _inittcattr();
+	
+	struct sigaction action;
+	action.sa_handler = SignalHandler;
+	action.sa_flags = 0;
+	sigemptyset(&action.sa_mask);
+	sigaction(SIGINT, &action, NULL);
+	sigaction(SIGTERM, &action, NULL);
 #endif
 
 	CTimestampManager::Pointer();
@@ -295,7 +306,11 @@ int main(int argc, char** argv) {
         } else if(bDirect && CH_RIGHT == key) {
             bDirect = false;
         }  else {
-            bDirect = false;
+			if(!isprint(key) && CH_ENTER != key) {
+				Sleep(30);
+				continue;
+			}
+			bDirect = false;
             if(offset + 1 >= (int)sizeof(szBuf) - 1) {
                 printf("\nThe buffer size {%d} overflow !!\n",(int)sizeof(szBuf) - 1);
                 continue;

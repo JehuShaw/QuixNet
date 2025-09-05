@@ -5,8 +5,8 @@
  * Created on 2014_5_8, 14:09
  */
 
-#ifndef __STREAMDATATYPE_H__
-#define __STREAMDATATYPE_H__
+#ifndef STREAMDATATYPE_H
+#define STREAMDATATYPE_H
 
 namespace util {
 
@@ -140,13 +140,15 @@ enum eStreamDataType {
 	STREAM_DATA_ARRAY_DOUBLE_NULL,
 	STREAM_DATA_ARRAY_STRING,
 	STREAM_DATA_ARRAY_STRING_NULL,
+	//////////////////////////////
+	STREAM_DATA_TINY_JSON,
+	STREAM_DATA_TINY_JSON_NULL,
 	STREAM_DATA_SIZE,
 };
 
-extern size_t GetStoreStreamSize(uint8_t nType);
-
 inline static uint8_t GetInnerType(uint8_t nType) {
-	if(nType < STREAM_DATA_VECTOR_BOOL) {
+	if(nType < STREAM_DATA_VECTOR_BOOL
+		|| STREAM_DATA_ARRAY_STRING_NULL < nType) {
 		return nType;
 	}
 	return (nType - 5) % 24 + 3;
@@ -175,7 +177,8 @@ inline static uint8_t ToIgnoreType(uint8_t nType) {
 }
 
 inline static bool IsSingleType(uint8_t nType) {
-	if(nType > STREAM_DATA_C_STRING_NULL
+	if((nType > STREAM_DATA_C_STRING_NULL 
+		&& nType <= STREAM_DATA_ARRAY_STRING_NULL)
 		|| STREAM_DATA_NIL == nType) 
 	{
 		return false;
@@ -205,7 +208,9 @@ inline static bool IsStringType(uint8_t nType) {
 	if(nType == STREAM_DATA_C_STRING
 		|| nType == STREAM_DATA_C_STRING_NULL
 		|| nType == STREAM_DATA_STD_STRING
-		|| nType == STREAM_DATA_STD_STRING_NULL)
+		|| nType == STREAM_DATA_STD_STRING_NULL
+		|| nType == STREAM_DATA_TINY_JSON
+		|| nType == STREAM_DATA_TINY_JSON_NULL)
 	{
 		return true;
 	}
@@ -214,11 +219,20 @@ inline static bool IsStringType(uint8_t nType) {
 
 inline static bool IsContainerType(uint8_t nType) {
 	if(nType <= STREAM_DATA_C_STRING_NULL 
-		|| STREAM_DATA_SIZE == nType) 
+		|| STREAM_DATA_ARRAY_STRING_NULL < nType)
 	{
 		return false;
 	}
 	return true;
+}
+
+inline static bool IsJsonType(uint8_t nType) {
+	if (nType == STREAM_DATA_TINY_JSON
+		|| nType == STREAM_DATA_TINY_JSON_NULL)
+	{
+		return true;
+	}
+	return false;
 }
 
 class CTypeString
@@ -242,4 +256,4 @@ private:
 
 }
 
-#endif /* __STREAMDATATYPE_H__ */
+#endif /* STREAMDATATYPE_H */

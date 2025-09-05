@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined ( _WIN64 )
 #include <winsock2.h>
 #else
 #include <sys/socket.h>

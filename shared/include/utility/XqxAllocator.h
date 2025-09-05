@@ -1,12 +1,12 @@
 /*
- * File:   SimpleAllocator.h
+ * File:   XqxAllocator.h
  * Author: Jehu Shaw
  *
  * Created on 2014_4_23, 10:32
  */
 
-#ifndef SIMPLEALLOCATOR_H_
-#define SIMPLEALLOCATOR_H_
+#ifndef XQXALLOCATOR_H
+#define XQXALLOCATOR_H
 
 #include <vector>
 #include <assert.h>
@@ -197,4 +197,4 @@ namespace util
 
 }
 
-#endif /* SIMPLEALLOCATOR_H_ */
+#endif /* XQXALLOCATOR_H */

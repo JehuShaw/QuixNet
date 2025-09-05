@@ -5,8 +5,8 @@
  * Created on 2014_5_8, 14:09
  */
 
-#ifndef __VALUESTREAM_H__
-#define __VALUESTREAM_H__
+#ifndef VALUESTREAM_H
+#define VALUESTREAM_H
 
 #include "TransferStream.h"
 
@@ -66,6 +66,18 @@ public:
 			m_tsValues.Reset();
 		}
 
+		inline uint32_t GetBitSize() const {
+			return m_tsValues.GetWriteOffset();
+		}
+
+		inline void IgnoreBits(const int numberOfBits) {
+			m_tsValues.IgnoreBits(numberOfBits);
+		}
+
+		inline uint32_t GetUnreadSize() {
+			return TS_BITS_TO_BYTES(m_tsValues.GetNumberOfUnreadBits());
+		}
+
 private:
 	CValueStream& operator = (const CValueStream& right) {
 		return *this; 
@@ -77,4 +89,4 @@ private:
 
 }
 
-#endif /* __VALUESTREAM_H__ */
+#endif /* VALUESTREAM_H */

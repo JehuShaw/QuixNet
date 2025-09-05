@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _SERVER_SINGLETON_H
-#define _SERVER_SINGLETON_H
+#ifndef SERVER_SINGLETON_H
+#define SERVER_SINGLETON_H
 
 #include <assert.h>
 #include "SpinLock.h"
@@ -14,56 +14,65 @@
 
 namespace util {
 
-template <class T>
-class Singleton
-{
-public:
-	typedef CAutoPointer<T> PTR_T;
+	template <class T>
+	class Singleton {
+	public:
+		typedef CAutoPointer<T> PTR_T;
+		typedef void (*AllocMethod)();
 
-	static PTR_T Pointer();
+		static PTR_T Pointer();
 
-	static void Release();
-protected:
+		static void Release();
 
-	Singleton(void){ if(s_instance != NULL) { assert(false); int* p = NULL; *p = 0;} }
+	protected:
+		// You can override this method in subclasses.
+		static T * Allocator() {
+			return new T;
+		}
 
-	~Singleton(void){}
+	protected:
+		Singleton(void) { 
+			if(s_instance != (intptr_t)NULL) {
+				assert(false); int* p = NULL; *p = 0;
+			} 
+		}
 
-	Singleton(const Singleton&){}
+		~Singleton(void) {}
 
-	Singleton & operator= (const Singleton &){ return *this; }
+		Singleton(const Singleton&) {}
 
-	static CAutoPointer<T> s_instance;
-	static thd::CSpinLock s_lock; 
-};
+		Singleton & operator= (const Singleton &) { return *this; }
 
-template <class T>
-CAutoPointer<T> Singleton<T>::s_instance;
+		static CAutoPointer<T> s_instance;
+		static thd::CSpinLock s_lock;
+	};
 
-template <class T>
-thd::CSpinLock Singleton<T>::s_lock; 
+	template <class T>
+	CAutoPointer<T> Singleton<T>::s_instance;
 
-template <class T>
-typename Singleton<T>::PTR_T Singleton<T>::Pointer()
-{
-	if(s_instance == NULL) {
+	template <class T>
+	thd::CSpinLock Singleton<T>::s_lock;
+
+	template <class T>
+	typename Singleton<T>::PTR_T Singleton<T>::Pointer()
+	{
+		if(s_instance == (intptr_t)NULL) {
+			thd::CScopedLock scopedLock(s_lock);
+			if(s_instance == (intptr_t)NULL) {
+				s_instance.SetRawPointer(T::Allocator());
+			}
+		}
+		return s_instance;
+	}
+
+	template <class T>
+	void Singleton<T>::Release()
+	{
 		thd::CScopedLock scopedLock(s_lock);
-		if(s_instance == NULL) {
-			s_instance.SetRawPointer(new T);
+		if(s_instance != (intptr_t)NULL) {
+			s_instance.SetRawPointer(NULL);
 		}
 	}
-	return s_instance;
 }
 
-template <class T>
-void Singleton<T>::Release()
-{
-	thd::CScopedLock scopedLock(s_lock);
-	if(s_instance != NULL) {
-		s_instance.SetRawPointer(NULL);
-	}
-}
-
-}
-
-#endif
+#endif // SERVER_SINGLETON_H

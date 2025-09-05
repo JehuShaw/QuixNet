@@ -6,7 +6,7 @@
  */
 
 #ifndef SIMPLEEVENTARRAY_H
-#define	SIMPLEEVENTARRAY_H
+#define	SIMPLEEVENTARRAY_H 
 
 #include <map>
 #include "AgentMethod.h"
@@ -26,12 +26,14 @@ namespace evt
             nArraySize = nSize;
             pEventArray = new util::CAutoPointer<MethodRIP1Base> [nArraySize];
         }
+
         ~SimpleEventArray() {
             thd::CScopedWriteLock scopedWriteLock(rwTicket);
             nArraySize = 0;
             delete[] pEventArray;
             pEventArray =  NULL;
         }
+
         bool AddEventListener(int id, const util::CAutoPointer<MethodRIP1Base>& method) {
             thd::CScopedWriteLock scopedWriteLock(rwTicket);
             if(NULL == pEventArray) {
@@ -46,9 +48,10 @@ namespace evt
             pEventArray[id] = method; 
             return true;
         }
+
         int DispatchEvent(int id, const util::CWeakPointer<ArgumentBase>& arg) {
             util::CAutoPointer<MethodRIP1Base> pMethod;
-            if(true) {
+            do {
                 thd::CScopedReadLock scopedReadLock(rwTicket);
                 if(NULL == pEventArray) {
                     return FALSE;
@@ -57,12 +60,13 @@ namespace evt
                     return FALSE;
                 }
                 pMethod = pEventArray[id];
-            }
+			} while (false);
             if(pMethod.IsInvalid()) {
                 return FALSE; 
             }
             return pMethod->Invoke(arg);
         }
+
         bool HasEventListener(int id) {
             thd::CScopedReadLock scopedReadLock(rwTicket);
             if(NULL == pEventArray) {
@@ -76,6 +80,7 @@ namespace evt
             }
             return true;
         }
+
         void RemoveEventListener(int id) {
             thd::CScopedWriteLock scopedWriteLock(rwTicket);
             if(NULL == pEventArray) {

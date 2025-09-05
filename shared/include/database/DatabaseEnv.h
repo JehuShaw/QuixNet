@@ -4,7 +4,7 @@
  *
  */
 
-#if !defined(DATABASEENV_H)
+#ifndef DATABASEENV_H
 #define DATABASEENV_H
 
 //! Other libs we depend on.
@@ -17,4 +17,4 @@
 #include "Field.h"
 #include "Database.h"
 
-#endif
+#endif /* DATABASEENV_H */

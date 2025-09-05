@@ -5,7 +5,8 @@
  * Created on 2014_4_5 AM 23:37
  */
 
-#pragma once
+#ifndef SERVANTSERVERIMP_H
+#define	SERVANTSERVERIMP_H
 
 #include <set>
 #include <string>
@@ -20,15 +21,13 @@ class CServantServiceImp: public ::node::ControlCentreService
 public:
 	CServantServiceImp(
 		util::CAutoPointer<rpcz::rpc_channel> pMasterChannel,
-        const std::string& strBind, uint16_t servantId);
-
-	~CServantServiceImp(void);
+        const std::string& endPoint, uint32_t servantId);
 
 	virtual void RegisterModule(const ::node::RegisterRequest& request,
-		::rpcz::reply< ::node::OperateResponse> response);
+		::rpcz::reply< ::node::RegisterResponse> response);
 
 	virtual void RemoveModule(const ::node::RemoveRequest& request,
-		::rpcz::reply< ::node::OperateResponse> response);
+		::rpcz::reply< ::node::RemoveResponse> response);
 
 	virtual void KeepRegister(const ::node::KeepRegisterRequest& request,
 		::rpcz::reply< ::node::KeepRegisterResponse> response);
@@ -48,47 +47,62 @@ public:
 	virtual void GetNodeList(const ::node::NodeListRequest& request,
 		::rpcz::reply< ::node::NodeListResponse> response);
 
-	virtual void CreateUserId(const ::node::CreateIdRequest& request,
-		::rpcz::reply< ::node::CreateIdResponse> response);
+	virtual void GetUsers(const ::node::GetUserRequest& request,
+		::rpcz::reply< ::node::GetUserResponse> response);
 
-	virtual void CheckUserId(const ::node::CheckIdRequest& request,
-		::rpcz::reply< ::node::CheckIdResponse> response);
+	virtual void CreateUser(const ::node::CreateUserRequest& request,
+		::rpcz::reply< ::node::CreateUserResponse> response);
 
-	virtual void UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-		::rpcz::reply< ::node::UpdateRegionResponse> response);
+	virtual void CheckUser(const ::node::CheckUserRequest& request,
+		::rpcz::reply< ::node::CheckUserResponse> response);
 
-	virtual void CacheServerStore(const ::node::CacheStoreRequest& request,
-		::rpcz::reply< ::node::CacheStoreResponse> response);
+	virtual void UpdateUser(const ::node::UpdateUserRequest& request,
+		::rpcz::reply< ::node::UpdateUserResponse> response);
 
-	static bool IsServerAlive(uint16_t serverId) {
+	virtual void DeleteUser(const ::node::DeleteUserRequest& request,
+		::rpcz::reply< ::node::DeleteUserResponse> response);
+
+	virtual void GetEndPointFromServant(const ::node::EndPointRequest& request,
+		::rpcz::reply< ::node::EndPointResponse> response);
+
+	virtual void SeizeServer(const ::node::SeizeRequest& request,
+		::rpcz::reply< ::node::SeizeResponse> response);
+
+	virtual void FreeServer(const ::node::FreeRequest& request,
+		::rpcz::reply< ::node::FreeResponse> response);
+
+	virtual void GenerateGuid(const ::node::ControlCentreVoid& request,
+		::rpcz::reply< ::node::GuidResponse> response);
+
+	static bool IsServerAlive(uint32_t serverId) {
 		return FindServerId(serverId);
 	}
 
+	static void ClearAllTimer();
+
 private:
-	inline static bool InsertServerId(uint16_t serverId) {
+	inline static bool InsertServerId(uint32_t serverId) {
 		thd::CScopedWriteLock wrLock(m_wrLock);
 		std::pair<SERVER_ID_SET_T::iterator, bool> pairIB(
 		m_serverIds.insert(serverId));
 		return pairIB.second;
 	}
 
-	inline static bool FindServerId(uint16_t serverId) {
+	inline static bool FindServerId(uint32_t serverId) {
 		thd::CScopedReadLock rdLock(m_wrLock);
 		return m_serverIds.end() != m_serverIds.find(serverId);
 	}
 
-	inline static void EraseServerId(uint16_t serverId) {
+	inline static void EraseServerId(uint32_t serverId) {
 		thd::CScopedWriteLock wrLock(m_wrLock);
 		m_serverIds.erase(serverId);
 	}
 
-	static void ClearAllTimer();
-
 	int RegisterToMaster(
 		const std::string& endPoint,
-		uint16_t servantId,
+		uint32_t servantId,
 		const std::string& serverName,
-		uint16_t serverId,
+		uint32_t serverId,
 		uint16_t serverRegion,
 		const std::string& projectName,
         const std::string& acceptAddress,
@@ -97,24 +111,25 @@ private:
 
 	static int UnregisterToMaster(
 		util::CAutoPointer<rpcz::rpc_channel>& pMasterChannel,
-		const std::string& serverName, uint16_t serverId);
+		const std::string& serverName, uint32_t serverId);
 
-	bool KeepRegisterToMaster(
+	int KeepRegisterToMaster(
 		const std::string& serverName,
-		uint16_t serverId,
+		uint32_t serverId,
 		uint32_t serverLoad,
 		int32_t serverStatus,
 		const std::string& serverState);
 
-	static void KeepTimeoutCallback(uint16_t& serverId);
+	static void KeepTimeoutCallback(uint32_t& serverId);
 
 private:
-	typedef std::set<uint16_t> SERVER_ID_SET_T;
+	typedef std::set<uint32_t> SERVER_ID_SET_T;
 	static SERVER_ID_SET_T m_serverIds;
 	static thd::CSpinRWLock m_wrLock;
 
 	util::CAutoPointer<rpcz::rpc_channel> m_pMasterChannel;
-    std::string m_strBind;
-	uint16_t m_servantId;
+    std::string m_endPoint;
+	uint32_t m_servantId;
 };
 
+#endif /* SERVANTSERVERIMP_H */

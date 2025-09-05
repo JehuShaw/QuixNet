@@ -5,8 +5,8 @@
  * Created on 2013年10月1日, 上午10:32
  */
 
-#ifndef SPINEVENT_H_
-#define	SPINEVENT_H_
+#ifndef SPINEVENT_H
+#define	SPINEVENT_H
 
 #include "Common.h"
 #include "AtomicLock.h"
@@ -31,12 +31,12 @@ namespace thd {
 			// wait
 			uint64_t startTime = GetSysTickCount();
 			for(int i = 0; TRUE == m_flag; ++i) {
+				cpu_relax(i);
 				if((int64_t)(GetSysTickCount() - 
 					startTime) >= (int64_t)msec)
 				{
 					return false;
 				}
-				cpu_relax(i);
 			}
 			return true;
 		}
@@ -55,4 +55,4 @@ namespace thd {
 
 }
 
-#endif  // SPINEVENT_H_
+#endif  // SPINEVENT_H

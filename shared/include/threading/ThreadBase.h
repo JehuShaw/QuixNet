@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _THREAD_BASE_H
-#define _THREAD_BASE_H
+#ifndef THREAD_BASE_H
+#define THREAD_BASE_H
 
 namespace thd {
 
@@ -22,5 +22,5 @@ public:
 
 }
 
-#endif
+#endif // THREAD_BASE_H
 

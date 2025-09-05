@@ -5,8 +5,8 @@
  * Created on 2016_5_13, 17:38
  */
 
-#ifndef __RANKSETMT_H_
-#define __RANKSETMT_H_
+#ifndef RANKSETMT_H
+#define RANKSETMT_H
 
 #include <map>
 #include "SkipList.h"
@@ -115,13 +115,21 @@ public:
 	// 增加或者更新一项并返回新增项和删除项
 	bool ReplaceItem(util::CAutoPointer<RankDataType>& outAddData, util::CAutoPointer<RankDataType>& outRemoveData, IDType id, ScoreType score);
 	// 删除一项
-	bool DelItem(IDType id);
+	bool DelItem(IDType id) {
+		thd::CScopedWriteLock wrLock(m_rwLock);
+		return InnerDelItem(id);
+	}
 	// 删除一项并返回删除的项
-	bool DelItem(util::CAutoPointer<RankDataType>& outRankData, IDType id);
+	bool DelItem(util::CAutoPointer<RankDataType>& outRankData, IDType id) {
+		thd::CScopedWriteLock wrLock(m_rwLock);
+		return InnerDelItem(outRankData, id);
+	}
 	// 获取一项
 	bool GetItem(util::CAutoPointer<RankDataType>& outRankData, IDType id);
 	// 获取排名和分值
 	bool GetRankAndScore(unsigned long& outRank, ScoreType& outScore, IDType id);
+	// 获取排名和数据
+	bool GetRankAndData(unsigned long& outRank, util::CAutoPointer<const RankDataType>& outRankData, IDType id);
 	// 获得排名
 	unsigned long GetRank(IDType id);
 	// 获取某个排序管理器的排名, 只取top排名
@@ -156,6 +164,10 @@ public:
 	bool GetMidMoreNodes(NodeRankType* outNodes, uint32_t u32Count, IDType id, bool reverse = false);
 
 private:
+	bool InnerDelItem(IDType id);
+	bool InnerDelItem(util::CAutoPointer<RankDataType>& outRankData, IDType id);
+
+private:
 	typedef CSkipList<CSkipListKey, IDType> SKIP_LIST_T;
 	typedef std::map<IDType, util::CAutoPointer<IRankData<ScoreType> > > ID_TO_RANKDAT_T;
 	SKIP_LIST_T m_skipList;
@@ -171,7 +183,7 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::InsertItem(IDType id, util::CA
 	thd::CScopedWriteLock wrLock(m_rwLock);
 	CSkipListKey slKey(inRankData);
 	if(0 != m_scoreFloor && slKey.GetScore() < m_scoreFloor) {
-		DelItem(id);
+		InnerDelItem(id);
 		return false;
 	}
 	std::pair<typename ID_TO_RANKDAT_T::iterator, bool> pairIB(m_id2RankData.insert(
@@ -181,7 +193,7 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::InsertItem(IDType id, util::CA
 		if(0 != m_uLimitSize && m_skipList.Size() > m_uLimitSize) {
 			typename SKIP_LIST_T::RIterator iter(m_skipList.RBegin());
 			if(m_skipList.REnd() != iter) {
-				DelItem(iter->GetValue());
+				InnerDelItem(iter->GetValue());
 			}
 		}
 		return true;
@@ -194,7 +206,7 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::InsertItem(util::CAutoPointer<
 	thd::CScopedWriteLock wrLock(m_rwLock);
 	CSkipListKey slKey(inRankData);
 	if(0 != m_scoreFloor && slKey.GetScore() < m_scoreFloor) {
-		DelItem(outRemoveData, id);
+		InnerDelItem(outRemoveData, id);
 		return false;
 	}
 	std::pair<typename ID_TO_RANKDAT_T::iterator, bool> pairIB(m_id2RankData.insert(
@@ -204,7 +216,7 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::InsertItem(util::CAutoPointer<
 		if(0 != m_uLimitSize && m_skipList.Size() > m_uLimitSize) {
 			typename SKIP_LIST_T::RIterator iter(m_skipList.RBegin());
 			if(m_skipList.REnd() != iter) {
-				DelItem(outRemoveData, iter->GetValue());
+				InnerDelItem(outRemoveData, iter->GetValue());
 			}
 		}
 		return true;
@@ -216,7 +228,7 @@ template <class IDType, class ScoreType, class RankDataType>
 bool CRankSetMT<IDType, ScoreType, RankDataType>::ReplaceItem(IDType id, ScoreType score) {
 	thd::CScopedWriteLock wrLock(m_rwLock);
 	if(0 != m_scoreFloor && score < m_scoreFloor) {
-		DelItem(id);
+		InnerDelItem(id);
 		return false;
 	}
 	typename ID_TO_RANKDAT_T::iterator iter(m_id2RankData.lower_bound(id));
@@ -238,7 +250,7 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::ReplaceItem(IDType id, ScoreTy
 		if(0 != m_uLimitSize && m_skipList.Size() > m_uLimitSize) {
 			typename SKIP_LIST_T::RIterator iter(m_skipList.RBegin());
 			if(m_skipList.REnd() != iter) {
-				DelItem(iter->GetValue());
+				InnerDelItem(iter->GetValue());
 			}
 		}
 	}
@@ -249,7 +261,7 @@ template <class IDType, class ScoreType, class RankDataType>
 bool CRankSetMT<IDType, ScoreType, RankDataType>::ReplaceItem(util::CAutoPointer<RankDataType>& outAddData, util::CAutoPointer<RankDataType>& outRemoveData, IDType id, ScoreType score) {
 	thd::CScopedWriteLock wrLock(m_rwLock);
 	if(0 != m_scoreFloor && score < m_scoreFloor) {
-		DelItem(outRemoveData, id);
+		InnerDelItem(outRemoveData, id);
 		return false;
 	}
 	typename ID_TO_RANKDAT_T::iterator iter(m_id2RankData.lower_bound(id));
@@ -272,37 +284,10 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::ReplaceItem(util::CAutoPointer
 		if(0 != m_uLimitSize && m_skipList.Size() > m_uLimitSize) {
 			typename SKIP_LIST_T::RIterator iter(m_skipList.RBegin());
 			if(m_skipList.REnd() != iter) {
-				DelItem(outRemoveData, iter->GetValue());
+				InnerDelItem(outRemoveData, iter->GetValue());
 			}
 		}
 	}
-	return true;
-}
-
-template <class IDType, class ScoreType, class RankDataType>
-bool CRankSetMT<IDType, ScoreType, RankDataType>::DelItem(IDType id) {
-	thd::CScopedWriteLock wrLock(m_rwLock);
-	typename ID_TO_RANKDAT_T::const_iterator iter(m_id2RankData.find(id));
-	if(m_id2RankData.end() == iter) {
-		return false;
-	}
-	CSkipListKey slKey(iter->second);
-	m_skipList.DeleteNode(slKey, id);
-	m_id2RankData.erase(iter);
-	return true;
-}
-
-template <class IDType, class ScoreType, class RankDataType>
-bool CRankSetMT<IDType, ScoreType, RankDataType>::DelItem(util::CAutoPointer<RankDataType>& outRankData, IDType id) {
-	thd::CScopedWriteLock wrLock(m_rwLock);
-	typename ID_TO_RANKDAT_T::const_iterator iter(m_id2RankData.find(id));
-	if(m_id2RankData.end() == iter) {
-		return false;
-	}
-	outRankData = iter->second;
-	CSkipListKey slKey(iter->second);
-	m_skipList.DeleteNode(slKey, id);
-	m_id2RankData.erase(iter);
 	return true;
 }
 
@@ -328,6 +313,20 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::GetRankAndScore(unsigned long&
 	CSkipListKey slKey(iter->second);
 	outRank = m_skipList.GetRank(slKey, id);
 	outScore = iter->second->GetScore();
+	return true;
+}
+
+template <class IDType, class ScoreType, class RankDataType>
+bool CRankSetMT<IDType, ScoreType, RankDataType>::GetRankAndData(unsigned long& outRank, util::CAutoPointer<const RankDataType>& outRankData, IDType id) {
+	thd::CScopedReadLock rdLock(m_rwLock);
+	typename ID_TO_RANKDAT_T::const_iterator iter(m_id2RankData.find(id));
+	if (m_id2RankData.end() == iter) {
+		return false;
+	}
+
+	CSkipListKey slKey(iter->second);
+	outRank = m_skipList.GetRank(slKey, id);
+	outRankData = iter->second;
 	return true;
 }
 
@@ -402,6 +401,31 @@ bool CRankSetMT<IDType, ScoreType, RankDataType>::GetMidMoreNodes(NodeRankType* 
 	return m_skipList.GetMidMoreNodes(outNodes, u32Count, slKey, id, reverse);
 }
 
+template <class IDType, class ScoreType, class RankDataType>
+bool CRankSetMT<IDType, ScoreType, RankDataType>::InnerDelItem(IDType id) {
+	typename ID_TO_RANKDAT_T::const_iterator iter(m_id2RankData.find(id));
+	if (m_id2RankData.end() == iter) {
+		return false;
+	}
+	CSkipListKey slKey(iter->second);
+	m_skipList.DeleteNode(slKey, id);
+	m_id2RankData.erase(iter);
+	return true;
 }
 
-#endif /* __RANKSETMT_H_ */
+template <class IDType, class ScoreType, class RankDataType>
+bool CRankSetMT<IDType, ScoreType, RankDataType>::InnerDelItem(util::CAutoPointer<RankDataType>& outRankData, IDType id) {
+	typename ID_TO_RANKDAT_T::const_iterator iter(m_id2RankData.find(id));
+	if (m_id2RankData.end() == iter) {
+		return false;
+	}
+	outRankData = iter->second;
+	CSkipListKey slKey(iter->second);
+	m_skipList.DeleteNode(slKey, id);
+	m_id2RankData.erase(iter);
+	return true;
+}
+
+}
+
+#endif /* RANKSETMT_H */

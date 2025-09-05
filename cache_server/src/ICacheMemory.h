@@ -5,8 +5,8 @@
  * Created on 2014_4_5 AM 23:37
  */
 
-#ifndef __ICACHEMEMORY_H__
-#define __ICACHEMEMORY_H__
+#ifndef ICACHEMEMORY_H
+#define ICACHEMEMORY_H
 
 #include "AutoPointer.h"
 #include "Common.h"
@@ -24,23 +24,23 @@ public:
 	ICacheMemory() : m_bLock(false) {}
 	virtual ~ICacheMemory() {}
 
-    virtual MCResult AddToDB(
-		bool bResetFlag = false) = 0;
+    virtual MCResult AddToDB() = 0;
 
     virtual MCResult LoadFromDB(
-		bool bDBCas = true,
-		const int32_t* pInFlag = NULL,
-		int32_t* pOutFlag = NULL) = 0;
+		bool bDBCas = true) = 0;
 
     virtual MCResult UpdateToDB(
-		bool bDBCas = true,
-		bool bResetFlag = false) = 0;
+		bool bDBCas = true) = 0;
 
     virtual MCResult DeleteFromDB() = 0;
+
+	virtual MCResult LoadCasFromDB() = 0;
 
     virtual const std::string& GetKey() const = 0;
 
     virtual void SetValue(util::CTransferStream& inValue) = 0;
+
+	virtual uint64_t GetCas() const = 0;
 
 protected:
 	friend class CCacheMemoryManager;
@@ -62,4 +62,4 @@ private:
 
 };
 
-#endif /* __ICACHEMEMORY_H__ */
+#endif /* ICACHEMEMORY_H */

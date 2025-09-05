@@ -5,8 +5,8 @@
  * Created on 2014_5_8, 14:09
  */
 
-#ifndef _SEPARATEDSTREAM_H
-#define _SEPARATEDSTREAM_H
+#ifndef SEPARATEDSTREAM_H
+#define SEPARATEDSTREAM_H
 
 #include "Common.h"
 #include <stdlib.h>
@@ -40,8 +40,14 @@ enum SeparatedType {
   ((sizeof (t) * CHAR_BIT - TYPE_SIGNED (t)) * 302 / 1000 \
    + 1 + TYPE_SIGNED (t))
 
+#ifndef DBL_DECIMAL_DIG
 #define DBL_DECIMAL_DIG (DBL_DIG + 2)
+#endif // !DBL_DECIMAL_DIG
+
+#ifndef FLT_DECIMAL_DIG
 #define FLT_DECIMAL_DIG (FLT_DIG + 2)
+#endif
+
 
 class SHARED_DLL_DECL CSeparatedStream
 {
@@ -238,7 +244,7 @@ class SHARED_DLL_DECL CSeparatedStream
 				int offset = ultostr(p, value, 10, 0);//sprintf(p, "%hu", value);
 				*(p += offset) = m_delim;
 				*++p = '\0';
-				m_writeOffset = ((uint64_t)p - (uint64_t)m_data);
+				m_writeOffset = static_cast<int>((uint64_t)p - (uint64_t)m_data);
 			}
 			m_moreData = true;
 			return *this;
@@ -423,7 +429,11 @@ class SHARED_DLL_DECL CSeparatedStream
 			{
 				char* p = m_data + m_writeOffset;
 				*p++ = m_delim;
-				gcvt(value, FLT_DECIMAL_DIG, p);
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2))
+				qgcvt(value, FLT_DECIMAL_DIG, p);
+#else
+				_gcvt(value, FLT_DECIMAL_DIG, p);
+#endif
 				int offset = strlen(p);//sprintf(p,"%g", value);
 				p += offset;
 				m_writeOffset = ((uint64_t)p - (uint64_t)m_data);
@@ -432,7 +442,11 @@ class SHARED_DLL_DECL CSeparatedStream
 				if(0 != m_writeOffset && *(p - 1) != m_delim) {
 					*p++ = m_delim;
 				}
-				gcvt(value, FLT_DECIMAL_DIG, p);
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2))
+				qgcvt(value, FLT_DECIMAL_DIG, p);
+#else
+				_gcvt(value, FLT_DECIMAL_DIG, p);
+#endif
 				int offset = strlen(p);//sprintf(p,"%g", value);
 				*(p += offset) = m_delim;
 				*++p = '\0';
@@ -452,7 +466,11 @@ class SHARED_DLL_DECL CSeparatedStream
 			{
 				char* p = m_data + m_writeOffset;
 				*p++ = m_delim;
-				gcvt(value, DBL_DECIMAL_DIG, p);
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2))
+				qgcvt(value, FLT_DECIMAL_DIG, p);
+#else
+				_gcvt(value, FLT_DECIMAL_DIG, p);
+#endif
 				int offset = strlen(p);//sprintf(p, "%lg", value);
 				p += offset;
 				m_writeOffset = ((uint64_t)p - (uint64_t)m_data);
@@ -461,7 +479,11 @@ class SHARED_DLL_DECL CSeparatedStream
 				if(0 != m_writeOffset && *(p - 1) != m_delim) {
 					*p++ = m_delim;
 				}
-				gcvt(value, DBL_DECIMAL_DIG, p);
+#if defined(__GLIBC__) && (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2))
+				qgcvt(value, FLT_DECIMAL_DIG, p);
+#else
+				_gcvt(value, FLT_DECIMAL_DIG, p);
+#endif
 				int offset = strlen(p);//sprintf(p,"%lg", value);
 				*(p += offset) = m_delim;
 				*++p = '\0';
@@ -1118,4 +1140,4 @@ class SHARED_DLL_DECL CSeparatedStream
 
 }
 
-#endif /* _SEPARATEDSTREAM_H */
+#endif /* SEPARATEDSTREAM_H */

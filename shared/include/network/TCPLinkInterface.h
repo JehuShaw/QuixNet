@@ -8,8 +8,8 @@
 #ifndef TCPLINKINTERFACE_H
 #define	TCPLINKINTERFACE_H
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-#include "TCPSocketWin32.h"
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+#include "TCPSocketWin.h"
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
 #include "TCPSocketBSD.h"
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -27,14 +27,15 @@ namespace ntwk {
 
 	class LinkData : public ILinkData {
 	public:
+
 		void Clear(){
 			ingoingQueue.Clear();
 		}
 		SingleProducerConsumer<Packet> ingoingQueue;
 	};
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-    class SHARED_DLL_DECL TCPLinkInterface : protected TCPSocketWin32 {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+    class SHARED_DLL_DECL TCPLinkInterface : protected TCPSocketWin {
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
     class SHARED_DLL_DECL TCPLinkInterface : protected TCPSocketBSD {
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -42,7 +43,7 @@ namespace ntwk {
 #endif
     public:
         TCPLinkInterface();
-#if !defined( __WIN32__ ) && !defined( WIN32 ) && !defined( _WIN32 )
+#if !defined( __WIN32__ ) && !defined( WIN32 ) && !defined( _WIN32 ) && !defined( _WIN64 )
         TCPLinkInterface(socket_domain domain);
 #endif
         virtual ~TCPLinkInterface();
@@ -52,8 +53,8 @@ namespace ntwk {
             uint32_t maxPacketSize = MAX_PACKET_SIZE)
         {
             this->packetSizeLimit = maxPacketSize;
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-            return this->TCPSocketWin32::Start(address, maxLink);
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+            return this->TCPSocketWin::Start(address, maxLink);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
             return this->TCPSocketBSD::Start(address, maxLink);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -63,8 +64,8 @@ namespace ntwk {
 
         //Stop the TCP server
         inline bool Stop(void) {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-            if(this->TCPSocketWin32::Stop()){
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+            if(this->TCPSocketWin::Stop()){
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
             if (this->TCPSocketBSD::Stop()) {
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -82,8 +83,8 @@ namespace ntwk {
             uint32_t maxPacketSize = MAX_PACKET_SIZE)
         {
             this->packetSizeLimit = maxPacketSize;
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-            return this->TCPSocketWin32::Connect(socketId, address);
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+            return this->TCPSocketWin::Connect(socketId, address);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
             return this->TCPSocketBSD::Connect(socketId, address);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -93,30 +94,39 @@ namespace ntwk {
 
         // Sends a byte stream
         inline bool Send(unsigned char * data, unsigned int length, const SocketID& socketId) {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-            return this->TCPSocketWin32::Send(data, length, socketId.index);
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+            return this->TCPSocketWin::Send(data, length, socketId);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-            return this->TCPSocketBSD::Send(data, length, socketId.index);
+            return this->TCPSocketBSD::Send(data, length, socketId);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-            return this->TCPSocketLinux::Send(data, length, socketId.index);
+            return this->TCPSocketLinux::Send(data, length, socketId);
 #endif
         }
 
-		inline bool Send(unsigned char * data, unsigned int length, int socketIdx) {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-			return this->TCPSocketWin32::Send(data, length, socketIdx);
+		// Is exist ?
+		inline bool Exist(const SocketID& socketId) const {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			return this->TCPSocketWin::Exist(socketId);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-            return this->TCPSocketBSD::Send(data, length, socketIdx);
+			return this->TCPSocketBSD::Exist(socketId);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-			return this->TCPSocketLinux::Send(data, length, socketIdx);
+			return this->TCPSocketLinux::Exist(socketId);
+#endif
+		}
+
+		// Number of socket connections
+		inline uint32_t Size() const {
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			return this->TCPSocketWin::Size();
+#elif defined( __NetBSD__ ) || defined( __APPLE__ )
+			return this->TCPSocketBSD::Size();
+#elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
+			return this->TCPSocketLinux::Size();
 #endif
 		}
 
         //returns data received
-		inline Packet* Receive(const SocketID& socketId) {
-			return Receive(socketId.index);
-		}
-		inline Packet* Receive(int socketIdx) {
+		inline LinkData* Receive(const SocketID& socketId) {
 
 			if(!m_isStarted) {
 				return NULL;
@@ -126,61 +136,33 @@ namespace ntwk {
 				return NULL;
 			}
 
-			socket_links_t::value_t val(m_pSktLinks->Find(socketIdx));
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+			SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+			if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
 				return NULL;
 			}
 
-			SocketLink* pSktLink = val.pObject;
-			if(NULL == pSktLink) {
-				assert(pSktLink);
-				return NULL;
-			}
+			return dynamic_cast<LinkData*>(pSktLink->GetLinkerData());
+		}
 
-			LinkData* ptr = dynamic_cast<LinkData*>(pSktLink->GetLinkerData());
-			if(NULL != ptr){
+		inline Packet* AllocatePacket(LinkData* ptr) {
+			if (NULL != ptr) {
 				return ptr->ingoingQueue.ReadLock();
 			}
 			return NULL;
 		}
 
         //Deallocates a packet returned by Receive
-		inline void DeallocatePacket(Packet* packet, const SocketID& socketId) {
-			DeallocatePacket(packet, socketId.index);
-		}
-		inline void DeallocatePacket(Packet* packet, int socketIdx) {
-
-			if(!m_isStarted) {
-				return;
-			}
-
-			if(NULL == m_pSktLinks) {
-				return;
-			}
-
-			socket_links_t::value_t val(m_pSktLinks->Find(socketIdx));
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-				return;
-			}
-
-			SocketLink* pSktLink = val.pObject;
-			if(NULL == pSktLink) {
-				assert(pSktLink);
-				return;
-			}
-
-			LinkData* ptr = dynamic_cast<LinkData*>(pSktLink->GetLinkerData());
-			if(NULL != ptr){
+		inline bool DeallocatePacket(LinkData* ptr, Packet* packet) {
+			if(NULL != ptr) {
 				assert(ptr->ingoingQueue.CheckReadUnlockOrder(packet));
 				ptr->ingoingQueue.ReadUnlock();
+				return true;
 			}
+			return false;
 		}
 
 		// returns received size
 		inline int ReceiveSize(const SocketID& socketId) {
-			return ReceiveSize(socketId.index);
-		}
-		inline int ReceiveSize(int socketIdx) {
 
 			if(!m_isStarted) {
 				return 0;
@@ -190,14 +172,8 @@ namespace ntwk {
 				return 0;
 			}
 
-			socket_links_t::value_t val(m_pSktLinks->Find(socketIdx));
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-				return 0;
-			}
-
-			SocketLink* pSktLink = val.pObject;
-			if(NULL == pSktLink) {
-				assert(pSktLink);
+			SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+			if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
 				return 0;
 			}
 
@@ -220,10 +196,11 @@ namespace ntwk {
 		}
 
         //check lost connections
-		inline bool HasLostConnection(SocketID& socketId){
-			SocketID *temp = lostConnections.ReadLock();
+		inline bool HasLostConnection(SocketID& socketId, int& nWhy){
+			LostData *temp = lostConnections.ReadLock();
 			if (temp){
-				socketId = *temp;
+				socketId = temp->socketId;
+				nWhy = temp->nWhy;
 				lostConnections.ReadUnlock();
 				return true;
 			}
@@ -231,13 +208,13 @@ namespace ntwk {
 		}
 
         //Disconnects aplayer/address
-		inline void CloseConnection(const SocketID& socketId){
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-			this->TCPSocketWin32::CloseConnection(socketId);
+		inline void CloseConnection(const SocketID& socketId, int nWhy){
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			this->TCPSocketWin::CloseConnection(socketId, nWhy);
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-            this->TCPSocketBSD::CloseConnection(socketId);
+            this->TCPSocketBSD::CloseConnection(socketId, nWhy);
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-			this->TCPSocketLinux::CloseConnection(socketId);
+			this->TCPSocketLinux::CloseConnection(socketId, nWhy);
 #endif
 		}
 
@@ -246,27 +223,36 @@ namespace ntwk {
 		}
 
     protected:
-        SingleProducerConsumer<SocketID> newConnections,lostConnections;
+        SingleProducerConsumer<SocketID> newConnections;
+		SingleProducerConsumer<LostData> lostConnections;
 		ILinkEvent* m_pLinkEvent;
 
 		// Limit the packet size, The unit is byte
 		uint32_t packetSizeLimit;
 
         ILinkData* AllocateLinkerData();
-        void AcceptCallback(SocketLink& socketLink);
+
+        void AcceptCallback(const SocketLink& socketLink);
+
         int ReceiveCallback(
 			SocketLink& socketLink,
             const unsigned char* buffer,
             const unsigned int length,
             const unsigned char* moreBuffer,
             const unsigned int moreLength);
+
         void SendCallback(
 			Packet& dstPacket,
 			const unsigned char* data,
 			const unsigned int length,
 			const unsigned char* prefixData,
 			const unsigned int prefixLength);
-        void DisconnectCallback(SocketLink& socketLink);
+
+        void DisconnectCallback(
+			int nIndex,
+			const SocketID& socketId,
+			int nWhy);
+
         void MisdataCallback(
 			SocketLink& socketLink,
             const unsigned char* buffer,

@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _FAST_MUTEX_H
-#define _FAST_MUTEX_H
+#ifndef FAST_MUTEX_H
+#define FAST_MUTEX_H
 
 #include "Common.h"
 #include "ILock.h"
@@ -36,7 +36,7 @@ public:
 			return;
 		}
 
-		for(int i = 0; atomic_cmpxchg(&m_lock, threadId, 0); ++i) {
+		for(int i = 0; atomic_cmpxchg(&m_lock, 0, threadId); ++i) {
 			cpu_relax(i);
 		}
 
@@ -50,7 +50,7 @@ public:
 			return true;
 		}
 
-		if(atomic_cmpxchg(&m_lock, threadId, 0) == 0) {
+		if(atomic_cmpxchg(&m_lock, 0, threadId) == 0) {
 			m_recursionCount = 1;
 			return true;
 		}
@@ -88,5 +88,5 @@ private:
 
 }
 
-#endif /* _FAST_MUTEX_H */
+#endif /* FAST_MUTEX_H */
 

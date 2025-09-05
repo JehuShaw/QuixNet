@@ -5,11 +5,12 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _TEMPLATEBASE_H
-#define	_TEMPLATEBASE_H
+#ifndef TEMPLATEBASE_H
+#define	TEMPLATEBASE_H
 
 #include <string>
 #include <map>
+#include "TinyJson.h"
 
 typedef std::map<std::string, std::string> csv_columns_t;
 

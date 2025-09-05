@@ -38,6 +38,10 @@ namespace evt
 		CommandEvent(const util::CAutoPointer<MethodRIP1Base>& method, const std::string& spec)
 			: m_method(method), m_spec(spec) {}
 
+		inline bool Equal(const MethodRIP1Base& base) const {
+			return m_method->Equal(base);
+		}
+
         int Invoke(const util::CWeakPointer<ArgumentBase>& arg) {
             if(m_method.IsInvalid()) {
                 return 0;

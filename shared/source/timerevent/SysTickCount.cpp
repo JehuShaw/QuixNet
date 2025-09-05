@@ -20,11 +20,11 @@ uint64_t GetSysTickCount(void) {
 	}
 	else
 	{
-		static volatile LONGLONG s_u64Count = 0;
-		LONGLONG curCount1, curCount2;
-		LONGLONG tmp;
+		static volatile ULONGLONG s_u64Count = 0;
+		ULONGLONG curCount1, curCount2;
+		ULONGLONG tmp;
 
-		curCount1 = atomic_cmpxchg64(&s_u64Count, 0, 0);
+		curCount1 = s_u64Count;
 		curCount2 = curCount1 & 0xFFFFFFFF00000000;
 		curCount2 |= GetTickCount();
 
@@ -32,7 +32,7 @@ uint64_t GetSysTickCount(void) {
 			curCount2 += 0x100000000;
 		}
 
-		tmp = atomic_cmpxchg64(&s_u64Count, curCount2, curCount1);
+		tmp = atomic_cmpxchg64(&s_u64Count, curCount1, curCount2);
 		if(tmp == curCount1) {
 			return curCount2;
 		}

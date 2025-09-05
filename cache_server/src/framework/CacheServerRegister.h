@@ -5,8 +5,8 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _CACHESERVERREGISTER_H_
-#define	_CACHESERVERREGISTER_H_
+#ifndef CACHESERVERREGISTER_H
+#define	CACHESERVERREGISTER_H
 
 #include "IServerRegister.h"
 
@@ -24,10 +24,10 @@ public:
 	
     virtual void RegisterCommand();
 
-	virtual void RegistModule();
+	virtual void RegisterModule();
 
-	virtual void UnregistModule();
+	virtual void UnregisterModule();
 };
 
-#endif	/* _CACHESERVERREGISTER_H_ */
+#endif	/* CACHESERVERREGISTER_H */
 

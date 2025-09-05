@@ -10,17 +10,16 @@
 #include "TimestampManager.h"
 #include "SeparatedStream.h"
 #include "TimerManager.h"
-#include "GuidFactory.h"
+#include "GlobalIDFactory.h"
 #include "ValueStream.h"
-#include "db_cxx.h"
-#include "dbstl_common.h"
 #include "Utf8.h"
+#include "ControlCentreStubImpEx.h"
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 )
 #include <io.h>
 #include <direct.h>
-#else
-#include <sys/stat.h>
+#else 
+#include <sys/stat.h> 
 #endif
 
 using namespace mdl;
@@ -28,7 +27,7 @@ using namespace util;
 using namespace evt;
 
 inline static bool IsMasterModule(uint16_t serverType) {
-	return (REGISTER_TYPE_CACHE == serverType
+	return (REGISTER_TYPE_CACHE == serverType 
 		|| REGISTER_TYPE_WORKER == serverType);
 }
 
@@ -37,51 +36,30 @@ thd::CSpinRWLock CMasterServiceImp::m_wrLock;
 
 
 CMasterServiceImp::CMasterServiceImp(
-	uint16_t serverId,
 	const std::string& strCurPath)
 	: m_cacheCount(0)
-	, m_serverId(serverId)
 {
 #if COMPILER == COMPILER_MICROSOFT
 	BUILD_BUG_ON(sizeof(int32_t) < sizeof(long));
 #endif
-
-	std::string strEnvHome(strCurPath);
-	TrimStringEx(strEnvHome, '\"');
-	strEnvHome += "/store/";
-
-	if(access(strEnvHome.c_str(), 0) == -1) {
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
-		mkdir(strEnvHome.c_str());
-#else
-		mkdir(strEnvHome.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif
-	}
-	m_pDbEnv = dbstl::open_env(strEnvHome.c_str(), 0);
-}
-
-CMasterServiceImp::~CMasterServiceImp(void)
-{
-	ClearAllTimer();
-	dbstl::close_db_env(m_pDbEnv);
 }
 
 void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
-	::rpcz::reply< ::node::OperateResponse> response)
+	::rpcz::reply< ::node::RegisterResponse> response)
 {
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	// read data
-	uint16_t serverType = (uint16_t)request.servertype();
-	uint16_t serverId = (uint16_t)request.serverid();
+	uint16_t serverType = static_cast<uint16_t>(request.servertype());
+	uint32_t serverId = request.serverid();
 
-	uint32_t serverKey = GetServerKey(serverId, serverType);
+	uint64_t serverKey = GetServerKey(serverId, serverType);
 	if(!InsertServerKey(serverKey)) {
-		::node::OperateResponse operateResponse;
-		operateResponse.set_result(CSR_CHANNEL_ALREADY_EXIST);
-		response.send(operateResponse);
+		::node::RegisterResponse registerResponse;
+		registerResponse.set_result(CSR_CHANNEL_ALREADY_EXIST);
+		response.send(registerResponse);
 		return;
 	}
-
+	
 	bool bMasterModule = IsMasterModule(serverType);
 	std::string serverName;
 	if(bMasterModule) {
@@ -91,25 +69,28 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 		serverName = request.servername();
 	}
 
+	bool routServer = request.routeserver();
+	uint64_t routeAddressId = request.routeaddressid();
 	std::string acceptAddress(request.acceptaddress());
 	std::string processPath(request.processpath());
 	std::string projectName(request.projectname());
-	uint16_t servantId = (uint16_t)request.servantid();
-	uint16_t serverRegion = (uint16_t)request.serverregion();
+	uint32_t servantId = request.servantid();
+	uint16_t serverRegion = static_cast<uint16_t>(request.serverregion());
 
 	CAutoPointer<IModule> module(pFacade->RetrieveModule(serverName));
 	if(module.IsInvalid()) {
 		switch(serverType) {
 		case REGISTER_TYPE_CACHE:
-			module.SetRawPointer(new CCacheModuleEx(serverName, request.endpoint(), serverId));
+			module.SetRawPointer(new CCacheModuleEx(serverName, request.endpoint(), serverId,
+				routServer, routeAddressId, request.routeuserids()));
 			break;
 		case REGISTER_TYPE_WORKER:
-			module.SetRawPointer(new CWorkerModule(m_pDbEnv, m_serverId,
-				serverName, request.endpoint(), serverId));
+			module.SetRawPointer(new CWorkerModule(serverName, request.endpoint(), serverId,
+				routServer, routeAddressId, request.routeuserids()));
 			break;
 		case REGISTER_TYPE_NODE:
 		case REGISTER_TYPE_SERVANT:
-			module.SetRawPointer(new CNodeModule(serverName, request.endpoint(), serverId,
+			module.SetRawPointer(new CNodeModule(serverName, request.endpoint(), serverId, 
 				serverType, acceptAddress, processPath, projectName, serverRegion));
 			break;
 		default:
@@ -117,48 +98,45 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 		};
 
 		if(module.IsInvalid()) {
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_WITHOUT_REGISTER_TYPE);
-			response.send(operateResponse);
+			::node::RegisterResponse registerResponse;
+			registerResponse.set_result(CSR_WITHOUT_REGISTER_TYPE);
+			response.send(registerResponse);
 			EraseServerKey(serverKey);
 			return;
 		}
 		// send data
 		pFacade->RegisterModule(module);
-		//
-		if(REGISTER_TYPE_NODE == serverType) {
-			RouteCreateTable(serverName, serverId);
-		}
 	} else {
 
 		CAutoPointer<IChannelControl> pChannelModule(module);
 		if(pChannelModule.IsInvalid()) {
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_NO_ICHANNELCONTROL);
-			response.send(operateResponse);
+			::node::RegisterResponse registerResponse;
+			registerResponse.set_result(CSR_NO_ICHANNELCONTROL);
+			response.send(registerResponse);
 			EraseServerKey(serverKey);
 			return;
 		}
 
 		bool bRet = true;
 		if(bMasterModule) {
-			bRet = pChannelModule->CreatChannel(serverId, request.endpoint(), serverType);
-		} else {
 			bRet = pChannelModule->CreatChannel(serverId, request.endpoint(), serverType,
+				routServer, routeAddressId, request.routeuserids());
+		} else {
+			bRet = pChannelModule->CreatChannel(serverId, request.endpoint(), serverType, 
 				acceptAddress, processPath, projectName, serverRegion);
 		}
 
 		if(!bRet)  {
-			::node::OperateResponse operateResponse;
+			::node::RegisterResponse registerResponse;
 			if(SERVER_STATUS_START == g_serverStatus) {
-				operateResponse.set_result(CSR_SUCCESS_AND_START);
+				registerResponse.set_result(CSR_SUCCESS_AND_START);
 			} else {
-				operateResponse.set_result(CSR_SUCCESS);
+				registerResponse.set_result(CSR_SUCCESS);
 			}
-			response.send(operateResponse);
+			response.send(registerResponse);
 			////////////////////////////////////////////////////////////////////
-			CAutoPointer<CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*> >
-				callback(new CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*>
+			CAutoPointer<CallBackFuncP4<const std::string, uint32_t, uint16_t, volatile int32_t*> >
+				callback(new CallBackFuncP4<const std::string, uint32_t, uint16_t, volatile int32_t*> 
 				(&CMasterServiceImp::KeepTimeoutCallback, serverName, serverId, serverType, &m_cacheCount));
 
 			CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -168,13 +146,13 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 		}
 	}
 	// send result
-	::node::OperateResponse operateResponse;
+	::node::RegisterResponse registerResponse;
 	if(SERVER_STATUS_START == g_serverStatus) {
-		operateResponse.set_result(CSR_SUCCESS_AND_START);
+		registerResponse.set_result(CSR_SUCCESS_AND_START);
 	} else {
-		operateResponse.set_result(CSR_SUCCESS);
+		registerResponse.set_result(CSR_SUCCESS);
 	}
-	response.send(operateResponse);
+	response.send(registerResponse);
 	///////////////////////////////////////////////////////
 	if(bMasterModule) {
 		if(REGISTER_TYPE_CACHE == serverType) {
@@ -209,19 +187,19 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 			addRequest.SetParams(datas);
 
 			CResponseRows addResponse;
-			McDBStoredProcBalServId(serverId, addRequest, addResponse);
+			McDBStoredProcHash32Key(serverId, addRequest, addResponse);
 		}
 		///////////////////////////////////////////////////////
 		// notification register
 		pFacade->SendNotification(N_CMD_SERVANT_NODE_REGISTER, serverId);
 		//////////////////////////////////////////////////////////////////////////
-		if((uint16_t)REGISTER_TYPE_NODE == serverType) {
+		if(static_cast<uint16_t>(REGISTER_TYPE_NODE) == serverType) {
 			CNodeModule::AddServerId(servantId, serverId);
 		}
 	}
 	////////////////////////////////////////////////////////////////////
-	CAutoPointer<CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*> >
-		callback(new CallBackFuncP4<const std::string, uint16_t, uint16_t, volatile int32_t*>
+	CAutoPointer<CallBackFuncP4<const std::string, uint32_t, uint16_t, volatile int32_t*> >
+		callback(new CallBackFuncP4<const std::string, uint32_t, uint16_t, volatile int32_t*> 
 		(&CMasterServiceImp::KeepTimeoutCallback, serverName, serverId, serverType, &m_cacheCount));
 
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -229,12 +207,12 @@ void CMasterServiceImp::RegisterModule(const ::node::RegisterRequest& request,
 }
 
 void CMasterServiceImp::RemoveModule(const ::node::RemoveRequest& request,
-	::rpcz::reply< ::node::OperateResponse> response)
+	::rpcz::reply< ::node::RemoveResponse> response)
 {
 	// read data
-	uint16_t serverId = (uint16_t)request.serverid();
+	uint32_t serverId = request.serverid();
 	int32_t serverType = request.servertype();
-	uint32_t serverKey = GetServerKey(serverId, serverType);
+	uint64_t serverKey = GetServerKey(serverId, serverType);
 	///////////////////////////////////////////////////////////
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 	pTMgr->Remove(serverKey, true);
@@ -253,16 +231,16 @@ void CMasterServiceImp::RemoveModule(const ::node::RemoveRequest& request,
 	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
 	CAutoPointer<IModule> module(pFacade->RetrieveModule(serverName));
 	if(module.IsInvalid()) {
-		::node::OperateResponse operateResponse;
-		operateResponse.set_result(CSR_WITHOUT_THIS_MODULE);
-		response.send(operateResponse);
+		::node::RemoveResponse removeResponse;
+		removeResponse.set_result(CSR_WITHOUT_THIS_MODULE);
+		response.send(removeResponse);
 	} else {
-
+			
 		CAutoPointer<IChannelControl> pChannelModule(module);
 		if(pChannelModule.IsInvalid()) {
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_NO_ICHANNELCONTROL);
-			response.send(operateResponse);
+			::node::RemoveResponse removeResponse;
+			removeResponse.set_result(CSR_NO_ICHANNELCONTROL);
+			response.send(removeResponse);
 		} else {
 			if(bMasterModule) {
 				// notification register
@@ -290,26 +268,22 @@ void CMasterServiceImp::RemoveModule(const ::node::RemoveRequest& request,
 					removeRequest.SetParams(datas);
 
 					CResponseRows removeResponse;
-					McDBStoredProcBalServId(serverId, removeRequest, removeResponse);
+					McDBStoredProcHash32Key(serverId, removeRequest, removeResponse);
 				}
 			}
 
 			if(pChannelModule->ChannelCount() < 2) {
 				pFacade->RemoveModule(serverName);
-				//
-				if(REGISTER_TYPE_NODE == serverType) {
-					RouteDropTable(serverName, serverId);
-				}
 			}
 
 			if(pChannelModule->RemoveChannel(serverId)) {
-				::node::OperateResponse operateResponse;
-				operateResponse.set_result(CSR_SUCCESS);
-				response.send(operateResponse);
+				::node::RemoveResponse removeResponse;
+				removeResponse.set_result(CSR_SUCCESS);
+				response.send(removeResponse);
 			} else {
-				::node::OperateResponse operateResponse;
-				operateResponse.set_result(CSR_REMOVE_CHANNEL_FAIL);
-				response.send(operateResponse);
+				::node::RemoveResponse removeResponse;
+				removeResponse.set_result(CSR_REMOVE_CHANNEL_FAIL);
+				response.send(removeResponse);
 			}
 		}
 	}
@@ -319,30 +293,37 @@ void CMasterServiceImp::RemoveModule(const ::node::RemoveRequest& request,
 void CMasterServiceImp::KeepRegister(const ::node::KeepRegisterRequest& request,
 	::rpcz::reply< ::node::KeepRegisterResponse> response)
 {
-	uint16_t serverId = (uint16_t)request.serverid();
+	uint32_t serverId = request.serverid();
 	if(ID_NULL == serverId) {
-		// If serverId is NULL, can be used to check if this server exists.
-		node::KeepRegisterResponse registerResponse;
-		registerResponse.set_reregister(false);
-		response.send(registerResponse);
+		// If serverId is NULL, can be used to check if this server exists.  
+		node::KeepRegisterResponse keepResponse;
+		keepResponse.set_result(CSR_FAIL);
+		response.send(keepResponse);
 		return;
 	}
 
 	int32_t serverType = request.servertype();
-	uint32_t serverKey = GetServerKey(serverId, serverType);
+	uint64_t serverKey = GetServerKey(serverId, serverType);
 	bool bExist = FindServerKey(serverKey);
 	//////////////////////////////////////////////////////////
+	node::KeepRegisterResponse keepResponse;
 	if(bExist) {
 		CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 		pTMgr->Modify(serverKey, TIMER_OPERATER_RESET);
+
+		if(SERVER_STATUS_START == g_serverStatus) {
+			keepResponse.set_result(CSR_SUCCESS_AND_START);
+		} else {
+			keepResponse.set_result(CSR_SUCCESS);
+		}
+	} else {
+		keepResponse.set_result(CSR_NOT_FOUND);
 	}
 
 	bool bMasterModule = IsMasterModule(serverType);
 
 	if(bMasterModule) {
-		node::KeepRegisterResponse registerResponse;
-		registerResponse.set_reregister(!bExist);
-		response.send(registerResponse);
+		response.send(keepResponse);
 		return;
 	}
 
@@ -354,9 +335,7 @@ void CMasterServiceImp::KeepRegister(const ::node::KeepRegisterRequest& request,
 	int32_t serverStatus = request.serverstatus();
 	std::string strState(request.serverstate());
 	//////////////////////////////////////////////////////////
-	node::KeepRegisterResponse registerResponse;
-	registerResponse.set_reregister(!bExist);
-	response.send(registerResponse);
+	response.send(keepResponse);
 
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	CAutoPointer<INodeControl> pNodeModule(pFacade->RetrieveModule(strServerName));
@@ -382,20 +361,20 @@ void CMasterServiceImp::KeepRegister(const ::node::KeepRegisterRequest& request,
 		refreshRequest.SetParams(datas);
 
 		CResponseRows refreshResponse;
-		McDBStoredProcBalServId(serverId, refreshRequest, refreshResponse);
+		McDBStoredProcHash32Key(serverId, refreshRequest, refreshResponse);
 	}
 }
 
 void CMasterServiceImp::KeepTimeoutCallback(
 	const std::string& serverName,
-	uint16_t& serverId,
+	uint32_t& serverId,
 	uint16_t& serverType,
 	volatile int32_t*& pCacheCount)
 {
 	OutputDebug("serverName = %s serverId= %d serverType=%d cacheCount=%d",
 		serverName.c_str(), serverId, serverType, *pCacheCount);
 	bool bMasterModule = IsMasterModule(serverType);
-	uint32_t serverKey = GetServerKey(serverId, serverType);
+	uint64_t serverKey = GetServerKey(serverId, serverType);
 
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	CAutoPointer<IModule> module(pFacade->RetrieveModule(serverName));
@@ -427,7 +406,7 @@ void CMasterServiceImp::KeepTimeoutCallback(
 					removeRequest.SetParams(datas);
 
 					CResponseRows removeResponse;
-					McDBStoredProcBalServId(serverId, removeRequest, removeResponse);
+					McDBStoredProcHash32Key(serverId, removeRequest, removeResponse);
 				}
 			}
 
@@ -438,7 +417,7 @@ void CMasterServiceImp::KeepTimeoutCallback(
 			pChannelModule->RemoveChannel(serverId);
 		}
 	}
-
+	
 	EraseServerKey(serverKey);
 }
 
@@ -483,7 +462,7 @@ void CMasterServiceImp::AddAllNode() {
 			addRequest.SetParams(datas);
 
 			CResponseRows addResponse;
-			McDBStoredProcBalServId(pNodeChannel->GetServerId(), addRequest, addResponse);
+			McDBStoredProcHash32Key(pNodeChannel->GetServerId(), addRequest, addResponse);
 		}
 	}
 }
@@ -520,7 +499,7 @@ void CMasterServiceImp::DelAllNode() {
 			removeRequest.SetParams(datas);
 
 			CResponseRows removeResponse;
-			McDBStoredProcBalServId(pNodeChannel->GetServerId(), removeRequest, removeResponse);
+			McDBStoredProcHash32Key(pNodeChannel->GetServerId(), removeRequest, removeResponse);
 		}
 	}
 }
@@ -528,8 +507,6 @@ void CMasterServiceImp::DelAllNode() {
 void CMasterServiceImp::UserLogin(const ::node::UserLoginRequest& request,
 	::rpcz::reply< ::node::ControlCentreVoid> response)
 {
-	RouteInsertRecord(request.servername(), request.userid(), (uint16_t)request.serverid());
-
 	::node::ControlCentreVoid voidResponse;
 	response.send(voidResponse);
 }
@@ -537,8 +514,6 @@ void CMasterServiceImp::UserLogin(const ::node::UserLoginRequest& request,
 void CMasterServiceImp::UserLogout(const ::node::UserLogoutRequest& request,
 	::rpcz::reply< ::node::ControlCentreVoid> response)
 {
-	RouteRemoveRecord(request.servername(), request.userid());
-
 	::node::ControlCentreVoid voidResponse;
 	response.send(voidResponse);
 }
@@ -552,7 +527,10 @@ void CMasterServiceImp::GetLowLoadNode(const ::node::LowLoadNodeRequest& request
 	if(!pNodeModule.IsInvalid()) {
 		CAutoPointer<IChannelValue> pChannel(pNodeModule->GetLowLoadUserChnl());
 		if(!pChannel.IsInvalid()) {
+			std::string realEndPoint(CControlCentreStubImpEx::Pointer()->GetEndPointFromServant(
+				pChannel->GetEndPoint(), pChannel->GetServerId()));
 			lowLoadNodeResponse.set_acceptaddress(pChannel->GetAcceptAddress());
+			lowLoadNodeResponse.set_endpoint(realEndPoint);
 			lowLoadNodeResponse.set_serverregion(pChannel->GetServerRegion());
 		}
 	}
@@ -568,7 +546,10 @@ void CMasterServiceImp::GetRegionLowLoad(const ::node::RegionLowLoadRequest& req
 		if(!pNodeModule.IsInvalid()) {
 			CAutoPointer<IChannelValue> pChannel(pNodeModule->GetLowLoadByRegion(request.serverregion()));
 			if(!pChannel.IsInvalid()) {
+				std::string realEndPoint(CControlCentreStubImpEx::Pointer()->GetEndPointFromServant(
+					pChannel->GetEndPoint(), pChannel->GetServerId()));
 				regionLowLoadResponse.set_acceptaddress(pChannel->GetAcceptAddress());
+				regionLowLoadResponse.set_endpoint(realEndPoint);
 			}
 		}
 		response.send(regionLowLoadResponse);
@@ -604,230 +585,360 @@ void CMasterServiceImp::GetNodeList(const ::node::NodeListRequest& request,
     response.send(nodeListResponse);
 }
 
-void CMasterServiceImp::CreateUserId(const ::node::CreateIdRequest& request,
-	::rpcz::reply< ::node::CreateIdResponse> response)
+void CMasterServiceImp::GetUsers(const ::node::GetUserRequest& request,
+	::rpcz::reply< ::node::GetUserResponse> response)
 {
 	util::CValueStream datas;
-	datas.Serialize(NODE_USER_LOGIN);
+	datas.Serialize(NODE_USER_GET);
 	CRequestStoredProcs cacheRequest;
 	cacheRequest.SetKey(datas);
 
 	datas.Reset();
+
 	datas.Serialize(request.account());
-	// 数据库设置成 %serverid% 数据类型，会把该值替换成对应CacheServer的serverId值
-	// 但是参数个数必须与数据库设置的个数一致，所以这边填0
-	datas.Serialize(0);
+	cacheRequest.SetParams(datas);
+
+	uint32_t u32Key = GenerateU32Key(request.account());
+
+	CResponseRows cacheResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS != serError) {
+		::node::GetUserResponse getResponse;
+		getResponse.set_result(serError);
+		response.send(getResponse);
+		return;
+	}
+
+	::node::GetUserResponse getResponse;
+	getResponse.set_result(SERVER_SUCCESS);
+	int nValuesSize = cacheResponse.GetSize();
+	for (int i = 0; i < nValuesSize; ++i) {
+		util::CValueStream tsValues(cacheResponse.GetValue(i));
+		uint32_t index = ID_NULL;
+		u32Key = ID_NULL;
+		std::string createTime;
+		uint32_t serverRegion = 0;
+		uint32_t loginCount = 0;
+		uint32_t mapId = ID_NULL;
+		tsValues.Parse(index);
+		tsValues.Parse(u32Key);
+		tsValues.Parse(createTime);
+		tsValues.Parse(serverRegion);
+		tsValues.Parse(loginCount);
+		tsValues.Parse(mapId);
+
+		uint64_t userId = CombineUserId(u32Key, index);
+
+		::node::UserPacket* pUserData = getResponse.add_rows();
+		pUserData->set_userid(userId);
+		pUserData->set_serverregion(serverRegion);
+		pUserData->set_createtime(createTime);
+		pUserData->set_logincount(loginCount);
+		pUserData->set_mapid(mapId);
+	}
+	response.send(getResponse);
+}
+
+void CMasterServiceImp::CreateUser(const ::node::CreateUserRequest& request,
+	::rpcz::reply< ::node::CreateUserResponse> response)
+{
+	util::CValueStream datas;
+	datas.Serialize(NODE_USER_CREATE);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
+
+	datas.Reset();
+
+	uint32_t u32Key = GenerateU32Key(request.account());
+	uint32_t mapId = request.mapid();
+	uint32_t maxSize = request.maxsize();
+
+	datas.Serialize(request.account());
+	datas.Serialize(u32Key);
+	datas.Serialize(mapId);
+	datas.Serialize(maxSize);
 	cacheRequest.SetParams(datas);
 
 	CResponseRows cacheResponse;
-	eServerError serError = McDBStoredProcBalUserId(request.account(),
-		cacheRequest, cacheResponse);
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
 	if(SERVER_SUCCESS != serError) {
-		::node::CreateIdResponse createResponse;
+		::node::CreateUserResponse createResponse;
 		createResponse.set_result(serError);
 		response.send(createResponse);
 		return;
 	}
 
-	if(MCERR_OK != cacheResponse.GetFirstRecordResult()) {
-		::node::CreateIdResponse createResponse;
+	MCResult mcRet = cacheResponse.GetFirstRecordResult();
+	if(MCERR_OK != mcRet) {
+		::node::CreateUserResponse createResponse;
 		createResponse.set_result(SERVER_ERROR_UNKNOW);
 		response.send(createResponse);
 		return;
 	}
 
-	::node::CreateIdResponse createResponse;
+	::node::CreateUserResponse createResponse;
 	int nValuesSize = cacheResponse.GetSize();
 	if(nValuesSize > 0) {
 		util::CValueStream tsValues(cacheResponse.GetValue(0));
+		uint32_t curSize = 0;
+		tsValues.Parse(curSize);
+		if (curSize >= maxSize) {
+			createResponse.set_result(MAX_CHARARER_LIMIT);
+			response.send(createResponse);
+			return;
+		}
 		uint32_t index = ID_NULL;
-		uint16_t serverId = ID_NULL;
+		u32Key = ID_NULL;
 		std::string createTime;
 		uint32_t serverRegion = 0;
+		uint32_t loginCount = 0;
+		
 		tsValues.Parse(index);
-		tsValues.Parse(serverId);
+		tsValues.Parse(u32Key);
 		tsValues.Parse(createTime);
 		tsValues.Parse(serverRegion);
-		uint64_t userId = CombineUserId(serverId, index);
+		tsValues.Parse(loginCount);
+		uint64_t userId = CombineUserId(u32Key, index);
+
 		createResponse.set_result(SERVER_SUCCESS);
-		createResponse.set_userid(userId);
-		createResponse.set_serverregion(serverRegion);
-		createResponse.set_createtime(createTime);
+		::node::UserPacket* pUserData = createResponse.mutable_row();
+		pUserData->set_userid(userId);
+		pUserData->set_serverregion(serverRegion);
+		pUserData->set_createtime(createTime);
+		pUserData->set_logincount(loginCount);
+		pUserData->set_mapid(mapId);
 	} else {
 		createResponse.set_result(SERVER_ERROR_UNKNOW);
 	}
 	response.send(createResponse);
 }
 
-void CMasterServiceImp::CheckUserId(const ::node::CheckIdRequest& request,
-	::rpcz::reply< ::node::CheckIdResponse> response)
+void CMasterServiceImp::CheckUser(const ::node::CheckUserRequest& request,
+	::rpcz::reply< ::node::CheckUserResponse> response)
 {
-	CRequestSnglRow cacheRequest;
-	mc_record_t* pMCRequest = cacheRequest.AddRecord();
-	if(NULL == pMCRequest) {
-		::node::CheckIdResponse checkResponse;
-		checkResponse.set_result(CACHE_ERROR_POINTER_NULL);
-		response.send(checkResponse);
-		return;
-	}
 	util::CValueStream datas;
-	datas.Serialize(NODE_USER_CHECK_KEY);
-	datas.Serialize(request.account());
-	cacheRequest.SetKey(pMCRequest, datas);
+	datas.Serialize(NODE_USER_CHECK);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
+
+	datas.Reset();
+
+	uint32_t u32Key = DepartUserId2U32Key(request.userid());
+
+	datas.Serialize(DepartUserId2Index(request.userid()));
+	datas.Serialize(u32Key);
+	cacheRequest.SetParams(datas);
+
 
 	CResponseRows cacheResponse;
-	eServerError serError = McGetsBalUserId(request.account(),
-		cacheRequest, cacheResponse);
-	if(SERVER_SUCCESS != serError) {
-		::node::CheckIdResponse checkResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS != serError) {
+		::node::CheckUserResponse checkResponse;
 		checkResponse.set_result(serError);
 		response.send(checkResponse);
 		return;
 	}
 
-	MCResult nResult = cacheResponse.GetFirstRecordResult();
-	if(MCERR_OK != nResult) {
-		::node::CheckIdResponse checkResponse;
-		checkResponse.set_result(SERVER_ERROR_UNKNOW);
+	if (MCERR_OK != cacheResponse.GetFirstRecordResult()) {
+		::node::CheckUserResponse checkResponse;
+		checkResponse.set_result(SERVER_ERROR_NOTFOUND_CHARACTER);
 		response.send(checkResponse);
 		return;
 	}
 
+	::node::CheckUserResponse checkResponse;
 	int nValuesSize = cacheResponse.GetSize();
-	if(nValuesSize > 0) {
-		CValueStream tsValues(cacheResponse.GetValue(0));
-		uint64_t userId = ID_NULL;
+	if (nValuesSize > 0) {
+		util::CValueStream tsValues(cacheResponse.GetValue(0));
 		std::string createTime;
 		uint32_t serverRegion = 0;
-		tsValues.Parse(userId);
+		uint32_t loginCount = 0;
+		uint64_t account = DEFAULT_ACCOUNT;
+		uint32_t mapId = ID_NULL;
 		tsValues.Parse(createTime);
 		tsValues.Parse(serverRegion);
-		::node::CheckIdResponse checkResponse;
+		tsValues.Parse(loginCount);
+		tsValues.Parse(account);
+		tsValues.Parse(mapId);
+
 		checkResponse.set_result(SERVER_SUCCESS);
-		checkResponse.set_userid(userId);
-		checkResponse.set_createtime(createTime);
 		checkResponse.set_serverregion(serverRegion);
-		checkResponse.set_cas(cacheResponse.GetCas(0));
-		response.send(checkResponse);
+		checkResponse.set_createtime(createTime);
+		checkResponse.set_logincount(loginCount);
+		checkResponse.set_account(account);
+		checkResponse.set_mapid(mapId);
 	} else {
-		::node::CheckIdResponse checkResponse;
-		checkResponse.set_result(SERVER_ERROR_UNKNOW);
-		response.send(checkResponse);
+		checkResponse.set_result(SERVER_ERROR_NOTFOUND_CHARACTER);
 	}
+	response.send(checkResponse);
 }
 
-void CMasterServiceImp::UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-	::rpcz::reply< ::node::UpdateRegionResponse> response)
+void CMasterServiceImp::UpdateUser(const ::node::UpdateUserRequest& request,
+	::rpcz::reply< ::node::UpdateUserResponse> response)
 {
-	CRequestSnglRow cacheRequest;
-	mc_record_t* pMCRequest = cacheRequest.AddRecord();
-	if(NULL == pMCRequest) {
-		::node::UpdateRegionResponse updateResponse;
-		updateResponse.set_result(CACHE_ERROR_POINTER_NULL);
-		response.send(updateResponse);
-		return;
-	}
-
 	util::CValueStream datas;
-	datas.Serialize(NODE_USER_CHECK_KEY);
-	datas.Serialize(request.account());
-	cacheRequest.SetKey(pMCRequest, datas);
+	datas.Serialize(NODE_USER_UPDATE);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
+
 	datas.Reset();
-	datas.Serialize((uint32_t)ID_NULL, false);
-	datas.Serialize(std::string(), false);
-	datas.Serialize(request.serverregion(), true);
-	cacheRequest.SetValue(pMCRequest, datas);
-	cacheRequest.SetCas(pMCRequest, request.cas());
+
+	uint32_t u32Key = DepartUserId2U32Key(request.userid());
+
+	datas.Serialize(DepartUserId2Index(request.userid()));
+	datas.Serialize(u32Key);
+	datas.Serialize((uint8_t)request.login());
+	datas.Serialize(request.mapid());
+	datas.Serialize(request.serverregion());
+	cacheRequest.SetParams(datas);
+
 
 	CResponseRows cacheResponse;
-	eServerError serError = McCasBalUserId(request.account(),
-		cacheRequest, cacheResponse);
-	if(SERVER_SUCCESS != serError) {
-		::node::UpdateRegionResponse updateResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS != serError) {
+		::node::UpdateUserResponse updateResponse;
 		updateResponse.set_result(serError);
 		response.send(updateResponse);
 		return;
 	}
 
-	::node::UpdateRegionResponse updateResponse;
-	MCResult nResult = cacheResponse.GetFirstRecordResult();
-	if(MCERR_OK == nResult) {
-		updateResponse.set_result(SERVER_SUCCESS);
-	} else if(MCERR_EXISTS == nResult) {
-		updateResponse.set_result(CACHE_ERROR_RECORD_EXISTS);
-	} else {
-		updateResponse.set_result(SERVER_ERROR_UNKNOW);
-	}
+	::node::UpdateUserResponse updateResponse;
+	updateResponse.set_result(SERVER_SUCCESS);
 	response.send(updateResponse);
 }
 
-void CMasterServiceImp::CacheServerStore(const ::node::CacheStoreRequest& request,
-	::rpcz::reply<::node::CacheStoreResponse> response)
+void CMasterServiceImp::DeleteUser(const ::node::DeleteUserRequest& request,
+	::rpcz::reply< ::node::DeleteUserResponse> response)
 {
-	uint16_t nServerId = (uint16_t)request.serverid();
-	CAutoPointer<IChannelValue> rpcChannel(
-		CNodeModule::GetStaticChannel(nServerId));
-	if(rpcChannel.IsInvalid()) {
-		::node::CacheStoreResponse storeResponse;
-		storeResponse.set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
-		response.send(storeResponse);
+	util::CValueStream datas;
+	datas.Serialize(NODE_USER_DELETE);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
+
+	datas.Reset();
+
+	uint32_t u32Key = DepartUserId2U32Key(request.userid());
+
+	datas.Serialize(DepartUserId2Index(request.userid()));
+	datas.Serialize(u32Key);
+	cacheRequest.SetParams(datas);
+
+	CResponseRows cacheResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS != serError) {
+		::node::DeleteUserResponse delResponse;
+		delResponse.set_result(serError);
+		response.send(delResponse);
 		return;
 	}
 
-	mc_request_t mcRequest;
+	::node::DeleteUserResponse delResponse;
+	delResponse.set_result(SERVER_SUCCESS);
+	response.send(delResponse);
+}
 
-	int nKeySize = request.keys_size();
-	for(int i = 0; i < nKeySize; ++i) {
-		mc_record_t* pMcRecord = SetRecord(mcRequest);
-		SetRecordKey(pMcRecord, request.keys(i));
-	}
-
-	::node::DataPacket cacheRequest;
-	if(!SerializeCacheData(cacheRequest, mcRequest)) {
-		::node::CacheStoreResponse storeResponse;
-		storeResponse.set_result(CACHE_ERROR_SERIALIZE_REQUEST);
-		response.send(storeResponse);
+void CMasterServiceImp::SeizeServer(const ::node::SeizeRequest& request,
+	::rpcz::reply< ::node::SeizeResponse> response)
+{
+	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
+	CAutoPointer<INodeControl> pNodeModule(pFacade->RetrieveModule(request.servername()));
+	if (pNodeModule.IsInvalid()) {
+		::node::SeizeResponse seizeResponse;
+		response.send(seizeResponse);
 		return;
 	}
-	cacheRequest.set_cmd(N_CMD_STORE);
-	cacheRequest.set_route_type(request.routetype());
-	cacheRequest.set_route(request.route());
-
-	::node::DataPacket servantRequest;
-	if(!SerializeCacheData(servantRequest, cacheRequest)) {
-		::node::CacheStoreResponse storeResponse;
-		storeResponse.set_result(CACHE_ERROR_SERIALIZE_REQUEST);
-		response.send(storeResponse);
+	CAutoPointer<IChannelValue> pChannel(pNodeModule->GetLowLoadUserChnl());
+	if (pChannel.IsInvalid()) {
+		::node::SeizeResponse seizeResponse;
+		response.send(seizeResponse);
 		return;
 	}
-	servantRequest.set_cmd(N_CMD_SERVER_STORE);
-	servantRequest.set_route(nServerId);
 
-	::node::DataPacket servantResponse;
-	eServerError nResult = (eServerError)
-		CNodeModule::SendNodeMessage(
-		rpcChannel, servantRequest, servantResponse);
+	::node::SeizeResponse seizeResponse;
 
-	::node::CacheStoreResponse storeResponse;
-	storeResponse.set_result(nResult);
+	util::CValueStream datas;
+	datas.Serialize(NODE_SEIZE_SERVER);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
 
-	mc_response_t cacheResponse;
-	ParseCacheData(cacheResponse, servantResponse);
-	int nResSize = GetRecordSize(cacheResponse);
-	for(int i = 0; i < nResSize; ++i) {
-		const mc_record_t& mcRecord = GetRecord(cacheResponse, i);
-		::node::CacheKeyResult* pKeyResult =
-			storeResponse.add_keyresults();
-		if(NULL == pKeyResult) {
-			OutputError("NULL == pKeyResult 1");
-			assert(false);
-			continue;
+	datas.Reset();
+
+	uint32_t u32Key = DepartUserId2U32Key(request.userid());
+	datas.Serialize(DepartUserId2Index(request.userid()));
+	datas.Serialize(u32Key);
+	datas.Serialize(pChannel->GetAcceptAddress());
+	datas.Serialize(pChannel->GetServerId());
+	datas.Serialize((uint8_t)request.login());
+	cacheRequest.SetParams(datas);
+
+	CResponseRows cacheResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS == serError) {
+		int nValuesSize = cacheResponse.GetSize();
+		if (nValuesSize > 0) {
+			util::CValueStream tsValues(cacheResponse.GetValue(0));
+			tsValues.Parse(*(std::string*)seizeResponse.mutable_acceptaddress());
+			uint32_t serverId = ID_NULL;
+			tsValues.Parse(serverId);
+			uint32_t mapId = ID_NULL;
+			tsValues.Parse(mapId);
+			if (seizeResponse.acceptaddress().empty()) {
+				seizeResponse.set_acceptaddress(pChannel->GetAcceptAddress());
+				seizeResponse.set_serverid(pChannel->GetServerId());
+			} else {
+				seizeResponse.set_serverid(serverId);
+			}
+			seizeResponse.set_mapid(mapId);
+		} else {
+			seizeResponse.set_acceptaddress(pChannel->GetAcceptAddress());
+			seizeResponse.set_serverid(pChannel->GetServerId());
+			seizeResponse.set_mapid(ID_NULL);
 		}
-		pKeyResult->set_key(GetRecordKey(mcRecord));
-		pKeyResult->set_result(GetRecordResult(mcRecord));
+	} else {
+		seizeResponse.set_acceptaddress(pChannel->GetAcceptAddress());
+		seizeResponse.set_serverid(pChannel->GetServerId());
+		seizeResponse.set_mapid(ID_NULL);
 	}
+	response.send(seizeResponse);
+}
 
-	response.send(storeResponse);
+void CMasterServiceImp::FreeServer(const ::node::FreeRequest& request,
+	::rpcz::reply< ::node::FreeResponse> response)
+{
+	util::CValueStream datas;
+	datas.Serialize(NODE_FREE_SERVER);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
+
+	datas.Reset();
+
+	uint32_t u32Key = DepartUserId2U32Key(request.userid());
+	datas.Serialize(DepartUserId2Index(request.userid()));
+	datas.Serialize(u32Key);
+	datas.Serialize((uint8_t)request.logout());
+	cacheRequest.SetParams(datas);
+
+	CResponseRows cacheResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+
+	::node::FreeResponse freeResponse;
+	freeResponse.set_result(serError);
+	response.send(freeResponse);
+}
+
+void CMasterServiceImp::GenerateGuid(const ::node::ControlCentreVoid& request,
+	::rpcz::reply< ::node::GuidResponse> response)
+{
+	::node::GuidResponse guidResponse;
+	guidResponse.set_id(CGlobalIDFactory::Pointer()->GenerateID());
+	response.send(guidResponse);
 }
 
 void CMasterServiceImp::ClearAllTimer()
@@ -840,184 +951,99 @@ void CMasterServiceImp::ClearAllTimer()
 	}
 }
 
-void CMasterServiceImp::RouteCreateTable(const std::string& serverName, uint16_t serverId) {
-
-	std::vector<CAutoPointer<mdl::IModule> > modules;
+void CMasterServiceImp::SeizeServerLocal(
+	uint32_t& outAgentId,
+	uint32_t& outMapId,
+	uint64_t userId,
+	const std::string& agentServerName)
+{
 	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
-	pFacade->IterateModule(modules);
-	std::vector<CAutoPointer<mdl::IModule> >::const_iterator itM(modules.begin());
-	for(; modules.end() != itM; ++itM) {
-		CAutoPointer<CCacheModule> pCacheModule(*itM);
-		if(pCacheModule.IsInvalid()) {
-			continue;
-		}
+	CAutoPointer<INodeControl> pNodeModule(pFacade->RetrieveModule(agentServerName));
+	if (pNodeModule.IsInvalid()) {
+		OutputError("Can't found AgentServer. agentServerName = %s userId = " I64FMTD, agentServerName.c_str(), userId);
+		return;
+	}
+	CAutoPointer<IChannelValue> pChannel(pNodeModule->GetLowLoadUserChnl());
+	if (pChannel.IsInvalid()) {
+		OutputError("pChannel.IsInvalid() agentServerName = %s userId = " I64FMTD, agentServerName.c_str(), userId);
+		return;
+	}
 
-		CAutoPointer<IChannelValue> pChnlValue(pCacheModule->GetChnlByDirServId(serverId));
-		if(!pChnlValue.IsInvalid()) {
-			// This node is center cache server
-			std::vector<CAutoPointer<mdl::IModule> >::const_iterator itM2(modules.begin());
-			for(; modules.end() != itM2; ++itM2) {
-				CAutoPointer<INodeControl> pNodeModule(*itM2);
-				if(pNodeModule.IsInvalid()) {
-					continue;
-				}
+	::node::SeizeResponse seizeResponse;
 
-				util::CValueStream datas;
-				datas.Serialize(NODE_ROUTE_CREATE);
+	util::CValueStream datas;
+	datas.Serialize(NODE_SEIZE_SERVER);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
 
-				CRequestStoredProcs addRequest;
-				addRequest.SetKey(datas);
-				addRequest.SetNoReply(true);
+	datas.Reset();
 
-				datas.Reset();
-				datas.Serialize(pNodeModule->GetModuleName());
-				addRequest.SetParams(datas);
+	uint32_t u32Key = DepartUserId2U32Key(userId);
+	datas.Serialize(DepartUserId2Index(userId));
+	datas.Serialize(u32Key);
+	datas.Serialize(pChannel->GetAcceptAddress());
+	datas.Serialize(pChannel->GetServerId());
+	datas.Serialize((uint8_t)false);
+	cacheRequest.SetParams(datas);
 
-				CResponseRows addResponse;
-				McDBAsyncStoredProcDirServId(serverId, addRequest, addResponse);
+	CResponseRows cacheResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS == serError) {
+		int nValuesSize = cacheResponse.GetSize();
+		if (nValuesSize > 0) {
+			util::CValueStream tsValues(cacheResponse.GetValue(0));
+			tsValues.Parse(*(std::string*)seizeResponse.mutable_acceptaddress());
+			uint32_t serverId = ID_NULL;
+			tsValues.Parse(serverId);
+			uint32_t mapId = ID_NULL;
+			tsValues.Parse(mapId);
+			if (seizeResponse.acceptaddress().empty()) {
+				outAgentId = pChannel->GetServerId();
+			} else {
+				outAgentId = serverId;
 			}
-			break;
+			outMapId = mapId;
+		} else {
+			outAgentId = pChannel->GetServerId();
+			outMapId = ID_NULL;
 		}
-
-		util::CValueStream datas;
-		CRequestStoredProcs addRequest;
-		datas.Serialize(NODE_ROUTE_CREATE);
-
-		addRequest.SetKey(datas);
-		addRequest.SetNoReply(true);
-
-		datas.Reset();
-		datas.Serialize(serverName);
-		addRequest.SetParams(datas);
-
-		std::vector<CAutoPointer<IChannelValue> > channels;
-		pCacheModule->IterateChannel(channels);
-		std::vector<CAutoPointer<IChannelValue> >::const_iterator itC(channels.begin());
-		for(; channels.end() != itC; ++itC) {
-			CAutoPointer<IChannelValue> pCacheChnl(*itC);
-			if(pCacheChnl.IsInvalid()) {
-				continue;
-			}
-
-			CResponseRows addResponse;
-			McDBAsyncStoredProcDirServId(pCacheChnl->GetServerId(), addRequest, addResponse);
-		}
+	} else {
+		outAgentId = pChannel->GetServerId();
+		outMapId = ID_NULL;
 	}
 }
 
-void CMasterServiceImp::RouteDropTable(const std::string& serverName, uint16_t serverId)
+void CMasterServiceImp::FreeServerLocal(uint64_t userId)
 {
-	std::vector<CAutoPointer<mdl::IModule> > modules;
-	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
-	pFacade->IterateModule(modules);
-	std::vector<CAutoPointer<mdl::IModule> >::const_iterator itM(modules.begin());
-	for(; modules.end() != itM; ++itM) {
-		CAutoPointer<CCacheModule> pCacheModule(*itM);
-		if(pCacheModule.IsInvalid()) {
-			continue;
-		}
+	util::CValueStream datas;
+	datas.Serialize(NODE_FREE_SERVER);
+	CRequestStoredProcs cacheRequest;
+	cacheRequest.SetKey(datas);
 
-		CAutoPointer<IChannelValue> pChnlValue(pCacheModule->GetChnlByDirServId(serverId));
-		if(!pChnlValue.IsInvalid()) {
-			// This node is center cache server, do nothing.
-			break;
-		}
+	datas.Reset();
 
-		util::CValueStream datas;
-		CRequestStoredProcs dropRequest;
-		datas.Serialize(NODE_ROUTE_DROP);
+	uint32_t u32Key = DepartUserId2U32Key(userId);
+	datas.Serialize(DepartUserId2Index(userId));
+	datas.Serialize(u32Key);
+	datas.Serialize((uint8_t)false);
+	cacheRequest.SetParams(datas);
 
-		dropRequest.SetKey(datas);
-		dropRequest.SetNoReply(true);
-
-		datas.Reset();
-		datas.Serialize(serverName);
-		dropRequest.SetParams(datas);
-
-		std::vector<CAutoPointer<IChannelValue> > channels;
-		pCacheModule->IterateChannel(channels);
-		std::vector<CAutoPointer<IChannelValue> >::const_iterator itC(channels.begin());
-		for(; channels.end() != itC; ++itC) {
-			CAutoPointer<IChannelValue> pCacheChnl(*itC);
-			if(pCacheChnl.IsInvalid()) {
-				continue;
-			}
-
-			CResponseRows dropResponse;
-			McDBAsyncStoredProcDirServId(pCacheChnl->GetServerId(), dropRequest, dropResponse);
-		}
+	CResponseRows cacheResponse;
+	eServerError serError = McDBStoredProcHash32Key(
+		u32Key, cacheRequest, cacheResponse);
+	if (SERVER_SUCCESS != serError) {
+		OutputError("SERVER_SUCCESS != serError "
+			"serError = %d userId = " I64FMTD, serError, userId);
 	}
-}
-
-void CMasterServiceImp::RouteInsertRecord(const std::string& serverName, uint64_t userId, uint16_t serverId)
-{
-	util::CValueStream datas;
-	CRequestStoredProcs insertRequest;
-	datas.Serialize(NODE_ROUTE_INSERT);
-	insertRequest.SetKey(datas);
-	insertRequest.SetNoReply(true);
-
-	datas.Reset();
-	datas.Serialize(serverName);
-	datas.Serialize(userId);
-	datas.Serialize(serverId);
-	insertRequest.SetParams(datas);
-
-	uint16_t cacheId = DepartUserId2ServId(userId);
-	CResponseRows insertResponse;
-	McDBAsyncStoredProcBalServId(cacheId, insertRequest, insertResponse);
-}
-
-void CMasterServiceImp::RouteRemoveRecord(const std::string& serverName, uint64_t userId)
-{
-	util::CValueStream datas;
-	CRequestStoredProcs removeRequest;
-	datas.Serialize(NODE_ROUTE_REMOVE);
-	removeRequest.SetKey(datas);
-	removeRequest.SetNoReply(true);
-
-	datas.Reset();
-	datas.Serialize(serverName);
-	datas.Serialize(userId);
-	removeRequest.SetParams(datas);
-
-	uint16_t cacheId = DepartUserId2ServId(userId);
-	CResponseRows removeResponse;
-	McDBAsyncStoredProcBalServId(cacheId, removeRequest, removeResponse);
-}
-
-uint16_t CMasterServiceImp::RouteGetServerId(const std::string& serverName, uint64_t userId)
-{
-	util::CValueStream datas;
-	CRequestStoredProcs getRequest;
-	datas.Serialize(NODE_ROUTE_GET);
-	getRequest.SetKey(datas);
-
-	datas.Reset();
-	datas.Serialize(serverName);
-	datas.Serialize(userId);
-	getRequest.SetParams(datas);
-
-	uint16_t cacheId = DepartUserId2ServId(userId);
-	CResponseRows getResponse;
-	McDBAsyncStoredProcBalServId(cacheId, getRequest, getResponse);
-	int nSize = getResponse.GetSize();
-	if(nSize < 1) {
-		return ID_NULL;
-	}
-	CValueStream rValue(getResponse.GetValue(0));
-	uint16_t serverId = ID_NULL;
-	rValue.Parse(serverId);
-	return serverId;
 }
 
 void CMasterServiceImp::OnServerPlay(void)
 {
 	if(0 == (int32_t)m_cacheCount) {
 		char szError[eBUF_SIZE_256] = {0};
-		snprintf(szError, sizeof(szError), "The MasterServer must have one CacheServer.");
+		snprintf(szError, sizeof(szError), "Masterserver must have a CacheServer.");
 		throw std::logic_error(szError);
 	}
 }
-
 

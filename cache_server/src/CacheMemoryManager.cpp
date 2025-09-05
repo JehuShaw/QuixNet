@@ -1,7 +1,7 @@
 #include "CacheMemoryManager.h"
 #include "CacheOperateHelper.h"
 #include "TimerManager.h"
-#include "GuidFactory.h"
+#include "LocalIDFactory.h"
 #include "CallBack.h"
 #include "Log.h"
 
@@ -16,7 +16,7 @@ void CCacheMemoryManager::Init() {
 	}
 	m_bInit = true;
 
-    m_timerId = CGuidFactory::Pointer()->CreateGuid();
+    m_timerId = CLocalIDFactory::Pointer()->GenerateID();
     CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
     CAutoPointer<CallbackMFnP0<CCacheMemoryManager> > pMethod(
         new CallbackMFnP0<CCacheMemoryManager>(m_pThis(), &CCacheMemoryManager::CheckAndUpdate));
@@ -34,38 +34,27 @@ void CCacheMemoryManager::Dispose(bool bUpdateToDb/* = true*/) throw() {
     pTMgr->Remove(m_timerId, true);
 
     if(bUpdateToDb) {
-        CScopedWriteLock wrLock(m_rwTicket);
-
-            CACHE_RECORDS_SET_T::iterator itI = m_records.begin();
-            while(m_records.end() != itI) {
-                util::CAutoPointer<ICacheMemory>& pCacheMem =
-                    const_cast<util::CAutoPointer<ICacheMemory>&>(*itI);
-                if(atomic_cmpxchg8(&pCacheMem->m_bLock,true,false) == false) {
-
-					uint8_t u8ChgType = pCacheMem->ChangeType();
-                    if(MCCHANGE_UPDATE == u8ChgType) {
-                        MCResult nResult = pCacheMem->UpdateToDB();
-                        if(MCERR_OK != nResult) {
-                            OutputError("MCERR_OK != pCacheMem->UpdateToDB() nResult = %d ", nResult);
-                        }
-                    }
-
-                    atomic_xchg8(&pCacheMem->m_bLock, false);
-                }
-                ++itI;
-            }
+		CScopedWriteLock wrLock(m_rwTicket);
+		
+		if (!m_records.empty()) {
+			CACHE_RECORDS_SET_T::iterator itI = m_records.begin();
+			while (m_records.end() != itI) {
+				CheckUpdateAndReloadRecord(*itI);
+				++itI;
+			}
+			m_arrRecords.clear();
+			m_records.clear();
+		}
     }
 }
 
 int CCacheMemoryManager::LoadCacheRecord(
 	util::CAutoPointer<ICacheMemory>& outCacheRecord,
 	uint16_t u16DBID, const std::string& strKey,
-	bool bDBCas /*= true*/, uint64_t n64Cas/* = 0*/,
-	const int32_t* pInFlag /*= NULL*/,
-	int32_t* pOutFlag /*= NULL*/)
+	bool bDBCas /*= true*/, uint64_t n64Cas/* = 0*/)
 {
 	CAutoPointer<ICacheMemory> pCacheRecord(InsertMemoryRecord(u16DBID, strKey, n64Cas));
-	int nResult = LoadRecord(pCacheRecord, bDBCas, pInFlag, pOutFlag);
+	int nResult = LoadRecord(pCacheRecord, bDBCas);
 	if(MCERR_OK == nResult) {
 		outCacheRecord = pCacheRecord;
 	}
@@ -92,15 +81,13 @@ bool CCacheMemoryManager::AddRecord(CAutoPointer<ICacheMemory> pCacheRecord)
 
 int CCacheMemoryManager::LoadRecord(
 	CAutoPointer<ICacheMemory> pCacheRecord,
-	bool bDBCas /*= true*/,
-	const int32_t* pInFlag /*= NULL*/,
-	int32_t* pOutFlag /*= NULL*/)
+	bool bDBCas /*= true*/)
 {
     if(pCacheRecord.IsInvalid()) {
         OutputError("pCacheRecord.IsInvalid()");
         return false;
     }
-    MCResult nResult = pCacheRecord->LoadFromDB(bDBCas, pInFlag, pOutFlag);
+    MCResult nResult = pCacheRecord->LoadFromDB(bDBCas);
     if(MCERR_OK != nResult) {
         if(MCERR_NOTFOUND != nResult) {
             OutputError("MCERR_OK != pCacheRecord->LoadFromDB()1 nResult = %d", nResult);
@@ -136,15 +123,14 @@ bool CCacheMemoryManager::DeleteRecord(uint16_t u16DBID, const std::string& strK
 }
 
 bool CCacheMemoryManager::CheckUpdateAndReloadRecord(
-	CAutoPointer<ICacheMemory> pCacheRecord,
-	bool bResetFlag /*= false*/) throw()
+	CAutoPointer<ICacheMemory> pCacheRecord) throw()
 {
 	if(pCacheRecord.IsInvalid()) {
         OutputError("pCacheRecord.IsInvalid()");
 		return false;
 	}
 
-	if(atomic_cmpxchg8(&pCacheRecord->m_bLock,true,false) == false) {
+	if(atomic_cmpxchg8(&pCacheRecord->m_bLock, false, true) == false) {
 
 		uint8_t u8ChgType = pCacheRecord->ChangeType();
 		if(MCCHANGE_NIL == u8ChgType) {
@@ -152,20 +138,25 @@ bool CCacheMemoryManager::CheckUpdateAndReloadRecord(
 			return false;
 		}
 
-		MCResult nResult = pCacheRecord->UpdateToDB(true, bResetFlag);
+		MCResult nResult = pCacheRecord->UpdateToDB(true);
         if(MCERR_NOTFOUND == nResult) {
-            nResult = pCacheRecord->AddToDB(bResetFlag);
+            nResult = pCacheRecord->AddToDB();
             if(MCERR_OK != nResult) {
-                OutputError("MCERR_OK != pCacheRecord->AddToDB() nResult = %d", nResult);
+                OutputError("MCERR_OK != pCacheRecord->AddToDB() nResult = %d key = %s ", nResult, pCacheRecord->GetKey().c_str());
             }
         } else if(MCERR_EXISTS == nResult) {
 			OutputError("MCERR_EXISTS == UpdateToDB()");
-            nResult = pCacheRecord->LoadFromDB();
-            if(MCERR_OK != nResult) {
-                OutputError("MCERR_OK != pCacheRecord->LoadFromDB() nResult = %d", nResult);
+            nResult = pCacheRecord->LoadCasFromDB();
+			if (MCERR_OK == nResult) {
+				nResult = pCacheRecord->UpdateToDB(true);
+				if (MCERR_OK != nResult) {
+					OutputError("2 MCERR_OK == pCacheRecord->UpdateToDB nResult = %d key = %s ", nResult, pCacheRecord->GetKey().c_str());
+				}
+			} else {
+                OutputError("MCERR_OK != pCacheRecord->LoadCasFromDB() nResult = %d key = %s ", nResult, pCacheRecord->GetKey().c_str());
             }
         } else if(MCERR_OK != nResult) {
-			OutputError("MCERR_OK != pCacheRecord->UpdateToDB() nResult = %d", nResult);
+			OutputError("1 MCERR_OK != pCacheRecord->UpdateToDB() nResult = %d key = %s ", nResult, pCacheRecord->GetKey().c_str());
 		}
 
 		atomic_xchg8(&pCacheRecord->m_bLock, false);
@@ -205,7 +196,7 @@ void CCacheMemoryManager::CheckAndUpdate()
         int64_t nDiffTime = (int64_t)pTsMgr->DiffTime(
 			pTsMgr->GetTimestamp(), pCacheRecord->LastActivityTime());
         if(nDiffTime > g_recordExpireSec) {
-        	if(RemoveCacheRecord(pCacheRecord->GetKey(), true, true)) {
+        	if(RemoveCacheRecord(pCacheRecord->GetKey(), true)) {
             	break;
             }
         } else {

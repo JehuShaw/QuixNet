@@ -22,10 +22,10 @@ namespace ntwk
 
     extern SHARED_DLL_DECL void NWTrace(const char* message, ...);
 
-    #ifndef _RELEASE
+	#ifdef DEBUG
     #define TRACE_MSG NWTrace
     #else
-    #define TRACE_MSG
+    #define TRACE_MSG(fmt, ...)
     #endif
 }
 #endif	/* NETWORKTRACE_H */

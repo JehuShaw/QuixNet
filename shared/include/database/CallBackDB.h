@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _CALLBACKDB_H
-#define _CALLBACKDB_H
+#ifndef CALLBACKDB_H
+#define CALLBACKDB_H
 
 #include <vector>
 #include <assert.h>
@@ -177,4 +177,4 @@ public:
 
 }
 
-#endif
+#endif /* CALLBACKDB_H */

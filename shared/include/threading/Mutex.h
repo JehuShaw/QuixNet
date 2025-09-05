@@ -4,15 +4,15 @@
  *
  */
 
-#ifndef __MUTEX_H_
-#define __MUTEX_H_
+#ifndef MUTEX_H
+#define MUTEX_H
 
 #include "Common.h"
 #include "ILock.h"
 
 namespace thd {
 
-class SHARED_DLL_DECL CMutex : public ILock
+class CMutex : public ILock
 {
 public:
 
@@ -155,5 +155,5 @@ private:
 
 }
 
-#endif /*__MUTEX_H_ */
+#endif /* MUTEX_H */
 

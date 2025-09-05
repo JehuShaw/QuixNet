@@ -11,7 +11,7 @@ using namespace db;
 using namespace thd;
 
 
-MCResult CCacheMemory::AddToDB(bool bResetFlag /*= false*/)
+MCResult CCacheMemory::AddToDB()
 {
 	CTransferStream tranKey(GetKey(), false);
 	CTypeString strTableName;
@@ -68,29 +68,24 @@ MCResult CCacheMemory::AddToDB(bool bResetFlag /*= false*/)
         return MCERR_NOTSTORED;
     }
 
-    std::string strSQL("INSERT INTO "SQL_FIELD_START);
+    std::string strSQL("INSERT INTO " SQL_FIELD_START);
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
     strSQL += pContainerData->GetDbTable();
-    strSQL += SQL_FIELD_END" (";
+    strSQL += SQL_FIELD_END " (";
     for(int k = 0; k < nKeySize; ++k) {
         strSQL += SQL_FIELD_START;
         strSQL += keyColumns[leakyKeyIdxs[k]];
-        strSQL += SQL_FIELD_END",";
+        strSQL += SQL_FIELD_END ",";
     }
     for(int i = 0; i < nValueSize; ++i) {
         strSQL += SQL_FIELD_START;
         strSQL += valueColumns[i];
-        strSQL += SQL_FIELD_END",";
+        strSQL += SQL_FIELD_END ",";
     }
     strSQL += SQL_FIELD_START;
     strSQL += pContainerData->GetCasColumn();
     strSQL += SQL_FIELD_END;
-	if(bResetFlag) {
-		strSQL += ","SQL_FIELD_START;
-		strSQL += pContainerData->GetFlagsColumn();
-		strSQL += SQL_FIELD_END;
-	}
     strSQL += ") VALUES (";
     for(int k = 0; k < nKeySize; ++k) {
 		int nIndex = leakyKeyIdxs[k];
@@ -102,9 +97,6 @@ MCResult CCacheMemory::AddToDB(bool bResetFlag /*= false*/)
 		strSQL += ',';
     }
     strSQL += CastToString(FlushDBCas());
-	if(bResetFlag) {
-		strSQL += ",0";
-	}
     strSQL += ");";
 
     if(!pDatabase->WaitExecuteNA(strSQL.c_str())) {
@@ -118,9 +110,7 @@ MCResult CCacheMemory::AddToDB(bool bResetFlag /*= false*/)
 }
 
 MCResult CCacheMemory::LoadFromDB(
-	bool bDBCas /*= true*/,
-	const int32_t* pInFlag /*= NULL*/,
-	int32_t* pOutFlag /*= NULL*/)
+	bool bDBCas /*= true*/)
 {
 	CTransferStream tranKey(GetKey(), false);
 	CTypeString strTableName;
@@ -164,84 +154,31 @@ MCResult CCacheMemory::LoadFromDB(
     const std::vector<int>& leakyKeyIdxs = pContainerData->GetLeakyKeyIdxs();
 	int nKeySize = (int)std::min(leakyKeyIdxs.size(), strKeys.size());
 
-    std::string strSQL;
-	if(NULL != pInFlag) {
-		strSQL += SQL_BEGIN_TRAN"; ";
-	}
-	strSQL += "SELECT ";
+    std::string strSQL("SELECT ");
     if(bDBCas) {
-		if(NULL != pInFlag) {
-			char szFlag[MAX_NUMBER_SIZE] = {0};
-			ltostr(szFlag, *pInFlag, 10, 0);
-
-			for(int i = 0; i < nValueSize; ++i) {
-				strSQL += "CASE WHEN "SQL_FIELD_START;
-				strSQL += pContainerData->GetFlagsColumn();
-				strSQL += SQL_FIELD_END" = 0 OR "SQL_FIELD_START;
-				strSQL += pContainerData->GetFlagsColumn();
-				strSQL += SQL_FIELD_END" = ";
-				strSQL += szFlag;
-				strSQL += " THEN "SQL_FIELD_START;
-				strSQL += valueColumns[i];
-				strSQL += SQL_FIELD_END" ELSE NULL END,";
-			}
-		} else {
-			for(int i = 0; i < nValueSize; ++i) {
-				strSQL += SQL_FIELD_START;
-				strSQL += valueColumns[i];
-				strSQL += SQL_FIELD_END",";
-			}
+		for(int i = 0; i < nValueSize; ++i) {
+			strSQL += SQL_FIELD_START;
+			strSQL += valueColumns[i];
+			strSQL += SQL_FIELD_END ",";
 		}
         strSQL += SQL_FIELD_START;
         strSQL += pContainerData->GetCasColumn();
         strSQL += SQL_FIELD_END;
     } else {
         if(nValueSize > 0) {
-			if(NULL != pInFlag) {
-				char szFlag[MAX_NUMBER_SIZE] = {0};
-				ltostr(szFlag, *pInFlag, 10, 0);
-
-				for(int i = 0; i < nValueSize - 1; ++i) {
-					strSQL += "CASE WHEN "SQL_FIELD_START;
-					strSQL += pContainerData->GetFlagsColumn();
-					strSQL += SQL_FIELD_END" = 0 OR "SQL_FIELD_START;
-					strSQL += pContainerData->GetFlagsColumn();
-					strSQL += SQL_FIELD_END" = ";
-					strSQL += szFlag;
-					strSQL += " THEN "SQL_FIELD_START;
-					strSQL += valueColumns[i];
-					strSQL += SQL_FIELD_END" ELSE NULL END,";
-				}
-				strSQL += "CASE WHEN "SQL_FIELD_START;
-				strSQL += pContainerData->GetFlagsColumn();
-				strSQL += SQL_FIELD_END" = 0 OR "SQL_FIELD_START;
-				strSQL += pContainerData->GetFlagsColumn();
-				strSQL += SQL_FIELD_END" = ";
-				strSQL += szFlag;
-				strSQL += " THEN "SQL_FIELD_START;
-				strSQL += valueColumns[nValueSize - 1];
-				strSQL += SQL_FIELD_END" ELSE NULL END";
-
-			} else {
-				for(int i = 0; i < nValueSize - 1; ++i) {
-					strSQL += SQL_FIELD_START;
-					strSQL += valueColumns[i];
-					strSQL += SQL_FIELD_END",";
-				}
+			for(int i = 0; i < nValueSize - 1; ++i) {
 				strSQL += SQL_FIELD_START;
-				strSQL += valueColumns[nValueSize - 1];
-				strSQL += SQL_FIELD_END;
+				strSQL += valueColumns[i];
+				strSQL += SQL_FIELD_END ",";
 			}
+			strSQL += SQL_FIELD_START;
+			strSQL += valueColumns[nValueSize - 1];
+			strSQL += SQL_FIELD_END;
         }
     }
-	if(NULL != pOutFlag) {
-		strSQL += ","SQL_FIELD_START;
-		strSQL += pContainerData->GetFlagsColumn();
-		strSQL += SQL_FIELD_END;
-	}
-    strSQL += " FROM "SQL_FIELD_START;
+    strSQL += " FROM " SQL_FIELD_START;
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
     strSQL += pContainerData->GetDbTable();
     strSQL += SQL_FIELD_END;
     if(nKeySize > 0) {
@@ -250,14 +187,14 @@ MCResult CCacheMemory::LoadFromDB(
 			int nIndex = leakyKeyIdxs[k];
             strSQL += SQL_FIELD_START;
             strSQL += keyColumns[nIndex];
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
 			strSQL += " AND ";
         }
 		int nIndex = leakyKeyIdxs[nKeySize - 1];
         strSQL += SQL_FIELD_START;
         strSQL += keyColumns[nIndex];
-		strSQL += SQL_FIELD_END" = ";
+		strSQL += SQL_FIELD_END " = ";
 		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeySize - 1].GetString());
     }
     strSQL += " LIMIT 1;";
@@ -273,46 +210,30 @@ MCResult CCacheMemory::LoadFromDB(
         return MCERR_NOTFOUND;
     }
 
-	bool bChange = true;
-	if(NULL != pOutFlag) {
-		if(bDBCas) {
-			*pOutFlag = pField[nValueSize + 1].GetInt32();
+	util::CTransferStream inValues;
+
+	for(int i = 0; i < nValueSize; ++i) {
+
+		uint8_t u8Type = pCacheDBMgr->DBToStreamDataType(valueColumnsType[i]);
+		const char * pValues = pField[i].GetString();
+		if(NULL != pValues) {
+			inValues.WriteFromTypeString(pValues, strlen(pValues), u8Type);
 		} else {
-			*pOutFlag = pField[nValueSize].GetInt32();
-		}
-		if(0 != *pOutFlag && NULL != pInFlag && *pInFlag != *pOutFlag) {
-			bChange = false;
+			inValues.WriteFromTypeString(NULL, 0, u8Type);
 		}
 	}
 
-	if(bChange) {
-		util::CTransferStream inValues;
-
-		for(int i = 0; i < nValueSize; ++i) {
-
-			uint8_t u8Type = pCacheDBMgr->DBToStreamDataType(valueColumnsType[i]);
-			const char * pValues = pField[i].GetString();
-			if(NULL != pValues) {
-				inValues.WriteFromTypeString(pValues, strlen(pValues), u8Type);
-			} else {
-				inValues.WriteFromTypeString(NULL, 0, u8Type);
-			}
-		}
-
-		if(bDBCas) {
-			uint64_t n64Cas = pField[nValueSize].GetUInt64();
-			ChangeValueAndCas(inValues, n64Cas);
-		} else {
-			ChangeValue(inValues);
-		}
+	if(bDBCas) {
+		uint64_t n64Cas = pField[nValueSize].GetUInt64();
+		ChangeValueAndCas(inValues, n64Cas);
+	} else {
+		ChangeValue(inValues);
 	}
-
     return MCERR_OK;
 }
 
 MCResult CCacheMemory::UpdateToDB(
-	bool bDBCas /*= true*/,
-	bool bResetFlag /*= false*/)
+	bool bDBCas /*= true*/)
 {
 	CTransferStream tranKey(GetKey(), false);
 	CTypeString strTableName;
@@ -371,11 +292,11 @@ MCResult CCacheMemory::UpdateToDB(
 
     if(bDBCas)
     {
-		std::string strSQL(SQL_UPDATE_GETCAS_BEFORE_UPDATE" UPDATE "SQL_FIELD_START);
+		std::string strSQL(SQL_UPDATE_GETCAS_BEFORE_UPDATE " UPDATE " SQL_FIELD_START);
 		strSQL += pContainerData->GetSchema();
-		strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+		strSQL += SQL_FIELD_END "." SQL_FIELD_START;
 		strSQL += pContainerData->GetDbTable();
-		strSQL += SQL_FIELD_END" SET ";
+		strSQL += SQL_FIELD_END " SET ";
 		uint64_t n64MemCas = GetDBCas();
         if(nValueSize > 0) {
             for(int i = 0; i < nValueSize; ++i) {
@@ -385,7 +306,7 @@ MCResult CCacheMemory::UpdateToDB(
 				}
                 strSQL += SQL_FIELD_START;
                 strSQL += valueColumns[i];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, valueColumnsType[i], typeString.GetString());
 				strSQL += ',';
             }
@@ -393,22 +314,15 @@ MCResult CCacheMemory::UpdateToDB(
             for(int i = 0; i < nValueColumnSize; ++i) {
                 strSQL += SQL_FIELD_START;
                 strSQL += valueColumns[i];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, valueColumnsType[i], std::string());
 				strSQL += ',';
             }
         }
         strSQL += SQL_FIELD_START;
         strSQL += pContainerData->GetCasColumn();
-        strSQL += SQL_FIELD_END" = ";
+        strSQL += SQL_FIELD_END " = ";
         strSQL += CastToString(FlushDBCas());
-
-		if(bResetFlag) {
-			strSQL += ","SQL_FIELD_START;
-			strSQL += pContainerData->GetFlagsColumn();
-			strSQL += SQL_FIELD_END" = 0";
-		}
-
 		strSQL += SQL_UPDATE_GETCAS_IN_SET;
 
 		if(nKeySize > 0) {
@@ -417,16 +331,16 @@ MCResult CCacheMemory::UpdateToDB(
 				int nIndex = leakyKeyIdxs[k];
 				strSQL += SQL_FIELD_START;
 				strSQL += keyColumns[nIndex];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
 				strSQL += " AND ";
 			}
 			strSQL += SQL_UPDATE_GETCAS_IN_WHERE_BEFORE_CAS_FIELD SQL_FIELD_START;
 			strSQL += pContainerData->GetCasColumn();
-			strSQL += SQL_FIELD_END SQL_UPDATE_GETCAS_IN_WHERE_AFTER_CAS_FIELD" = ";
+			strSQL += SQL_FIELD_END SQL_UPDATE_GETCAS_IN_WHERE_AFTER_CAS_FIELD " = ";
 			strSQL += CastToString(n64MemCas);
 		}
-		strSQL += " LIMIT 1; "SQL_UPDATE_GETCAS_AFTER_UPDATE;
+		strSQL += " LIMIT 1; " SQL_UPDATE_GETCAS_AFTER_UPDATE;
 
 		CAutoPointer<QueryResult> pQueryResult(pDatabase->QueryNA(strSQL.c_str()));
 		if(pQueryResult.IsInvalid()) {
@@ -458,16 +372,16 @@ MCResult CCacheMemory::UpdateToDB(
 			if(MCCHANGE_NIL != oldChgType) {
 				RecoverChgType(strValues, oldChgType);
 			}
-			OutputError("n64DBCas != n64MemCas n64DBCas = "I64FMTD
-				" n64MemCas = "I64FMTD, n64DBCas, n64MemCas);
+			OutputError("n64DBCas != n64MemCas n64DBCas = " I64FMTD
+				" n64MemCas = " I64FMTD, n64DBCas, n64MemCas);
 			return MCERR_EXISTS;
 		}
     } else {
-		std::string strSQL("UPDATE "SQL_FIELD_START);
+		std::string strSQL("UPDATE " SQL_FIELD_START);
 		strSQL += pContainerData->GetSchema();
-		strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+		strSQL += SQL_FIELD_END "." SQL_FIELD_START;
 		strSQL += pContainerData->GetDbTable();
-		strSQL += SQL_FIELD_END" SET ";
+		strSQL += SQL_FIELD_END " SET ";
         if(nValueSize > 0) {
 			bool bSetField = false;
             for(int i = 0; i < nValueSize - 1; ++i) {
@@ -477,7 +391,7 @@ MCResult CCacheMemory::UpdateToDB(
 				}
                 strSQL += SQL_FIELD_START;
                 strSQL += valueColumns[i];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, valueColumnsType[i], typeString.GetString());
 				strSQL += ',';
 				bSetField = true;
@@ -486,20 +400,10 @@ MCResult CCacheMemory::UpdateToDB(
 			if(!typeString.IsIgnore()) {
 				strSQL += SQL_FIELD_START;
 				strSQL += valueColumns[nValueSize - 1];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, valueColumnsType[nValueSize - 1], typeString.GetString());
-				
-				if(bResetFlag) {
-					strSQL += ","SQL_FIELD_START;
-					strSQL += pContainerData->GetFlagsColumn();
-					strSQL += SQL_FIELD_END" = 0";
-				}
 			} else {		
-				if(bResetFlag) {
-					strSQL += SQL_FIELD_START;
-					strSQL += pContainerData->GetFlagsColumn();
-					strSQL += SQL_FIELD_END" = 0";
-				} else if(bSetField) {
+				if(bSetField) {
 					strSQL.erase(strSQL.size() - 1, 1);
 				}
 			}
@@ -508,26 +412,15 @@ MCResult CCacheMemory::UpdateToDB(
                 for(int i = 0; i < nValueColumnSize - 1; ++i) {
                     strSQL += SQL_FIELD_START;
                     strSQL += valueColumns[i];
-					strSQL += SQL_FIELD_END" = ";
+					strSQL += SQL_FIELD_END " = ";
 					pCacheDBMgr->AttachData(strSQL, valueColumnsType[i], std::string());
 					strSQL += ',';
                 }
                 strSQL += SQL_FIELD_START;
                 strSQL += valueColumns[nValueColumnSize - 1];
-                strSQL += SQL_FIELD_END" = ";
+                strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, valueColumnsType[nValueColumnSize - 1], std::string());
-				if(bResetFlag) {
-					strSQL += ","SQL_FIELD_START;
-					strSQL += pContainerData->GetFlagsColumn();
-					strSQL += SQL_FIELD_END" = 0";
-				}
-            } else {
-				if(bResetFlag) {
-					strSQL += SQL_FIELD_START;
-					strSQL += pContainerData->GetFlagsColumn();
-					strSQL += SQL_FIELD_END" = 0";
-				}
-			}
+            }
         }
 
 		if(nKeySize > 0) {
@@ -536,14 +429,14 @@ MCResult CCacheMemory::UpdateToDB(
 				int nIndex = leakyKeyIdxs[k];
 				strSQL += SQL_FIELD_START;
 				strSQL += keyColumns[nIndex];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
 				strSQL += " AND ";
 			}
 			int nIndex = leakyKeyIdxs[nKeySize - 1];
 			strSQL += SQL_FIELD_START;
 			strSQL += keyColumns[nIndex];
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeySize - 1].GetString());
 		}
 		strSQL += " LIMIT 1;";
@@ -595,9 +488,9 @@ MCResult CCacheMemory::DeleteFromDB()
 	const std::vector<int>& leakyKeyIdxs = pContainerData->GetLeakyKeyIdxs();
 	int nKeySize = (int)std::min(leakyKeyIdxs.size(), strKeys.size());
 
-    std::string strSQL("DELETE FROM "SQL_FIELD_START);
+    std::string strSQL("DELETE FROM " SQL_FIELD_START);
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
     strSQL += pContainerData->GetDbTable();
     strSQL += SQL_FIELD_END;
     if(nKeySize > 0) {
@@ -606,14 +499,14 @@ MCResult CCacheMemory::DeleteFromDB()
 			int nIndex = leakyKeyIdxs[k];
             strSQL += SQL_FIELD_START;
             strSQL += keyColumns[nIndex];
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
 			strSQL += " AND ";
         }
 		int nIndex = leakyKeyIdxs[nKeySize - 1];
         strSQL += SQL_FIELD_START;
         strSQL += keyColumns[nIndex];
-		strSQL += SQL_FIELD_END" = ";
+		strSQL += SQL_FIELD_END " = ";
 		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeySize - 1].GetString());
     }
     strSQL += " LIMIT 1;";
@@ -625,6 +518,89 @@ MCResult CCacheMemory::DeleteFromDB()
 
     ResetChgType();
     return MCERR_OK;
+}
+
+MCResult CCacheMemory::LoadCasFromDB()
+{
+	CTransferStream tranKey(GetKey(), false);
+	CTypeString strTableName;
+	tranKey.ReadToTypeString(strTableName);
+	std::vector<CTypeString> strKeys;
+	tranKey.ReadToTypeString(strKeys);
+
+	if (!IsStringType(strTableName.GetType())) {
+		OutputError("strTableName.empty()");
+		return MCERR_NOREPLY;
+	}
+
+	if (strKeys.empty()) {
+		OutputError("strFieldKeys.empty()");
+		return MCERR_NOREPLY;
+	}
+
+	CCacheDBManager::PTR_T pCacheDBMgr(CCacheDBManager::Pointer());
+	const CContainerData* pContainerData = pCacheDBMgr->GetContainer(strTableName.GetString());
+	if (NULL == pContainerData) {
+		OutputError("NULL == pContainerData");
+		return MCERR_NOREPLY;
+	}
+
+	CAutoPointer<Database> pDatabase(pCacheDBMgr->GetDatabase(m_u16DBID));
+	if (pDatabase.IsInvalid()) {
+		OutputError("pDatabase.IsInvalid()");
+		return MCERR_NOREPLY;
+	}
+
+	const std::vector<std::string>& keyColumns = pContainerData->GetKeyColumns();
+	const std::vector<int>& keyColumnsType = pContainerData->GetKeyColumnsType();
+	const std::vector<int>& leakyKeyIdxs = pContainerData->GetLeakyKeyIdxs();
+	int nKeySize = (int)std::min(leakyKeyIdxs.size(), strKeys.size());
+
+	std::string strSQL("SELECT ");
+	strSQL += SQL_FIELD_START;
+	strSQL += pContainerData->GetCasColumn();
+	strSQL += SQL_FIELD_END;
+	
+	strSQL += " FROM " SQL_FIELD_START;
+	strSQL += pContainerData->GetSchema();
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
+	strSQL += pContainerData->GetDbTable();
+	strSQL += SQL_FIELD_END;
+	if (nKeySize > 0) {
+		strSQL += " WHERE ";
+		for (int k = 0; k < nKeySize - 1; ++k) {
+			int nIndex = leakyKeyIdxs[k];
+			strSQL += SQL_FIELD_START;
+			strSQL += keyColumns[nIndex];
+			strSQL += SQL_FIELD_END " = ";
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
+			strSQL += " AND ";
+		}
+		int nIndex = leakyKeyIdxs[nKeySize - 1];
+		strSQL += SQL_FIELD_START;
+		strSQL += keyColumns[nIndex];
+		strSQL += SQL_FIELD_END " = ";
+		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeySize - 1].GetString());
+	}
+	strSQL += " LIMIT 1;";
+
+	PrintDebug("CCacheMemory::LoadCasFromDB strSQL = %s ", strSQL.c_str());
+
+	CAutoPointer<QueryResult> pQueryResult(pDatabase->QueryNA(strSQL.c_str()));
+	if (pQueryResult.IsInvalid()) {
+		return MCERR_NOTFOUND;
+	}
+
+	Field* pField = pQueryResult->Fetch();
+	if (NULL == pField) {
+		OutputError("NULL == pField");
+		return MCERR_NOTFOUND;
+	}
+
+	uint64_t n64Cas = pField[0].GetUInt64();
+	ChangeCas(n64Cas);
+
+	return MCERR_OK;
 }
 
 MCResult CCacheMemory::SelectAllFromDB(
@@ -687,12 +663,12 @@ MCResult CCacheMemory::SelectAllFromDB(
 			int nIndex = leakyKeyIdxs[i];
 			strSQL += SQL_FIELD_START;
 			strSQL += keyColumns[nIndex];
-			strSQL += SQL_FIELD_END",";
+			strSQL += SQL_FIELD_END ",";
 		}
 		for(int i = 0; i < nValueColSize; ++i) {
 			strSQL += SQL_FIELD_START;
 			strSQL += valueColumns[i];
-			strSQL += SQL_FIELD_END",";
+			strSQL += SQL_FIELD_END ",";
 		}
 		strSQL += SQL_FIELD_START;
 		strSQL += pContainerData->GetCasColumn();
@@ -704,12 +680,12 @@ MCResult CCacheMemory::SelectAllFromDB(
 				int nIndex = leakyKeyIdxs[i];
 				strSQL += SQL_FIELD_START;
 				strSQL += keyColumns[nIndex];
-				strSQL += SQL_FIELD_END",";
+				strSQL += SQL_FIELD_END ",";
 			}
 			for(int i = 0; i < nValueColSize - 1; ++i) {
 				strSQL += SQL_FIELD_START;
 				strSQL += valueColumns[i];
-				strSQL += SQL_FIELD_END",";
+				strSQL += SQL_FIELD_END ",";
 			}
 			strSQL += SQL_FIELD_START;
 			strSQL += valueColumns[nValueColSize - 1];
@@ -720,7 +696,7 @@ MCResult CCacheMemory::SelectAllFromDB(
 					int nIndex = leakyKeyIdxs[i];
 					strSQL += SQL_FIELD_START;
 					strSQL += keyColumns[nIndex];
-					strSQL += SQL_FIELD_END",";
+					strSQL += SQL_FIELD_END ",";
 				}
 				int nIndex = leakyKeyIdxs[nKeyColSize - 1];
 				strSQL += SQL_FIELD_START;
@@ -729,9 +705,9 @@ MCResult CCacheMemory::SelectAllFromDB(
 			}
 		}
 	}
-	strSQL += " FROM "SQL_FIELD_START;
+	strSQL += " FROM " SQL_FIELD_START;
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
 	strSQL += pContainerData->GetDbTable();
 	strSQL += SQL_FIELD_END;
 	if(!strKeys.empty()) {
@@ -751,27 +727,27 @@ MCResult CCacheMemory::SelectAllFromDB(
 				for(int k = 0; k < nKeySize - 1; ++k) {
 					strSQL += SQL_FIELD_START;
 					strSQL += keyColumns[k];
-					strSQL += SQL_FIELD_END" = ";
+					strSQL += SQL_FIELD_END " = ";
 					pCacheDBMgr->AttachData(strSQL, keyColumnsType[k], strKeys[k].GetString());
 					strSQL += " AND ";
 				}
 				strSQL += SQL_FIELD_START;
 				strSQL += keyColumns[nKeySize - 1];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, keyColumnsType[nKeySize - 1], strKeys[nKeySize - 1].GetString());
 			} else {
 				for(int k = 0; k < nKeySize - 1; ++k) {
 					int nIndex = valueKeyIdxs[k];
 					strSQL += SQL_FIELD_START;
 					strSQL += keyColumns[nIndex];
-					strSQL += SQL_FIELD_END" = ";
+					strSQL += SQL_FIELD_END " = ";
 					pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
 					strSQL += " AND ";
 				}
 				int nIndex = valueKeyIdxs[nKeySize - 1];
 				strSQL += SQL_FIELD_START;
 				strSQL += keyColumns[nIndex];
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeySize - 1].GetString());
 			}
 		}
@@ -912,14 +888,9 @@ MCResult CCacheMemory::StoredProcedures(
 	uint16_t u16DBID,
     const std::string& strProc,
 	const std::string& strParam,
+	bool bEscapeString,
     mc_record_set_t* pRecordSet)
 {
-	// no reply
-	if(NULL == pRecordSet) {
-		OutputError("NULL == pRecordSet");
-		return MCERR_NOREPLY;
-	}
-
 	CTransferStream tsProc(strProc, false);
 	CTypeString strProcName;
 	tsProc.ReadToTypeString(strProcName);
@@ -933,7 +904,7 @@ MCResult CCacheMemory::StoredProcedures(
     const CContainerData* pContainerData = pCacheDBMgr->GetContainer(strProcName.GetString());
     if(NULL == pContainerData) {
 		// It's meaning close the function, when empty the name.
-		// return Ok for result.
+		// return ok for result.
         return MCERR_OK;
     }
 
@@ -956,24 +927,38 @@ MCResult CCacheMemory::StoredProcedures(
 	int nParamSize = (int)std::min(strParams.size(), keyColumnsType.size());
 
     std::string strSQL;
-	strSQL += SQL_PROCEDURE_CALL" "SQL_FIELD_START;
+	strSQL += SQL_PROCEDURE_CALL " " SQL_FIELD_START;
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END".";
+	strSQL += SQL_FIELD_END ".";
     strSQL += pContainerData->GetDbTable();
     strSQL += SQL_PROCEDURE_BEFORE_PARAMS;
     if(nParamSize > 0) {
         int nLoopSize = nParamSize - 1;
         for(int i = 0; i < nLoopSize; ++i) {
-			pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strParams[i].GetString());
+			if (bEscapeString && pCacheDBMgr->IsDBString(keyColumnsType[i])) {
+				std::string strEscape(pDatabase->EscapeString(strParams[i].GetString()));
+				pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strEscape);
+			} else {
+				pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strParams[i].GetString());
+			}
 			strSQL += ',';
         }
-		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strParams[nLoopSize].GetString());
+		if (bEscapeString && pCacheDBMgr->IsDBString(keyColumnsType[nLoopSize])) {
+			std::string strEscape(pDatabase->EscapeString(strParams[nLoopSize].GetString()));
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strEscape);
+		} else {
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strParams[nLoopSize].GetString());
+		}
     }
     strSQL += SQL_PROCEDURE_AFTER_PARAMS;
 
 	CAutoPointer<QueryResult> pQueryResult(pDatabase->QueryNA(strSQL.c_str()));
 	if(pQueryResult.IsInvalid()) {
-		return MCERR_NOTFOUND;
+		return MCERR_OK;
+	}
+
+	if(NULL == pRecordSet) {
+		return MCERR_OK;
 	}
 
     int nFieldSize = pQueryResult->GetFieldCount();
@@ -981,6 +966,12 @@ MCResult CCacheMemory::StoredProcedures(
         return MCERR_OK;
     }
 	const std::vector<int>& valueColumnsType = pContainerData->GetValueColumnsType();
+
+	if (valueColumnsType.size() != nFieldSize) {
+		OutputError("valueColumnsType.size() %d != nFieldSize %d   strSQL = %s ",
+			valueColumnsType.size(), nFieldSize, strSQL.c_str());
+		return MCERR_NOREPLY;
+	}
 
     do {
 		Field* pField = pQueryResult->Fetch();
@@ -1016,6 +1007,7 @@ MCResult CCacheMemory::AsyncStoredProcedures(
 	uint16_t u16DBID,
 	const std::string& strProc,
 	const std::string& strParam,
+	bool bEscapeString,
 	mc_record_set_t* pRecordSet)
 {
 	CTransferStream tsProc(strProc, false);
@@ -1024,7 +1016,7 @@ MCResult CCacheMemory::AsyncStoredProcedures(
 
 	if(!IsStringType(strProcName.GetType())) {
 		OutputError("strProcName.empty()");
-		return MCERR_NOTSTORED;
+		return MCERR_NOREPLY;
 	}
 
 	CCacheDBManager::PTR_T pCacheDBMgr(CCacheDBManager::Pointer());
@@ -1037,13 +1029,13 @@ MCResult CCacheMemory::AsyncStoredProcedures(
 
 	if(pContainerData->GetDbTable().empty()) {
 		OutputError("pContainerData->GetDbTable().empty()");
-		return MCERR_NOTSTORED;
+		return MCERR_NOREPLY;
 	}
 
 	CAutoPointer<Database> pDatabase(pCacheDBMgr->GetDatabase(u16DBID));
 	if(pDatabase.IsInvalid()) {
 		OutputError("pDatabase.IsInvalid()");
-		return MCERR_NOTSTORED;
+		return MCERR_NOREPLY;
 	}
 
 	CTransferStream tsParams(strParam, false);
@@ -1054,25 +1046,35 @@ MCResult CCacheMemory::AsyncStoredProcedures(
 	int nParamSize = (int)std::min(strParams.size(), keyColumnsType.size());
 
 	std::string strSQL;
-	strSQL += SQL_PROCEDURE_CALL" "SQL_FIELD_START;
+	strSQL += SQL_PROCEDURE_CALL " " SQL_FIELD_START;
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END".";
+	strSQL += SQL_FIELD_END ".";
 	strSQL += pContainerData->GetDbTable();
 	strSQL += SQL_PROCEDURE_BEFORE_PARAMS;
 	if(nParamSize > 0) {
 		int nLoopSize = nParamSize - 1;
 		for(int i = 0; i < nLoopSize; ++i) {
-			pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strParams[i].GetString());
+			if (bEscapeString && pCacheDBMgr->IsDBString(keyColumnsType[i])) {
+				std::string strEscape(pDatabase->EscapeString(strParams[i].GetString()));
+				pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strEscape);
+			} else {
+				pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strParams[i].GetString());
+			}
 			strSQL += ',';
 		}
-		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strParams[nLoopSize].GetString());
+		if (bEscapeString && pCacheDBMgr->IsDBString(keyColumnsType[nLoopSize])) {
+			std::string strEscape(pDatabase->EscapeString(strParams[nLoopSize].GetString()));
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strEscape);
+		} else {
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strParams[nLoopSize].GetString());
+		}
 	}
 	strSQL += SQL_PROCEDURE_AFTER_PARAMS;
 
 	if(NULL == pRecordSet) {
 		if(!pDatabase->ExecuteNA(strSQL.c_str())) {
 			OutputError("!pDatabase->Execute()");
-			return MCERR_NOTSTORED;
+			return MCERR_NOREPLY;
 		}
 	} else {
 
@@ -1083,7 +1085,7 @@ MCResult CCacheMemory::AsyncStoredProcedures(
 
 		CAutoPointer<QueryResult> pQueryResult(pAqw->GetQueryResult(nIdx));
 		if(pQueryResult.IsInvalid()) {
-			return MCERR_NOTFOUND;
+			return MCERR_OK;
 		}
 
 		int nFieldSize = pQueryResult->GetFieldCount();
@@ -1091,6 +1093,12 @@ MCResult CCacheMemory::AsyncStoredProcedures(
 			return MCERR_OK;
 		}
 		const std::vector<int>& valueColumnsType = pContainerData->GetValueColumnsType();
+
+		if (valueColumnsType.size() != nFieldSize) {
+			OutputError("valueColumnsType.size() %d != nFieldSize %d   strSQL = %s ",
+				valueColumnsType.size(), nFieldSize, strSQL.c_str());
+			return MCERR_NOREPLY;
+		}
 
 		do {
 			Field* pField = pQueryResult->Fetch();
@@ -1161,13 +1169,13 @@ MCResult CCacheMemory::ChangeFlag(uint16_t u16DBID, const std::string& strKey, i
 		return MCERR_NOREPLY;
 	}
 
-	std::string strSQL("UPDATE "SQL_FIELD_START);
+	std::string strSQL("UPDATE " SQL_FIELD_START);
 	strSQL += pContainerData->GetSchema();
-	strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
 	strSQL += pContainerData->GetDbTable();
-	strSQL += SQL_FIELD_END" SET "SQL_FIELD_START;
+	strSQL += SQL_FIELD_END " SET " SQL_FIELD_START;
 	strSQL += flagsColumn;
-	strSQL += SQL_FIELD_END" = ";
+	strSQL += SQL_FIELD_END " = ";
 	char szBuf[MAX_NUMBER_SIZE] = {0};
 	ltostr(szBuf, nFlag, 10, 0);
 	strSQL += szBuf;
@@ -1178,21 +1186,21 @@ MCResult CCacheMemory::ChangeFlag(uint16_t u16DBID, const std::string& strKey, i
 			int nIndex = leakyKeyIdxs[k];
 			strSQL += SQL_FIELD_START;
 			strSQL += keyColumns[nIndex];
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
 			strSQL += " AND ";
 		}
 		int nIndex = leakyKeyIdxs[nKeySize - 1];
 		strSQL += SQL_FIELD_START;
 		strSQL += keyColumns[nIndex];
-		strSQL += SQL_FIELD_END" = ";
+		strSQL += SQL_FIELD_END " = ";
 		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeySize - 1].GetString());
 	}
 	strSQL += " LIMIT 1;";
 
 	if(!pDatabase->WaitExecuteNA(strSQL.c_str())) {
 		OutputError("!pDatabase->WaitExecuteNA");
-		return MCERR_NOTSTORED;
+		return MCERR_NOREPLY;
 	}
 	return MCERR_OK;
 }
@@ -1248,3 +1256,277 @@ bool CCacheMemory::InsertCacheRecord(
 	return true;
 }
 
+MCResult CCacheMemory::CheckGlobalExists(const std::string& strKey)
+{
+	CTransferStream tsKey(strKey, false);
+	CTypeString strTableName;
+	tsKey.ReadToTypeString(strTableName);
+	std::vector<CTypeString> strKeys;
+	tsKey.ReadToTypeString(strKeys);
+
+	if (!IsStringType(strTableName.GetType())) {
+		OutputError("strTableName.empty()");
+		return MCERR_NOREPLY;
+	}
+
+	CCacheDBManager::PTR_T pCacheDBMgr(CCacheDBManager::Pointer());
+	const CContainerData* pContainerData = pCacheDBMgr->GetContainer(strTableName.GetString());
+	if (NULL == pContainerData) {
+		OutputError("NULL == pContainerData");
+		return MCERR_NOREPLY;
+	}
+
+	const std::vector<std::string>& keyColumns = pContainerData->GetKeyColumns();
+	const std::vector<int>& keyColumnsType = pContainerData->GetKeyColumnsType();
+	const std::vector<int>& leakyKeyIdxs = pContainerData->GetLeakyKeyIdxs();
+	int nKeyColSize = (int)leakyKeyIdxs.size();
+
+	if (nKeyColSize < 1) {
+		OutputError("nKeyColSize < 1  nKeyColSize = %d", nKeyColSize);
+		return MCERR_NOREPLY;
+	}
+
+	std::string strSQL("SELECT ");
+	strSQL += SQL_FIELD_START;
+	int nIndex = leakyKeyIdxs[0];
+	strSQL += keyColumns[nIndex];
+	strSQL += SQL_FIELD_END " FROM " SQL_FIELD_START;
+	strSQL += pContainerData->GetSchema();
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
+	strSQL += pContainerData->GetDbTable();
+	strSQL += SQL_FIELD_END " WHERE ";
+	for (int k = 0; k < nKeyColSize - 1; ++k) {
+		nIndex = leakyKeyIdxs[k];
+		strSQL += SQL_FIELD_START;
+		strSQL += keyColumns[nIndex];
+		strSQL += SQL_FIELD_END " = ";
+		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
+		strSQL += " AND ";
+	}
+	nIndex = leakyKeyIdxs[nKeyColSize - 1];
+	strSQL += SQL_FIELD_START;
+	strSQL += keyColumns[nIndex];
+	strSQL += SQL_FIELD_END " = ";
+	pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeyColSize - 1].GetString());
+
+	strSQL += " LIMIT 1;";
+
+	if(pCacheDBMgr->CheckKeyExist(strSQL)) {
+		return MCERR_OK;
+	}
+	return MCERR_NOTFOUND;
+}
+
+MCResult CCacheMemory::CheckExistEscapeString(const std::string& strKey, util::CTransferStream& outNewKey)
+{
+	CTransferStream tsKey(strKey, false);
+	CTypeString strTableName;
+	tsKey.ReadToTypeString(strTableName);
+	std::vector<CTypeString> strKeys;
+	tsKey.ReadToTypeString(strKeys);
+
+	if (!IsStringType(strTableName.GetType())) {
+		OutputError("strTableName.empty()");
+		return MCERR_NOREPLY;
+	}
+
+	CCacheDBManager::PTR_T pCacheDBMgr(CCacheDBManager::Pointer());
+	const CContainerData* pContainerData = pCacheDBMgr->GetContainer(strTableName.GetString());
+	if (NULL == pContainerData) {
+		OutputError("NULL == pContainerData");
+		return MCERR_NOREPLY;
+	}
+
+	CAutoPointer<Database> pDatabase(pCacheDBMgr->GetRandomDatabase());
+	if (pDatabase.IsInvalid()) {
+		OutputError("pDatabase.IsInvalid()");
+		return MCERR_NOREPLY;
+	}
+
+	const std::vector<std::string>& keyColumns = pContainerData->GetKeyColumns();
+	const std::vector<int>& keyColumnsType = pContainerData->GetKeyColumnsType();
+	const std::vector<int>& leakyKeyIdxs = pContainerData->GetLeakyKeyIdxs();
+	int nKeyColSize = (int)leakyKeyIdxs.size();
+
+	if (nKeyColSize < 1) {
+		OutputError("nKeyColSize < 1  nKeyColSize = %d", nKeyColSize);
+		return MCERR_NOREPLY;
+	}
+
+	outNewKey.WriteFromTypeString(strTableName.GetString(), strTableName.GetType());
+
+	std::string strSQL("SELECT ");
+	strSQL += SQL_FIELD_START;
+	int nIndex = leakyKeyIdxs[0];
+	strSQL += keyColumns[nIndex];
+	strSQL += SQL_FIELD_END " FROM " SQL_FIELD_START;
+	strSQL += pContainerData->GetSchema();
+	strSQL += SQL_FIELD_END "." SQL_FIELD_START;
+	strSQL += pContainerData->GetDbTable();
+	strSQL += SQL_FIELD_END " WHERE ";
+	for (int k = 0; k < nKeyColSize - 1; ++k) {
+		nIndex = leakyKeyIdxs[k];
+		strSQL += SQL_FIELD_START;
+		strSQL += keyColumns[nIndex];
+		strSQL += SQL_FIELD_END " = ";
+		if (pCacheDBMgr->IsDBString(keyColumnsType[nIndex])) {
+			std::string strNewKey(pDatabase->EscapeString(strKeys[k].GetString()));
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strNewKey);
+			outNewKey.WriteFromTypeString(strNewKey, strKeys[k].GetType());
+		} else {
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[k].GetString());
+			outNewKey.WriteFromTypeString(strKeys[k].GetString(), strKeys[k].GetType());
+		}
+		strSQL += " AND ";
+	}
+	nIndex = leakyKeyIdxs[nKeyColSize - 1];
+	strSQL += SQL_FIELD_START;
+	strSQL += keyColumns[nIndex];
+	strSQL += SQL_FIELD_END " = ";
+	if (pCacheDBMgr->IsDBString(keyColumnsType[nIndex])) {
+		std::string strNewKey(pDatabase->EscapeString(strKeys[nKeyColSize - 1].GetString()));
+		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strNewKey);
+		outNewKey.WriteFromTypeString(strNewKey, strKeys[nKeyColSize - 1].GetType());
+	} else {
+		pCacheDBMgr->AttachData(strSQL, keyColumnsType[nIndex], strKeys[nKeyColSize - 1].GetString());
+		outNewKey.WriteFromTypeString(strKeys[nKeyColSize - 1].GetString(), strKeys[nKeyColSize - 1].GetType());
+	}
+	strSQL += " LIMIT 1;";
+
+	if (pCacheDBMgr->CheckKeyExist(strSQL)) {
+		return MCERR_OK;
+	}
+	return MCERR_NOTFOUND;
+}
+
+MCResult CCacheMemory::AllDBStoredProcedures(
+	const std::string& strProc,
+	const std::string& strParam,
+	bool bEscapeString,
+	mc_record_set_t* pRecordSet)
+{
+	CTransferStream tsProc(strProc, false);
+	CTypeString strProcName;
+	tsProc.ReadToTypeString(strProcName);
+
+	if (!IsStringType(strProcName.GetType())) {
+		OutputError("strProcName.empty()");
+		return MCERR_NOREPLY;
+	}
+
+	CCacheDBManager::PTR_T pCacheDBMgr(CCacheDBManager::Pointer());
+	const CContainerData* pContainerData = pCacheDBMgr->GetContainer(strProcName.GetString());
+	if (NULL == pContainerData) {
+		// It's meaning close the function, when empty the name.
+		// return Ok for result.
+		return MCERR_OK;
+	}
+
+	if (pContainerData->GetDbTable().empty()) {
+		OutputError("pContainerData->GetDbTable().empty()");
+		return MCERR_NOREPLY;
+	}
+
+	CAutoPointer<Database> pDatabase(pCacheDBMgr->GetRandomDatabase());
+	if (pDatabase.IsInvalid()) {
+		OutputError("pDatabase.IsInvalid()");
+		return MCERR_NOREPLY;
+	}
+
+	CTransferStream tsParams(strParam, false);
+	std::vector<CTypeString> strParams;
+	tsParams.ReadToTypeString(strParams);
+
+	const std::vector<int>& keyColumnsType = pContainerData->GetKeyColumnsType();
+	int nParamSize = (int)std::min(strParams.size(), keyColumnsType.size());
+
+	std::string strSQL;
+	strSQL += SQL_PROCEDURE_CALL " " SQL_FIELD_START;
+	strSQL += pContainerData->GetSchema();
+	strSQL += SQL_FIELD_END ".";
+	strSQL += pContainerData->GetDbTable();
+	strSQL += SQL_PROCEDURE_BEFORE_PARAMS;
+	if (nParamSize > 0) {
+		int nLoopSize = nParamSize - 1;
+		for (int i = 0; i < nLoopSize; ++i) {
+			if (bEscapeString && pCacheDBMgr->IsDBString(keyColumnsType[i])) {
+				std::string strEscape(pDatabase->EscapeString(strParams[i].GetString()));
+				pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strEscape);
+			} else {
+				pCacheDBMgr->AttachData(strSQL, keyColumnsType[i], strParams[i].GetString());
+			}
+			strSQL += ',';
+		}
+		if (bEscapeString && pCacheDBMgr->IsDBString(keyColumnsType[nLoopSize])) {
+			std::string strEscape(pDatabase->EscapeString(strParams[nLoopSize].GetString()));
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strEscape);
+		} else {
+			pCacheDBMgr->AttachData(strSQL, keyColumnsType[nLoopSize], strParams[nLoopSize].GetString());
+		}
+	}
+	strSQL += SQL_PROCEDURE_AFTER_PARAMS;
+
+	if (NULL == pRecordSet) {
+		if (!pCacheDBMgr->QueryFromAllDB(strSQL, NULL)) {
+			OutputError("1 !pCacheDBMgr->QueryFromAllDB()  strSQL = %s ", strSQL.c_str());
+			return MCERR_NOREPLY;
+		}
+	} else {
+		DB_RESUTLT_VEC_T results;
+		if (!pCacheDBMgr->QueryFromAllDB(strSQL, &results)) {
+			OutputError("2 !pCacheDBMgr->QueryFromAllDB()  strSQL = %s ", strSQL.c_str());
+			return MCERR_NOREPLY;
+		}
+
+		const std::vector<int>& valueColumnsType = pContainerData->GetValueColumnsType();
+
+		int nSize = (int)results.size();
+		for (int i = 0; i < nSize; ++i) {
+			CAutoPointer<QueryResult> pQueryResult(results[i]);
+			if (pQueryResult.IsInvalid()) {
+				continue;
+			}
+
+			int nFieldSize = pQueryResult->GetFieldCount();
+			if (nFieldSize < 1) {
+				continue;
+			}
+
+			if (valueColumnsType.size() != nFieldSize) {
+				OutputError("valueColumnsType.size() %d != nFieldSize %d   strSQL = %s ",
+					valueColumnsType.size(), nFieldSize, strSQL.c_str());
+				return MCERR_NOREPLY;
+			}
+
+			do {
+				Field* pField = pQueryResult->Fetch();
+				if (NULL != pField) {
+					mc_record_t* pMcRecord = RecordSetAdd(pRecordSet);
+					CTransferStream tranValues;
+					if (nFieldSize > 0) {
+						uint8_t u8Type = STREAM_DATA_NIL;
+						for (int i = 0; i < nFieldSize; ++i) {
+							if (i < (int)valueColumnsType.size()) {
+								u8Type = pCacheDBMgr->DBToStreamDataType(valueColumnsType[i]);
+							} else {
+								u8Type = STREAM_DATA_C_STRING;
+							}
+							const char * pValues = pField[i].GetString();
+							if (NULL != pValues) {
+								tranValues.WriteFromTypeString(pValues, strlen(pValues), u8Type);
+							} else {
+								tranValues.WriteFromTypeString(NULL, 0, u8Type);
+							}
+						}
+					}
+					SetRecordKey(pMcRecord, "");
+					SetRecordNValue(pMcRecord, tranValues.GetData(), tranValues.GetNumberOfBytesUsed());
+				} else {
+					OutputError("NULL == pField");
+				}
+			} while (pQueryResult->NextRow());
+		}
+	}
+
+	return MCERR_OK;
+}

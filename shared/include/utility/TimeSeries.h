@@ -5,8 +5,8 @@
  * Created on 2016_5_13, 17:38
  */
 
-#ifndef _TIMESERIES_H_
-#define	_TIMESERIES_H_
+#ifndef TIMESERIES_H
+#define	TIMESERIES_H
 
 #include "Common.h"
 
@@ -33,5 +33,5 @@ private:
 
 }
 
-#endif	/* _TIMESERIES_H_ */
+#endif	/* TIMESERIES_H */
 

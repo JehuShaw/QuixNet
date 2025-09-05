@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _HTTPREQUEST_H
-#define _HTTPREQUEST_H
+#ifndef HTTPREQUEST_H
+#define HTTPREQUEST_H
 
 #include "Common.h"
 
@@ -71,4 +71,4 @@ private:
 
 }
 
-#endif /* _HTTPREQUEST_H */
+#endif /* HTTPREQUEST_H */

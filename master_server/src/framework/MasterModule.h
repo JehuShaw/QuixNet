@@ -5,15 +5,15 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _MASTERMODULE_H
-#define	_MASTERMODULE_H
+#ifndef MASTERMODULE_H
+#define	MASTERMODULE_H
 
 #include "INodeControl.h"
 
 class CMasterModule : public INodeControl 
 {
 public:
-	CMasterModule(const char* name, uint16_t serverId,
+	CMasterModule(const char* name, uint32_t serverId,
 		const std::string& endPoint, const std::string& acceptAddress,
 		const std::string& processPath, const std::string& projectName);
 
@@ -28,13 +28,11 @@ public:
 	virtual void HandleNotification(const util::CWeakPointer<mdl::INotification>& request,
 		util::CWeakPointer<mdl::IResponse>& reply);
 
-	virtual bool CreatChannel(uint16_t serverId, const std::string& endPoint, uint16_t serverType);
-
-	virtual bool CreatChannel(uint16_t serverId, const std::string& endPoint, uint16_t serverType,
+	virtual bool CreatChannel(uint32_t serverId, const std::string& endPoint, uint16_t serverType,
 		const std::string& acceptAddress, const std::string& processPath, const std::string& projectName,
 		uint16_t serverRegion);
 
-	virtual bool RemoveChannel(uint16_t serverId);
+	virtual bool RemoveChannel(uint32_t serverId);
 
 	virtual int ChannelCount() const;
 
@@ -44,14 +42,14 @@ public:
 
 	virtual util::CAutoPointer<IChannelValue> GetLowLoadByRegion(uint16_t serverRegion) const;
 
-	virtual util::CAutoPointer<IChannelValue> GetChnlByDirServId(uint16_t serverId) const;
+	virtual util::CAutoPointer<IChannelValue> GetChnlByDirServId(uint32_t serverId) const;
 
-	virtual void UpdateChannelLoad(uint16_t serverId, uint32_t serverLoad) {}
+	virtual void UpdateChannelLoad(uint32_t serverId, int32_t serverLoad) {}
 
 private:
 	util::CAutoPointer<IChannelValue> m_channel;
 	thd::CSpinRWLock m_rwLock;
 };
 
-#endif	/* _MASTERMODULE_H */
+#endif	/* MASTERMODULE_H */
 

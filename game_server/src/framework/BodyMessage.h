@@ -5,13 +5,13 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#pragma once
+#ifndef BODYMESSAGE_H
+#define BODYMESSAGE_H
 
 #include "Common.h"
 #include "INotificationBody.h"
 #include <google/protobuf/message.h>
-
-class CPlayerBase;
+#include "PlayerBase.h"
 
 class CBodyMessage : public mdl::IBody
 {
@@ -42,17 +42,18 @@ public:
     /**
 	 * get player
 	 */
-	const util::CWeakPointer<CPlayerBase>& GetPlayer() const {
+	const util::CWeakPointer<CWrapPlayer>& GetPlayer() const {
 		return m_player;
 	}
 	/**
 	 * set player
 	 */
-	void SetPlayer(const util::CWeakPointer<CPlayerBase>& player) {
+	void SetPlayer(const util::CWeakPointer<CWrapPlayer>& player) {
 		m_player = player;
 	}
 private:
 	util::CAutoPointer<::google::protobuf::Message> m_message;
-    util::CWeakPointer<CPlayerBase> m_player;
+    util::CWeakPointer<CWrapPlayer> m_player;
 };
 
+#endif /* BODYMESSAGE_H */

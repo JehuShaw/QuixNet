@@ -6,7 +6,7 @@
  */
 #include "ServantModule.h"
 
-#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 )
 #include <process.h>
 #include <direct.h>
 #include <ShellAPI.h>
@@ -33,7 +33,7 @@ using namespace rpcz;
 using namespace util;
 
 
-CServantModule::CServantModule(const char* name, uint16_t serverId)
+CServantModule::CServantModule(const char* name, uint32_t serverId)
 	: CModule(name)
 	, m_serverId(serverId)
 {
@@ -55,15 +55,15 @@ void CServantModule::OnRemove()
 
 std::vector<int> CServantModule::ListNotificationInterests()
 {
-    std::vector<int> interests;
-    interests.push_back(N_CMD_MASTER_TRANSPORT);
-	interests.push_back(N_CMD_MASTER_RESTART);
-	interests.push_back(N_CMD_MASTER_SHUTDOWN);
-	interests.push_back(N_CMD_MASTER_ERASE);
-	interests.push_back(N_CMD_SERVER_PLAY);
-	interests.push_back(N_CMD_SERVER_STOP);
-	interests.push_back(N_CMD_SERVER_STORE);
-    return interests;
+    return std::vector<int>({
+		N_CMD_MASTER_TRANSPORT,
+		N_CMD_MASTER_RESTART,
+		N_CMD_MASTER_SHUTDOWN,
+		N_CMD_MASTER_ERASE,
+		N_CMD_SERVER_PLAY,
+		N_CMD_SERVER_STOP,
+		N_CMD_SERVER_STORE
+    });
 }
 
 IModule::InterestList CServantModule::ListProtocolInterests()
@@ -109,8 +109,9 @@ int CServantModule::SendCacheMessage(
 {
 
 	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
-		return FALSE;
+		OutputError("rpcChannel.IsInvalid() routeType = %d route = " I64FMTD,
+			request.route_type(), request.route());
+		return SERVER_ERROR_NOTFOUND_CHANNEL;
 	}
 
 	::node::CacheService_Stub cacheService_stub(&*rpcChannel->GetRpcChannel());
@@ -121,8 +122,15 @@ int CServantModule::SendCacheMessage(
 	cacheService_stub.HandleNotification(request, &response, &controller, NULL);
 	controller.wait();
 
-	if(!controller.ok()) {
-		OutputError("controller.get_status() = %d", controller.get_status());
+	const rpcz::status_code curStatus = controller.get_status();
+
+	if (curStatus == rpcz::status::DEADLINE_EXCEEDED) {
+		response.set_result(SERVER_CALL_DEADLINE);
+	}
+
+	if (curStatus != rpcz::status::OK) {
+		OutputError("controller.get_status() = %d routeType = %d route = " I64FMTD,
+			controller.get_status(), request.route_type(), request.route());
 	}
 
 	return response.result();
@@ -142,21 +150,23 @@ void CServantModule::CaseTransport(const util::CWeakPointer<mdl::INotification>&
 		return;
 	}
 
-	uint16_t serverId = (uint16_t)pRequest->route();
+	uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	CAutoPointer<IChannelValue> rpcChannel(CNodeModule::GetStaticChannel(serverId));
 	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
-		pResponse->set_result(FALSE);
+		OutputError("rpcChannel.IsInvalid() serverId = %u", serverId);
+		pResponse->set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		return;
 	}
 
 	if(rpcChannel->GetServerType() != REGISTER_TYPE_WORKER) {
 		// Only Worker can transport.
+		OutputError("GetServerType() != REGISTER_TYPE_WORKER GetServerType() = %d serverId = %u",
+			rpcChannel->GetServerType(), serverId);
+		pResponse->set_result(SERVER_FAILURE);
 		return;
 	}
 
-	int32_t nResult = CNodeModule::SendNodeMessage(rpcChannel, *pRequest);
-	pResponse->set_result(nResult);
+	pResponse->set_result(CNodeModule::SendNodeMessage(rpcChannel, *pRequest, *pResponse));
 }
 
 void CServantModule::CaseRestart(const util::CWeakPointer<mdl::INotification>& request,
@@ -173,16 +183,17 @@ void CServantModule::CaseRestart(const util::CWeakPointer<mdl::INotification>& r
 		return;
 	}
 
-	uint16_t serverId = (uint16_t)pRequest->route();
+	uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	CAutoPointer<IChannelValue> rpcChannel(CNodeModule::GetStaticChannel(serverId));
 	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
-		pResponse->set_result(FALSE);
+		OutputError("rpcChannel.IsInvalid() serverId = %u", serverId);
+		pResponse->set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		return;
 	}
 
 	if(CServantServiceImp::IsServerAlive(serverId)) {
-		pResponse->set_result(FALSE);
+		OutputError("IsServerAlive() serverId = %u", serverId);
+		pResponse->set_result(SERVER_FAILURE);
 		return;
 	}
 
@@ -191,15 +202,15 @@ void CServantModule::CaseRestart(const util::CWeakPointer<mdl::INotification>& r
 	getcwd(szCurDir, sizeof(szCurDir));
 	std::string::size_type nPos = strProcessPath.find_last_of('/');
 	if(nPos == std::string::npos) {
-		OutputError("nPos == std::string::npos ");
-		pResponse->set_result(FALSE);
+		OutputError("nPos == std::string::npos serverId = %u", serverId);
+		pResponse->set_result(SERVER_FAILURE);
 		return;
 	}
 	std::string strProcessDir(strProcessPath.substr(0, nPos));
 	chdir(strProcessDir.c_str());
 
 	std::string strCmd;
-#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ )
+#if defined( WIN32 ) || defined( _WIN32 ) || defined( __WIN32__ ) || defined( _WIN64 )
 	strCmd = "start \"\" \"";
 	strCmd += strProcessPath;
 	strCmd += '\"';
@@ -213,33 +224,32 @@ void CServantModule::CaseRestart(const util::CWeakPointer<mdl::INotification>& r
 
 	system(strCmd.c_str());
 	chdir(szCurDir);
-	pResponse->set_result(TRUE);
+	pResponse->set_result(SERVER_SUCCESS);
 }
 
 void CServantModule::CaseShutdown(const util::CWeakPointer<mdl::INotification>& request,
 	util::CWeakPointer<mdl::IResponse>& reply)
 {
 	util::CWeakPointer<::node::DataPacket> pRequest(GetWorkerRequestPacket(request));
-	if(pRequest.IsInvalid()) {
+	if (pRequest.IsInvalid()) {
 		return;
 	}
 
 	// response
 	util::CWeakPointer<::node::DataPacket> pResponse(GetWorkerResponsePacket(reply));
-	if(pResponse.IsInvalid()) {
+	if (pResponse.IsInvalid()) {
 		return;
 	}
 
-	uint16_t serverId = (uint16_t)pRequest->route();
+	uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	CAutoPointer<IChannelValue> rpcChannel(CNodeModule::GetStaticChannel(serverId));
-	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
-		pResponse->set_result(FALSE);
+	if (rpcChannel.IsInvalid()) {
+		OutputError("rpcChannel.IsInvalid() serverId = %u", serverId);
+		pResponse->set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		return;
 	}
 
-	int32_t nResult = CNodeModule::SendNodeMessage(rpcChannel, *pRequest);
-	pResponse->set_result(nResult);
+	pResponse->set_result(CNodeModule::SendNodeMessage(rpcChannel, *pRequest));
 }
 
 void CServantModule::CaseErase(const util::CWeakPointer<mdl::INotification>& request,
@@ -256,14 +266,15 @@ void CServantModule::CaseErase(const util::CWeakPointer<mdl::INotification>& req
 		return;
 	}
 
-	uint16_t serverId = (uint16_t)pRequest->route();
+	uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	if(CServantServiceImp::IsServerAlive(serverId)) {
-		pResponse->set_result(FALSE);
+		OutputError("IsServerAlive() serverId = %u", serverId);
+		pResponse->set_result(SERVER_FAILURE);
 		return;
 	}
 
 	CNodeModule::RemoveStaticChannel(serverId);
-	pResponse->set_result(TRUE);
+	pResponse->set_result(SERVER_SUCCESS);
 }
 
 void CServantModule::CaseCacheStore(const util::CWeakPointer<mdl::INotification>& request,
@@ -280,23 +291,24 @@ void CServantModule::CaseCacheStore(const util::CWeakPointer<mdl::INotification>
 		return;
 	}
 
-	uint16_t serverId = (uint16_t)pRequest->route();
+	uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	CAutoPointer<IChannelValue> rpcChannel(CNodeModule::GetStaticChannel(serverId));
 	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
+		OutputError("rpcChannel.IsInvalid() serverId = %u", serverId);
 		pResponse->set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		return;
 	}
 
 	if(rpcChannel->GetServerType() != REGISTER_TYPE_CACHE) {
-		OutputError("rpcChannel->GetServerType() != REGISTER_TYPE_CACHE");
-		pResponse->set_result(CACHE_ERROR_NOTFOUND);
+		OutputError("GetServerType() != REGISTER_TYPE_CACHE GetServerType() = %d serverId = %u ",
+			rpcChannel->GetServerType(), serverId);
+		pResponse->set_result(SERVER_FAILURE);
 		return;
 	}
 
 	::node::DataPacket cacheRequest;
 	if(!ParseCacheData(cacheRequest, pRequest)) {
-		OutputError("!ParseWorkerData serverId = %d", serverId);
+		OutputError("!ParseWorkerData serverId = %u", serverId);
 		pResponse->set_result(PARSE_PACKAGE_FAIL);
 		return;
 	}
@@ -318,18 +330,18 @@ void CServantModule::CasePlay(const util::CWeakPointer<mdl::INotification>& requ
 		return;
 	}
 
-	const uint16_t serverId = (uint16_t)pRequest->route();
+	const uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	if(serverId == m_serverId) {
 		// This server
 		atomic_xchg(&g_serverStatus, SERVER_STATUS_START);
-		pResponse->set_result(TRUE);
+		pResponse->set_result(SERVER_SUCCESS);
 		return;
 	}
 
 	CAutoPointer<IChannelValue> rpcChannel(CNodeModule::GetStaticChannel(serverId));
 	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
-		pResponse->set_result(FALSE);
+		OutputError("rpcChannel.IsInvalid() serverId = %u", serverId);
+		pResponse->set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		return;
 	}
 
@@ -355,18 +367,18 @@ void CServantModule::CaseStop(const util::CWeakPointer<mdl::INotification>& requ
 		return;
 	}
 
-	const uint16_t serverId = (uint16_t)pRequest->route();
+	const uint32_t serverId = static_cast<uint32_t>(pRequest->route());
 	if(serverId == m_serverId) {
 		// This server
 		atomic_xchg(&g_serverStatus, SERVER_STATUS_STOP);
-		pResponse->set_result(TRUE);
+		pResponse->set_result(SERVER_SUCCESS);
 		return;
 	}
 
 	CAutoPointer<IChannelValue> rpcChannel(CNodeModule::GetStaticChannel(serverId));
 	if(rpcChannel.IsInvalid()) {
-		OutputError("rpcChannel.IsInvalid()");
-		pResponse->set_result(FALSE);
+		OutputError("rpcChannel.IsInvalid() serverId = %u", serverId);
+		pResponse->set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		return;
 	}
 

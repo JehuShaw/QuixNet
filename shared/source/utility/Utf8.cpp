@@ -70,6 +70,14 @@ namespace util {
             return buf[index];
         }
 
+        T& operator[] (const size_t index) {
+            return buf[index];
+        }
+
+        const T& operator[] (const size_t index) const {
+            return buf[index];
+        }
+
     protected:
         T   smallBuf[STRING_BUF_SIZE];
         T*  buf;
@@ -238,16 +246,16 @@ namespace util {
         return tmpVal;   
     }   
    
-    int UTF8StrCmp(castr str1,castr str2,size_t count){   
+    int UTF8StrCmp(castr str1, castr str2, size_t count) {   
         if(count == -1)   
-            return ::strcmp((char*)str1,(char*)str2);      
+            return ::strcmp((char*)str1, (char*)str2);      
         else{   
-            unsigned int len1=(unsigned int)strlen((char*)str1);   
-            unsigned int len2=(unsigned int)strlen((char*)str2);   
-            unsigned int len = (len1<len2) ? len1 : len2;   
-            len = (len<count) ? len : count;   
+            size_t len1 = strlen((char*)str1);
+            size_t len2 = strlen((char*)str2);
+            size_t len = (len1 < len2) ? len1 : len2;
+            len = (len < count) ? len : count;   
    
-            int ret = memcmp(str1,str2,len);   
+            int ret = memcmp(str1, str2, len);   
             if(ret == 0){   
                 if(len1 > len2) ret = 1;   
                 else if(len1 < len2) ret = -1;   
@@ -364,8 +372,8 @@ namespace util {
         try{   
 #if defined(WIN32)   
         ret = ::MultiByteToWideChar(CP_ACP,0,srcData,(int)srcCount,
-            (wchar_t*)wstr,(int)destCount);   
-        if(ret == 0) ret = -1;   
+            (wchar_t*)wstr,(int)destCount);
+        if(ret == 0) ret = -1;
 #else   
         ret = ::mbstowcs((wchar_t*)wstr, srcData,srcCount);   
 #endif   

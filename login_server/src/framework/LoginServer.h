@@ -5,13 +5,13 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _LOGINSERVER_H_
-#define	_LOGINSERVER_H_
+#ifndef LOGINSERVER_H
+#define	LOGINSERVER_H
 
 #include <vector>
 #include <map>
 #include "NodeDefines.h"
-#include "CThreads.h"
+#include "ThreadBase.h"
 #include "rpcz.hpp"
 #include "AutoPointer.h"
 #include "TCPPacketInterface.h"
@@ -19,10 +19,11 @@
 #include "LoginServiceImp.h"
 #include "Singleton.h"
 #include "IServerRegister.h"
+#include "HttpThreadHold.h"
 
 
 class CLoginServer
-	: public thd::CThread
+	: public thd::ThreadBase
 	, public util::Singleton<CLoginServer>
 {
 public:
@@ -34,46 +35,61 @@ public:
 
     void Dispose();
 
-    virtual bool Run();
+    virtual bool OnRun();
 
-    bool InsertSocketId(uint64_t userId, int socketIdx);
+	virtual void OnShutdown() {}
 
-	bool SendToClient(uint64_t userId, const ::node::DataPacket& message);
+    bool InsertSocketId(const ntwk::SocketID& socketId, uint64_t account);
 
-	bool SendToClientByIdx(unsigned int socketIdx, const ::node::DataPacket& message);
+	bool SendToClient(uint64_t account, const ::node::DataPacket& message);
+
+	bool SendToClientBySocketID(const ntwk::SocketID& socketId, const ::node::DataPacket& message);
+
+	bool IsLoggedAccount(const ntwk::SocketID& socketId);
+
+	uint64_t GetLoggedAccount(const ntwk::SocketID& socketId);
+
+	bool FindSocketId(uint64_t account, ntwk::SocketID& outSocketId);
+
+	void CloseSocket(ntwk::SocketID& socketId, int nWhy);
 
 private:
 	void DisposeKeepRegTimer();
+
 	void ConnectServers(
 		const std::string& strServerName,
 		const std::string& strBind,
-		uint16_t u16ServerId,
+		uint32_t uServerId,
 		uint16_t u16ServerRegion);
+
 	void DisconnectServers();
-	void KeepServersRegister(std::string& connect, volatile bool& bRun);
+
+	void KeepServersRegister(
+		std::string& connect,
+		volatile bool& bRun,
+		volatile long& nTimeoutCount);
 
 	void ConnectControlServant(
 		const std::string& strServant,
 		const std::string& strServerName,
 		const std::string& strBind,
-		uint16_t u16ServerId,
+		uint32_t uServerId,
 		uint16_t u16ServerRegion);
+
 	void DisconnectControlServant();
+
 	void KeepControlServantRegister(std::string& connect, volatile bool& bRun);
 
 private:
-
 	void InsertSocketId(const ntwk::SocketID& socketId);
 
 	uint64_t RemoveSocketId(const ntwk::SocketID& socketId);
 
-	bool FindSocketId(uint64_t userId, ntwk::SocketID& outSocketId);
-
-	bool FindUserId(unsigned int socketIdx, uint64_t& outUserId);
+	bool FindAccount(const ntwk::SocketID& socketId, uint64_t& outAccount);
 
 	bool SendToClient(const ntwk::SocketID& socketId, const ::node::DataPacket& message);
 
-    void LoginTimeout(unsigned int& socketIdx);
+    void LoginTimeout(ntwk::SocketID& socketId, int& nWhy);
 
 private:
     volatile bool m_isStarted;
@@ -90,17 +106,19 @@ private:
 	thd::CSpinLock m_tcpSpinLock;
 
     struct ClientData {
-        uint64_t userId;
+        uint64_t account;
         uint64_t timerId;
     };
-	typedef std::map<uint64_t, ntwk::SocketID> USERID_TO_SOCKETID_T;
+	typedef std::map<uint64_t, ntwk::SocketID> ACCOUNT_TO_SOCKETID_T;
 	typedef std::map<ntwk::SocketID, struct ClientData> SOCKETID_TO_CLIENT_T;
-	USERID_TO_SOCKETID_T m_socketIds;
+	ACCOUNT_TO_SOCKETID_T m_socketIds;
 	SOCKETID_TO_CLIENT_T m_clients;
 	thd::CSpinRWLock m_socketIdsLock;
 
 	util::CAutoPointer<IServerRegister> m_pServerRegister;
+
+	CHttpThreadHold m_httpThreadHold;
 };
 
-#endif	/* _LOGINSERVER_H_ */
+#endif	/* LOGINSERVER_H */
 

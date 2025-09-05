@@ -1,0 +1,1133 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Framework">
+      <UniqueIdentifier>{ec4deb54-38f6-4bd9-ab21-5f722f661168}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Shared">
+      <UniqueIdentifier>{4b4c8270-f4f1-46f7-b0d0-10ba996204a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party">
+      <UniqueIdentifier>{bad1a3e5-ba1a-4000-bc3a-3a77726602d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Memcache">
+      <UniqueIdentifier>{09d0eedb-41f7-4f32-b04d-0baec5b07680}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{911a0f25-cbc1-4dd7-95af-71de4c7a55ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Template">
+      <UniqueIdentifier>{2aef0465-f77d-4bf6-ae29-dd503a9373e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\module">
+      <UniqueIdentifier>{caf14edf-12c4-4a29-a43b-aab3dd2ce721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\network">
+      <UniqueIdentifier>{6726bde1-8026-4c5f-bf17-6fca733da311}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\threading">
+      <UniqueIdentifier>{acc06ea4-3eff-4c27-b665-65bdedaeda39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\timerevent">
+      <UniqueIdentifier>{c817b9e1-21ae-4bec-ba7a-30394a3cc8a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\utility">
+      <UniqueIdentifier>{d76c3786-11c4-4b41-9e9e-b0bf0a23c215}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\json">
+      <UniqueIdentifier>{0676e672-dbad-4b4d-9cf0-b555096404eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\rpcz">
+      <UniqueIdentifier>{e8a8b94b-e3bf-4390-ba1e-a0cd320c4869}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\stacktrace">
+      <UniqueIdentifier>{60e881d5-7df4-4b26-ba76-a2efe32e2cf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Third Party\tinyxml">
+      <UniqueIdentifier>{1fdb037c-586b-4321-a06f-f552f19bf5ac}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\framework\AppConfig.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\BodyBitStream.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\BodyMessage.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\broadcast_packet.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\cache.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\cache.rpcz.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheChannel.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheEnvManager.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheModule.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheOperateHelper.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheRecord.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheRecordPool.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\CacheUserManager.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ChannelManager.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ControlArgument.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\controlcentre.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\controlcentre.rpcz.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ControlCentreModule.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ControlCentreServiceImp.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ControlCentreStubImp.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ControlCentreStubImpEx.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ControlEventManager.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\data_packet.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\GameServer.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ICacheRecord.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ICacheValue.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\IChannelControl.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\IChannelValue.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\interest_packet.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\IServerRegister.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\LoggingModule.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\LoggingOperateHelper.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\MailManager.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\MCResult.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ModuleOperateHelper.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\msg_client_login.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\msg_node_create_character.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\msg_node_get_character.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\msg_send_mail.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\NodeDefines.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\PlayerBase.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\PlayerCallBack.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\PlayerOperateHelper.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\ProtoRpczServiceImpl.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\SepaTableStore.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\TemplateBase.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\void_packet.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\worker.pb.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\worker.rpcz.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\WorkerChannel.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\WorkerModule.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\WorkerOperateHelper.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\framework\WorkerServiceImp.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\IncludeModule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\IncludePlayerCacheData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\IncludePlayerTemplate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\IncludeTemplate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\IPlayerUnit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\IPlayerUnitAdapter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\PlayerBasic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\PlayerMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\PlayerModule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ServerRegisterHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\WorkerServiceImpHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ArgumentBitStream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ArgumentMessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ControlUserModule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\FillPacketHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\GameEventManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\GameServerRegister.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memcache\PlayerData.h">
+      <Filter>Memcache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memcache\PlayerMapBean.h">
+      <Filter>Memcache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memcache\PlayerMapData.h">
+      <Filter>Memcache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memcache\PlayerPosBean.h">
+      <Filter>Memcache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memcache\PlayerPosData.h">
+      <Filter>Memcache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\memcache\RankData.h">
+      <Filter>Memcache</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\common_packet.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\mail_packet.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\map_packet.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\msg_game_charater.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\msg_game_login.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\msg_game_mail.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\msg_game_map.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\msg_game_map_switch.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\msg_game_time.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\protocol\sender_packet.pb.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\CharacterConfig.h">
+      <Filter>Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\GlobalConfig.h">
+      <Filter>Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\GlobalTemplate.h">
+      <Filter>Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\LevelExpConfig.h">
+      <Filter>Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\MapConfig.h">
+      <Filter>Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\template\MapTemplate.h">
+      <Filter>Template</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\module\INotificationBody.h">
+      <Filter>Shared\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\module\ModuleEnv.h">
+      <Filter>Shared\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\module\ModuleManager.h">
+      <Filter>Shared\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\network\BitStream.h">
+      <Filter>Shared\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\AreaOfInterest2D.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\AreaOfInterest3D.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ArrayList.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ArrayMap.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\AutoPointer.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\BitSignSet.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\CallBack.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\CrashDump.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\CsvParser.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\DynamicBitset.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ExceptionManager.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\GlobalIDFactory.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\GuidFactory.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\IObject.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\IRankData.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\IStream.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ITComparer.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ITPriorityQueue.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\LocalIDFactory.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\Log.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\Md5.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ObjectSet.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\PoolBase.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\PrintStackTrace.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ProcessStatus.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\RankSetMT.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ReferObject.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ScopedPointer.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\SeparatedStream.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\Singleton.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\SkipList.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\StoreStream.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\StreamDataType.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\StringResolved.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\TimeSeries.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\TinyJson.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\TPriorityQueue.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\TransferStream.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\UniquePointer.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\Utf8.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\ValueStream.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\WeakPointer.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxAllocator.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable0.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable0S.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1S.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1Store.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable1StoreS.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2S.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2Store.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTable2StoreS.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTableIndex.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\utility\XqxTableIndexS.h">
+      <Filter>Shared\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\AgentMethod.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\CommandManager.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleEvent.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleEventArray.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\SimpleMultiEvent.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\SysTickCount.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\TimerEvent.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\TimerManager.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\TimerManagerHelper.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\timerevent\TimestampManager.h">
+      <Filter>Shared\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\AtomicCas.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\AtomicLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\CircleQueue.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\CondVar.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\CriticalSection.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\CThreads.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\EnvLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\EnvLockHelper.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\EnvRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\FastMutex.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\IEnvLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\IEnvLockBase.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\IEnvRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ILock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\IRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\IteratorBase.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\LockFreeCircleQueue.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\LockFreeNode.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\LockFreeQueue.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\MessageData.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\Mutex.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\OperationAsync.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\OperationBase.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\OperationIterate.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\OperationSync.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ReadWriteLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\RecursiveRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ScopedEnvLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ScopedEnvRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ScopedLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ScopedRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\SpinEvent.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\SpinLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\SpinRecursiveLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\SpinRecursiveRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\SpinRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\SysCurrentThreadId.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ThreadBase.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ThreadIndexManager.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\Threading.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\ThreadPool.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapControl.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapHelper.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapIterator.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapIteratorChild.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapIteratorParent.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapObject.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapObjectHelper.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\threading\WrapRWLock.h">
+      <Filter>Shared\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\assertions.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\autolink.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\config.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\features.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\forwards.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\json.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\json_batchallocator.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\json_tool.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\reader.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\value.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\version.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\json\writer.h">
+      <Filter>Third Party\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\tinyxml\tinystr.h">
+      <Filter>Third Party\tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\tinyxml\tinyxml.h">
+      <Filter>Third Party\tinyxml</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\stacktrace\Array.h">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\stacktrace\MapFile.h">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\stacktrace\MapFileEntry.h">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\stacktrace\StackTrace.h">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\stacktrace\TextFile.h">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\application.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\application_options.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\broker_thread.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\callback.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\client_connection.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\client_request_callback.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\clock.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\common.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\connection.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\connection_manager.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\connection_manager_ptr.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\connection_manager_status.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\event_id_generator.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\internal_commands.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\logging.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\reactor.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\remote_response_wrapper.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\rpc_channel.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\rpc_channel_impl.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\rpc_controller.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\rpc_service.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\rpcz.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\rpcz.pb.h">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\server.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\server_function.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\server_impl.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\service.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\sync_event.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\third_party\rpcz\zmq_utils.hpp">
+      <Filter>Third Party\rpcz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\Common.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\ControlCMD.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\ShareConfig.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\ShareDefines.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\ShareDll.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\include\ShareErrors.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\framework\broadcast_packet.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\cache.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\cache.rpcz.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\CacheModule.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\controlcentre.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\controlcentre.rpcz.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\ControlCentreModule.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\ControlCentreServiceImp.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\ControlEventManager.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\data_packet.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\GameServer.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\interest_packet.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\LoggingModule.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\MailManager.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\main.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\msg_client_login.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\msg_node_create_character.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\msg_node_get_character.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\msg_send_mail.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\NodeDefines.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\PlayerOperateHelper.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\ProtoRpczServiceImpl.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\SepaTableStore.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\TemplateBase.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\void_packet.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\worker.pb.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\worker.rpcz.cc">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\WorkerModule.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\framework\WorkerServiceImp.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ControlUserModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\FillPacketHelper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\GameServerRegister.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Player.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\PlayerBasic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\PlayerMap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\PlayerModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memcache\PlayerData.cpp">
+      <Filter>Memcache</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memcache\PlayerMapBean.cpp">
+      <Filter>Memcache</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memcache\PlayerPosBean.cpp">
+      <Filter>Memcache</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\memcache\RankData.cpp">
+      <Filter>Memcache</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\common_packet.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\mail_packet.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\map_packet.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\msg_game_charater.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\msg_game_login.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\msg_game_mail.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\msg_game_map.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\msg_game_map_switch.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\msg_game_time.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\protocol\sender_packet.pb.cc">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\CharacterConfig.cpp">
+      <Filter>Template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\GlobalConfig.cpp">
+      <Filter>Template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\GlobalTemplate.cpp">
+      <Filter>Template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\LevelExpConfig.cpp">
+      <Filter>Template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\MapTemplate.cpp">
+      <Filter>Template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\json\json_reader.cpp">
+      <Filter>Third Party\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\json\json_value.cpp">
+      <Filter>Third Party\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\json\json_writer.cpp">
+      <Filter>Third Party\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\tinyxml\tinystr.cpp">
+      <Filter>Third Party\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\tinyxml\tinyxml.cpp">
+      <Filter>Third Party\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\tinyxml\tinyxmlerror.cpp">
+      <Filter>Third Party\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\tinyxml\tinyxmlparser.cpp">
+      <Filter>Third Party\tinyxml</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\stacktrace\MapFile.cpp">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\stacktrace\MapFileEntry.cpp">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\stacktrace\StackTrace.cpp">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\stacktrace\TextFile.cpp">
+      <Filter>Third Party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\application.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\application_options.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\broker_thread.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\client_connection.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\clock.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\connection.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\connection_manager.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\event_id_generator.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\reactor.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\rpc_channel.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\rpc_channel_impl.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\rpc_controller.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\rpcz.pb.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\server.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\server_impl.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\sync_event.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\third_party\rpcz\zmq_utils.cc">
+      <Filter>Third Party\rpcz</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\third_party\json\json_internalarray.inl">
+      <Filter>Third Party\json</Filter>
+    </None>
+    <None Include="..\..\third_party\json\json_internalmap.inl">
+      <Filter>Third Party\json</Filter>
+    </None>
+    <None Include="..\..\third_party\json\json_valueiterator.inl">
+      <Filter>Third Party\json</Filter>
+    </None>
+    <None Include="..\..\third_party\json\version.h.in">
+      <Filter>Third Party\json</Filter>
+    </None>
+    <None Include="..\src\App.config">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\src\templatefiles.csv">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+</Project>

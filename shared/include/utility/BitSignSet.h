@@ -10,8 +10,8 @@
  *printBitSet() print the bits
  *
  */
-#ifndef _BIT_SET_H_
-#define _BIT_SET_H_
+#ifndef BIT_SET_H
+#define BIT_SET_H
 
 #include <stdint.h>
 #include "Common.h"
@@ -106,4 +106,4 @@ namespace util {
 
 }
 
-#endif /* _BIT_SET_H_ */
+#endif /* BIT_SET_H */

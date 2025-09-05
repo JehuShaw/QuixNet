@@ -1,5 +1,5 @@
 
-#ifdef WIN32
+#if defined(_WIN32) || defined(_WIN64) 
 #include "ProcessStatus.h"
 #include "ExceptionManager.h"
 #include <tchar.h>
@@ -31,7 +31,7 @@ SHARED_DLL_DECL char File_E[128]      = {0};
 
 using namespace util;
 
-char* GetExceptionString( DWORD dwCode )
+const char* GetExceptionString( DWORD dwCode )
 {
 #define EXCEPTION( x ) case EXCEPTION_##x: return (#x);
 
@@ -158,7 +158,11 @@ void WriteStackDetails(	PCONTEXT pContext, bool bWriteVariables )  // true if lo
 		if ( 0 == sf.AddrFrame.Offset ) // Basic sanity check to make sure
 			break;                      // the frame is OK.  Bail if not.
 
+#if defined(_WIN64)
+		sprintf_s(ExceptionBuf, "%s%08I64X  %08I64X  ", ExceptionBuf, sf.AddrPC.Offset, sf.AddrFrame.Offset);
+#elif  defined(_WIN32)
 		sprintf_s( ExceptionBuf, "%s%08X  %08X  ", ExceptionBuf, sf.AddrPC.Offset, sf.AddrFrame.Offset );
+#endif
 		/*
 		// Get the name of the function for this stack frame entry
 		BYTE symbolBuffer[ sizeof(SYMBOL_INFO) + 1024 ];
@@ -256,14 +260,24 @@ LONG WINAPI UnknowExceptionHandler( _EXCEPTION_POINTERS* pExceptionInfo ) throw 
 	char szFaultingModule[MAX_OUTPUT_MESSAGE];
 	DWORD section, offset;
 	GetLogicalAddress(  pExceptionRecord->ExceptionAddress, szFaultingModule, sizeof( szFaultingModule ), section, offset );
-	sprintf_s( ExceptionBuf, "%sFault address:  %08X %02X:%08X\r\nFile: %s\r\n", ExceptionBuf, pExceptionRecord->ExceptionAddress, section, offset, szFaultingModule );
+#if defined(_WIN64)
+	sprintf_s(ExceptionBuf, "%sFault address:  %08I64X %02X:%08X\r\nFile: %s\r\n", ExceptionBuf, (uintptr_t)pExceptionRecord->ExceptionAddress, section, offset, szFaultingModule);
+#elif  defined(_WIN32)
+	sprintf_s( ExceptionBuf, "%sFault address:  %08X %02X:%08X\r\nFile: %s\r\n", ExceptionBuf, (uintptr_t)pExceptionRecord->ExceptionAddress, section, offset, szFaultingModule );
+#endif
 
 	PCONTEXT pCtx = pExceptionInfo->ContextRecord;
 	
 	printf_s( ExceptionBuf, "%s\r\nRegisters:\r\n", ExceptionBuf );
+#if defined(_WIN64)
+	sprintf_s(ExceptionBuf, "%sRAX:%08I64X\tRBX:%08I64X\r\nRCX:%08I64X\tRDX:%08I64X\r\nRSI:%08I64X\tRDI:%08I64X\r\n", ExceptionBuf, pCtx->Rax, pCtx->Rbx, pCtx->Rcx, pCtx->Rdx, pCtx->Rsi, pCtx->Rdi);
+	sprintf_s(ExceptionBuf, "%sCS:RIP:%04X:%08I64X\r\n", ExceptionBuf, pCtx->SegCs, pCtx->Rip);
+	sprintf_s(ExceptionBuf, "%sSS:RSP:%04X:%08I64X  RBP:%08I64X\r\n", ExceptionBuf, pCtx->SegSs, pCtx->Rsp, pCtx->Rbp);
+#elif defined(_WIN32)
 	sprintf_s( ExceptionBuf, "%sEAX:%08X\tEBX:%08X\r\nECX:%08X\tEDX:%08X\r\nESI:%08X\tEDI:%08X\r\n", ExceptionBuf, pCtx->Eax, pCtx->Ebx, pCtx->Ecx, pCtx->Edx,pCtx->Esi, pCtx->Edi );
 	sprintf_s( ExceptionBuf, "%sCS:EIP:%04X:%08X\r\n", ExceptionBuf,pCtx->SegCs, pCtx->Eip );
 	sprintf_s( ExceptionBuf, "%sSS:ESP:%04X:%08X  EBP:%08X\r\n", ExceptionBuf,pCtx->SegSs, pCtx->Esp, pCtx->Ebp );
+#endif
 	sprintf_s( ExceptionBuf, "%sDS:%04X  ES:%04X  FS:%04X  GS:%04X\r\n", ExceptionBuf,pCtx->SegDs, pCtx->SegEs, pCtx->SegFs, pCtx->SegGs );
 	sprintf_s( ExceptionBuf, "%sFlags:%08X\r\n", ExceptionBuf,pCtx->EFlags );
 	sprintf_s( ExceptionBuf, "%sBeginFile:%s,BeginLine:%d \r\n",ExceptionBuf,File_B,Line_B);

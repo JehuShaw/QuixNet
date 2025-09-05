@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef __IRWLOCK_H_
-#define __IRWLOCK_H_
+#ifndef IRWLOCK_H
+#define IRWLOCK_H
 
 #include "Common.h"
 
@@ -25,16 +25,13 @@ class SHARED_DLL_DECL IRWLock
 
   virtual bool TimedLockWrite(uint32_t msec) throw() = 0;
 
-  /** Release the write lock. */
-  virtual void UnlockWrite() throw() = 0;
-
   /** Acquire a read lock, blocking until the unlockRead is acquired. */
   virtual void LockRead() throw() = 0;
 
   virtual bool TimedLockRead(uint32_t msec) throw() = 0;
 
-  /** Release the read lock. */
-  virtual void UnlockRead() throw() = 0;
+  /** Release read or write lock. */
+  virtual void Unlock() throw() = 0;
 
   /** Upgrade the read lock. */
   virtual void UpgradeLockRead() throw() = 0;
@@ -50,6 +47,6 @@ class SHARED_DLL_DECL IRWLock
 
 }; // namespace thd
 
-#endif // __IRWLOCK_H_
+#endif // IRWLOCK_H
 
 /* end of header file */

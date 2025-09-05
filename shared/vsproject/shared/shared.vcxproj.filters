@@ -1,0 +1,669 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\database">
+      <UniqueIdentifier>{50741a62-72b9-40b0-9d73-a4001f90ab8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\httpclient">
+      <UniqueIdentifier>{d9fa298f-5cb3-41b3-a82f-763ced0305ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\httpclient">
+      <UniqueIdentifier>{b86d1b11-d354-41f6-b61d-ecacc955a3ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\database">
+      <UniqueIdentifier>{65e28d66-f85c-427a-828b-ff60b35db1d8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\module">
+      <UniqueIdentifier>{1d0ca08a-3eb9-4864-9276-0d8eff2bbd4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\module">
+      <UniqueIdentifier>{a22ddef8-c41b-4a81-823e-464b34cdc472}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\network">
+      <UniqueIdentifier>{4d1640d7-acd3-4899-a1a1-0ebce8fe5496}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\network">
+      <UniqueIdentifier>{98644bf8-32af-4133-ac32-4851904ab45b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\threading">
+      <UniqueIdentifier>{0c531e23-be5e-46dc-aee6-0532a4effa26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\threading">
+      <UniqueIdentifier>{5318ac59-bc5c-4f68-8e8c-9541adaf551e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\timerevent">
+      <UniqueIdentifier>{abab5dc7-bb3e-4574-8dea-72edd65d603e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\timerevent">
+      <UniqueIdentifier>{0a12d007-6bac-425f-9913-3e08b73966bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\utility">
+      <UniqueIdentifier>{0d57a229-5a75-4ada-b5e3-cbc2f4ca80d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\utility">
+      <UniqueIdentifier>{80f5d119-be4c-4a30-855a-2a886b78f4dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{73811b5e-d1c8-47e5-8ab5-74c3cb0f2026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\stacktrace">
+      <UniqueIdentifier>{01e07118-e5f8-4ce7-886b-8840b9deca15}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\database\CallBackDB.h">
+      <Filter>Header Files\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\database\Database.h">
+      <Filter>Header Files\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\database\DatabaseEnv.h">
+      <Filter>Header Files\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\database\Field.h">
+      <Filter>Header Files\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\database\MySQLDatabase.h">
+      <Filter>Header Files\database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\httpclient\CurlMultiMT.h">
+      <Filter>Header Files\httpclient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\httpclient\HttpClientManager.h">
+      <Filter>Header Files\httpclient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\httpclient\HttpRequest.h">
+      <Filter>Header Files\httpclient</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\module\INotificationBody.h">
+      <Filter>Header Files\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\module\ModuleEnv.h">
+      <Filter>Header Files\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\module\ModuleManager.h">
+      <Filter>Header Files\module</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\BitStream.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\NetworkSync.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\NetworkTrace.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\NetworkTypes.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\ReceiveBuffer.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\SingleProducerConsumer.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\SmallBuffer.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPLinkInterface.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPPacketInterface.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPSocketBase.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPSocketBSD.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPSocketLinux.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPSocketWin.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPThreadInfo.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPThreadList.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\network\TCPThreadPool.h">
+      <Filter>Header Files\network</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\AtomicCas.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\AtomicLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\CircleQueue.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\CondVar.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\CriticalSection.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\CThreads.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\EnvLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\EnvLockHelper.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\EnvRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\FastMutex.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\IEnvLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\IEnvLockBase.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\IEnvRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ILock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\IRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\IteratorBase.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\LockFreeQueue.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\MessageData.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\Mutex.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\OperationAsync.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\OperationBase.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\OperationIterate.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\OperationSync.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ReadWriteLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\RecursiveRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ScopedEnvLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ScopedEnvRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ScopedLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ScopedRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\SpinEvent.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\SpinLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\SpinRecursiveLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\SpinRecursiveRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\SpinRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\SysCurrentThreadId.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ThreadBase.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ThreadIndexManager.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\Threading.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ThreadPool.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapControl.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapIterator.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapIteratorChild.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapIteratorParent.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapObject.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapRWLock.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\AgentMethod.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\CommandManager.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\SimpleEvent.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\SimpleEventArray.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\SimpleMultiEvent.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\SysTickCount.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\TimerEvent.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\TimerManager.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\TimerManagerHelper.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\timerevent\TimestampManager.h">
+      <Filter>Header Files\timerevent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\AreaOfInterest2D.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\AreaOfInterest3D.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ArrayList.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ArrayMap.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\AutoPointer.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\BitSignSet.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\CallBack.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\CrashDump.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\CsvParser.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\DynamicBitset.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ExceptionManager.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\GlobalIDFactory.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\GuidFactory.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\IObject.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\IRankData.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\IStream.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ITComparer.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ITPriorityQueue.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\LocalIDFactory.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\Log.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\Md5.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ObjectSet.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\PoolBase.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\PrintStackTrace.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ProcessStatus.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\RankSetMT.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ReferObject.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ScopedPointer.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\SeparatedStream.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\Singleton.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\SkipList.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\StoreStream.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\StreamDataType.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\StringResolved.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\TimeSeries.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\TinyJson.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\TPriorityQueue.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\TransferStream.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\UniquePointer.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\Utf8.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\ValueStream.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\WeakPointer.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxAllocator.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable0.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable0S.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable1.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable1S.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable1Store.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable1StoreS.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable2.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable2S.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable2Store.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTable2StoreS.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTableIndex.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\utility\XqxTableIndexS.h">
+      <Filter>Header Files\utility</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ControlCMD.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ShareConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ShareDefines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ShareDll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\ShareErrors.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\LockFreeNode.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\WrapHelper.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\ThreadController.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\threading\LockFreeArrayQueue.h">
+      <Filter>Header Files\threading</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\database\CreateInterface.cpp">
+      <Filter>Source Files\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\database\Database.cpp">
+      <Filter>Source Files\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\database\MySQLDatabase.cpp">
+      <Filter>Source Files\database</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\httpclient\CurlMultiMT.cpp">
+      <Filter>Source Files\httpclient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\httpclient\HttpClientManager.cpp">
+      <Filter>Source Files\httpclient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\httpclient\HttpRequest.cpp">
+      <Filter>Source Files\httpclient</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\module\ModuleManager.cpp">
+      <Filter>Source Files\module</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\BitStream.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\NetworkTrace.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\NetworkTypes.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\ReceiveBuffer.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\TCPLinkInterface.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\TCPPacketInterface.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\TCPSocketBSD.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\TCPSocketLinux.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\TCPSocketWin.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\network\TCPThreadPool.cpp">
+      <Filter>Source Files\network</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\CondVar.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\ReadWriteLock.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\RecursiveRWLock.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\ScopedRWLock.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\SysCurrentThreadId.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\ThreadIndexManager.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\ThreadPool.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\threading\WrapControl.cpp">
+      <Filter>Source Files\threading</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\timerevent\CommandManager.cpp">
+      <Filter>Source Files\timerevent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\timerevent\SysTickCount.cpp">
+      <Filter>Source Files\timerevent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\timerevent\TimerEvent.cpp">
+      <Filter>Source Files\timerevent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\timerevent\TimestampManager.cpp">
+      <Filter>Source Files\timerevent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\BitSignSet.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\CrashDump.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\CsvParser.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\ExceptionManager.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\itostr.c">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\Log.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\Md5.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\PrintStackTrace.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\ProcessStatus.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\SeparatedStream.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\StoreStream.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\TimeSeries.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\TransferStream.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\utility\Utf8.cpp">
+      <Filter>Source Files\utility</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\source\Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\stacktrace\MapFile.cpp">
+      <Filter>third_party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\stacktrace\MapFileEntry.cpp">
+      <Filter>third_party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\stacktrace\StackTrace.cpp">
+      <Filter>third_party\stacktrace</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\stacktrace\TextFile.cpp">
+      <Filter>third_party\stacktrace</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

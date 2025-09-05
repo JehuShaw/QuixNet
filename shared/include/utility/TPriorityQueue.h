@@ -5,7 +5,8 @@
  * Created on 2014_5_8, 14:09
  */
 
-#pragma once
+#ifndef TPRIORITYQUEUE_H
+#define TPRIORITYQUEUE_H
 
 #include "ITPriorityQueue.h"
 #include "ITComparer.h"
@@ -222,3 +223,5 @@ protected:
 };
 
 }
+
+#endif /* TPRIORITYQUEUE_H */

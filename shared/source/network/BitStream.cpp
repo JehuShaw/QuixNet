@@ -7,7 +7,7 @@
 #include <math.h>
 #include <assert.h>
 #include <string.h>
-#ifdef _WIN32
+#if defined( _WIN32 ) || defined ( _WIN64 )
 #include <stdlib.h>
 #include <memory.h>
 #include <stdio.h>

@@ -1,6 +1,6 @@
 #include "ProcessStatus.h"
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 #include <windows.h>
 #include <psapi.h>
 
@@ -21,7 +21,7 @@
 
 namespace util {
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined(_WIN64)
 	// Convert to single value.
 	inline static uint64_t file_time_2_utc(const FILETIME* ftime) {
 		if(NULL == ftime) {

@@ -9,12 +9,14 @@
 #define	PLAYERMODULE_H
 
 #include "ModuleManager.h"
+#include "ReferObject.h"
+
 
 class CharacterPacket;
 
-class CPlayerModule:public mdl::CModule {
+class CPlayerModule : public mdl::CModule {
 public:
-    CPlayerModule(const char* name, uint16_t serverRegion);
+    CPlayerModule(const char* name);
     virtual ~CPlayerModule();
 
 	virtual void OnRegister();
@@ -29,22 +31,25 @@ public:
 		util::CWeakPointer<mdl::IResponse>& reply);
 
 private:
+	void CaseCheckCreateCharacter(const util::CWeakPointer<mdl::INotification>& request,
+		util::CWeakPointer<mdl::IResponse>& reply);
+
+	void CaseCreateCharacter(const util::CWeakPointer<mdl::INotification>& request,
+		util::CWeakPointer<mdl::IResponse>& reply);
+
+	void CaseGetCharacter(const util::CWeakPointer<mdl::INotification>& request,
+		util::CWeakPointer<mdl::IResponse>& reply);
+
 	void HandleLogin(const util::CWeakPointer<mdl::INotification>& request,
 		util::CWeakPointer<mdl::IResponse>& reply);
 
     void HandleLogout(const util::CWeakPointer<mdl::INotification>& request,
         util::CWeakPointer<mdl::IResponse>& reply);
 
-    void HandleRename(const util::CWeakPointer<mdl::INotification>& request,
-        util::CWeakPointer<mdl::IResponse>& reply);
+	void HandleTime(const util::CWeakPointer<mdl::INotification>& request,
+		util::CWeakPointer<mdl::IResponse>& reply);
 
-	void TestCallback();
-	void TestCallback2();
-	void TestCallback3();
-	void TestCallback4();
-	util::CAutoPointer<CPlayerModule> m_pThis;
-private:
-	uint16_t m_u16ServerRegion;
+	util::CReferObject<CPlayerModule> m_pThis;
 };
 
 #endif	/* PLAYERMODULE_H */

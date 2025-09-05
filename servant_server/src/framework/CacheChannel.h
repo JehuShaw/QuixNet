@@ -5,18 +5,20 @@
  * Created on 2014_4_28, 13:15
  */
 
-#ifndef _CACHECHANNEL_H
-#define	_CACHECHANNEL_H
+#ifndef CACHECHANNEL_H
+#define	CACHECHANNEL_H
 
 #include "IChannelValue.h"
 
 class CCacheChannel0 : public IChannelValue {
 public:
 	CCacheChannel0()
-		: m_timeoutCount(0)
-		, m_endPoint()
-		, m_serverId(0)
+		: m_serverId(0)
 		, m_serverType(0)
+		, m_timeoutCount(0)
+		, m_serverLoad(0)
+		, m_routeAddressId(0)
+		, m_endPoint()
 		, m_channel()
 	{
 #if COMPILER == COMPILER_MICROSOFT
@@ -24,10 +26,12 @@ public:
 #endif
 	}
 public:
-	virtual uint16_t GetServerId() const { return m_serverId; }
+	virtual uint32_t GetServerId() const { return m_serverId; }
 	virtual const std::string& GetEndPoint() const { return m_endPoint; }
-	virtual uint32_t GetServerLoad() const { return 0; }
+	virtual int32_t GetServerLoad() const { return m_serverLoad; }
 	virtual uint16_t GetServerType() const { return m_serverType; }
+
+	virtual uint64_t GetRouteAddressId() const { return m_routeAddressId; }
 
 	virtual const std::string& GetAcceptAddress() const { return GetStrNull(); }
 	virtual const std::string& GetProcessPath() const { return GetStrNull(); }
@@ -38,11 +42,15 @@ protected:
 
 protected:
 	virtual void SetEndPoint(const std::string& strValue) { m_endPoint = strValue; }
-	virtual void SetServerId(uint16_t nValue) { m_serverId = nValue; }
+	virtual void SetServerId(uint32_t nValue) { m_serverId = nValue; }
 	virtual void SetServerType(uint16_t nValue) { m_serverType = nValue; }
+	virtual void SetRouteAddressId(uint64_t nValue) { m_routeAddressId = nValue; }
 	virtual void SetRpcChannel(util::CAutoPointer<rpcz::rpc_channel> channel) { m_channel = channel; }
 	virtual void SetTimeoutCount(int32_t nValue) { atomic_xchg(&m_timeoutCount, nValue); }
 	virtual int32_t IncTimeoutCount() { return atomic_inc(&m_timeoutCount); }
+	virtual int32_t XchgServerLoad(int32_t nValue) { return atomic_xchg(&m_serverLoad, nValue); }
+	virtual void IncServerLoad() { atomic_inc(&m_serverLoad); }
+	virtual void DecServerLoad() { atomic_dec(&m_serverLoad); }
 
 protected:
 	static const std::string& GetStrNull() {
@@ -51,10 +59,12 @@ protected:
 	}
 
 private:
-	volatile int32_t m_timeoutCount;
-	std::string m_endPoint;
-	uint16_t m_serverId;
+	uint32_t m_serverId;
 	uint16_t m_serverType;
+	volatile int32_t m_timeoutCount;
+	volatile int32_t m_serverLoad;
+	uint64_t m_routeAddressId;
+	std::string m_endPoint;
 	util::CAutoPointer<rpcz::rpc_channel> m_channel;
 };
 
@@ -86,5 +96,5 @@ private:
 	uint16_t m_serverRegion;
 };
 
-#endif	/* _CACHECHANNEL_H */
+#endif	/* CACHECHANNEL_H */
 

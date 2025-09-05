@@ -16,12 +16,11 @@
 #include "ICacheValue.h"
 #include "Log.h"
 #include "ChannelManager.h"
-#include "SmallBuffer.h"
 #include "BitSignSet.h"
 #include "TransferStream.h"
 #include "MCResult.h"
 #include "ValueStream.h"
-
+#include "broadcast_packet.pb.h"
 
 // array string delimit
 #define ARRAY_SEPARATOR ","
@@ -46,8 +45,10 @@ typedef ::google::protobuf::RepeatedPtrField< ::node::MCRequest > mc_record_set_
 #define SetRecordFlags(mcRecordPtr, flags) mcRecordPtr->set_flags(flags)
 #define SetRecordExpiry(mcRecordPtr, expiry) mcRecordPtr->set_expiry(expiry)
 #define SetRecordResult(mcRecordPtr, result) mcRecordPtr->set_result(result)
-#define SetRecordNoReply(mcRecordPtr) mcRecordPtr->set_result(MCERR_NOREPLY)
+#define SetRecordNoReply(mcRecordPtr) mcRecordPtr->set_result(mcRecordPtr->result() | MCERR_NOREPLY)
+#define SetRecordAttachCas(mcRecordPtr) mcRecordPtr->set_result(mcRecordPtr->result() | MCERR_ATTACH_CAS)
 #define SetRecordCas(mcRecordPtr, cas) mcRecordPtr->set_cas(cas)
+#define SetRecordCasAndResult(mcRecordPtr, cas) mcRecordPtr->set_result(mcRecordPtr->result() | MCERR_ATTACH_CAS); mcRecordPtr->set_cas(cas)
 
 // get record operator
 #define GetRecordSize(mcResponse) mcResponse.values_size()
@@ -60,12 +61,9 @@ typedef ::google::protobuf::RepeatedPtrField< ::node::MCRequest > mc_record_set_
 #define GetRecordCas(mcRecordRef) mcRecordRef.cas()
 
 // check record operator
-#define HasRecordKey(mcRecordRef) mcRecordRef.has_key()
-#define HasRecordValue(mcRecordRef) mcRecordRef.has_value()
-#define HasRecordFlags(mcRecordRef) mcRecordRef.has_flags()
-#define HasRecordExpiry(mcRecordRef) mcRecordRef.has_expiry()
-#define HasRecordResult(mcRecordRef) mcRecordRef.has_result()
-#define HasRecordCas(mcRecordRef) mcRecordRef.has_cas()
+#define HasRecordKey(mcRecordRef) !mcRecordRef.key().empty()
+#define HasRecordValue(mcRecordRef) !mcRecordRef.value().empty()
+#define HasRecordCas(mcRecordRef) mcRecordRef.result() & MCERR_ATTACH_CAS
 
 // reset record operator
 #define ResetRecordValue(mcRecordRef, value) const_cast<mc_record_t&>(mcRecordRef).set_value(value)
@@ -158,6 +156,9 @@ CCacheOperate::CasOneRecord(ROUTE_DIRECT_SERVERID, serverId, strKey, inValue)
 #define McGetsOneRecordDirServId(serverId, strKey, inValue)\
 CCacheOperate::GetsOneRecord(ROUTE_DIRECT_SERVERID, serverId, strKey, inValue)
 
+#define McReadOnlyOneRecordDirServId(serverId, strKey, inValue)\
+CCacheOperate::ReadOnlyOneRecord(ROUTE_DIRECT_SERVERID, serverId, strKey, inValue)
+
 #define McLoadOneRecordDirServId(serverId, strKey, inValue)\
 CCacheOperate::LoadOneRecord(ROUTE_DIRECT_SERVERID, serverId, strKey, inValue)
 
@@ -176,6 +177,15 @@ CCacheOperate::UpdateOneRecordToDB(ROUTE_DIRECT_SERVERID, serverId, strKey, inVa
 
 #define McDeleteOneRecordFromDBDirServId(serverId, strKey)\
 CCacheOperate::DeleteOneRecordFromDB(ROUTE_DIRECT_SERVERID, serverId, strKey)
+
+#define McCheckGlobalExistDirServId(serverId, strKey)\
+CCacheOperate::CheckGlobalExist(ROUTE_DIRECT_SERVERID, serverId, strKey)
+
+#define McCheckExistEscapeStringDirServId(serverId, strKey, strNewKey)\
+CCacheOperate::CheckExistEscapeString(ROUTE_DIRECT_SERVERID, serverId, strKey, strNewKey)
+
+#define McAllDBStoredProceduresDirServId(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleStoredProcs(N_CMD_ALL_DB_STOREDPROCEDURES, ROUTE_DIRECT_SERVERID, serverId, mcRequest, mcResponse)
 
 //////////////////////////////////////////////////////////////////////////
 // operator by balance serverId
@@ -255,6 +265,9 @@ CCacheOperate::CasOneRecord(ROUTE_BALANCE_SERVERID, serverId, strKey, inValue)
 #define McGetsOneRecordBalServId(serverId, strKey, inValue)\
 CCacheOperate::GetsOneRecord(ROUTE_BALANCE_SERVERID, serverId, strKey, inValue)
 
+#define McReadOnlyOneRecordBalServId(serverId, strKey, inValue)\
+CCacheOperate::ReadOnlyOneRecord(ROUTE_BALANCE_SERVERID, serverId, strKey, inValue)
+
 #define McLoadOneRecordBalServId(serverId, strKey, inValue)\
 CCacheOperate::LoadOneRecord(ROUTE_BALANCE_SERVERID, serverId, strKey, inValue)
 
@@ -273,6 +286,44 @@ CCacheOperate::UpdateOneRecordToDB(ROUTE_BALANCE_SERVERID, serverId, strKey, inV
 
 #define McDeleteOneRecordFromDBBalServId(serverId, strKey)\
 CCacheOperate::DeleteOneRecordFromDB(ROUTE_BALANCE_SERVERID, serverId, strKey)
+
+#define McCheckGlobalExistBalServId(serverId, strKey)\
+CCacheOperate::CheckGlobalExist(ROUTE_BALANCE_SERVERID, serverId, strKey)
+
+#define McCheckExistEscapeStringBalServId(serverId, strKey, strNewKey)\
+CCacheOperate::CheckExistEscapeString(ROUTE_BALANCE_SERVERID, serverId, strKey, strNewKey)
+
+#define McAllDBStoredProceduresBalServId(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleStoredProcs(N_CMD_ALL_DB_STOREDPROCEDURES, ROUTE_BALANCE_SERVERID, serverId, mcRequest, mcResponse)
+
+//////////////////////////////////////////////////////////////////////////
+// operator by hash 32Key
+#define McLoadAllHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleMultiRows(N_CMD_LOADALL, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBInsertHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleSnglRow(N_CMD_DB_INSERT, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBSelectHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleSnglRow(N_CMD_DB_SELECT, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBUpdateHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleSnglRow(N_CMD_DB_UPDATE, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBDeleteHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleSnglRow(N_CMD_DB_DELETE, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBSelectAllHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleMultiRows(N_CMD_DB_SELECTALL, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBStoredProcHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleStoredProcs(N_CMD_DB_STOREDPROCEDURES, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBAsyncStoredProcHash32Key(serverId, mcRequest, mcResponse)\
+CCacheOperate::HandleStoredProcs(N_CMD_DB_ASYNCSTOREDPROCEDURES, ROUTE_HASH_32KEY, serverId, mcRequest, mcResponse)
+
+#define McDBEscapeStringHash32Key(serverId, inEscape, outEscape)\
+CCacheOperate::HandleEscapeString(ROUTE_HASH_32KEY, serverId, inEscape, outEscape)
 
 //////////////////////////////////////////////////////////////////////////
 // operator by balance userId
@@ -351,6 +402,9 @@ CCacheOperate::CasOneRecord(ROUTE_BALANCE_USERID, userId, strKey, inValue)
 #define McGetsOneRecordBalUserId(userId, strKey, inValue)\
 CCacheOperate::GetsOneRecord(ROUTE_BALANCE_USERID, userId, strKey, inValue)
 
+#define McReadOnlyOneRecordBalUserId(userId, strKey, inValue)\
+CCacheOperate::ReadOnlyOneRecord(ROUTE_BALANCE_USERID, userId, strKey, inValue)
+
 #define McLoadOneRecordBalUserId(userId, strKey, inValue)\
 CCacheOperate::LoadOneRecord(ROUTE_BALANCE_USERID, userId, strKey, inValue)
 
@@ -370,34 +424,42 @@ CCacheOperate::UpdateOneRecordToDB(ROUTE_BALANCE_USERID, userId, strKey, inValue
 #define McDeleteOneRecordFromDBBalUserId(userId, strKey)\
 CCacheOperate::DeleteOneRecordFromDB(ROUTE_BALANCE_USERID, userId, strKey)
 
+#define McCheckGlobalExistBalUserId(userId, strKey)\
+CCacheOperate::CheckGlobalExist(ROUTE_BALANCE_USERID, userId, strKey)
+
+#define McCheckExistEscapeStringBalUserId(userId, strKey, strNewKey)\
+CCacheOperate::CheckExistEscapeString(ROUTE_BALANCE_USERID, userId, strKey, strNewKey)
+
+#define McAllDBStoredProcBalUserId(userId, mcRequest, mcResponse)\
+CCacheOperate::HandleStoredProcs(N_CMD_ALL_DB_STOREDPROCEDURES, ROUTE_BALANCE_USERID, userId, mcRequest, mcResponse)
+
 #ifdef DEFAULT_ROUTE_BY_SERVERID
-#define McGetForUpdate McGetForUpdateDirServId
-#define McUpdate McUpdateDirServId
-#define McAdd McAddDirServId
-#define McGet McGetDirServId
-#define McSet McSetDirServId
-#define McGets McGetsDirServId
-#define McCas McCasDirServId
-#define McDel McDelDirServId
-#define McLoad McLoadDirServId
-#define McStore McStoreDirServId
-#define McLoadAll McLoadAllDirServId
-#define McDBInsert McDBInsertDirServId
-#define McDBSelect McDBSelectDirServId
-#define McDBUpdate McDBUpdateDirServId
-#define McDBDelete McDBDeleteDirServId
-#define McDBSelectAll McDBSelectAllDirServId
-#define McDBEscapeString McDBEscapeStringDirServId
-#define McAddOneRecord McAddOneRecordDirServId
-#define McDelOneRecord McDelOneRecordDirServId
-#define McCasOneRecord McCasOneRecordDirServId
-#define McGetsOneRecord McGetsOneRecordDirServId
-#define McLoadOneRecord McLoadOneRecordDirServId
-#define McStoreOneRecord McStoreOneRecordDirServId
-#define McInsertOneRecordToDB McInsertOneRecordToDBDirServId
-#define McSelectOneRecordFromDB McSelectOneRecordFromDBDirServId
-#define McUpdateOneRecordToDB McUpdateOneRecordToDBDirServId
-#define McDeleteOneRecordFromDB McDeleteOneRecordFromDBDirServId
+#define McGetForUpdate McGetForUpdateBalServId
+#define McUpdate McUpdateBalServId
+#define McAdd McAddBalServId
+#define McGet McGetBalServId
+#define McSet McSetBalServId
+#define McGets McGetsBalServId
+#define McCas McCasBalServId
+#define McDel McDelBalServId
+#define McLoad McLoadBalServId
+#define McStore McStoreBalServId
+#define McDBInsert McDBInsertBalServId
+#define McDBSelect McDBSelectBalServId
+#define McDBUpdate McDBUpdateBalServId
+#define McDBDelete McDBDeleteBalServId
+#define McDBEscapeString McDBEscapeStringBalServId
+#define McAddOneRecord McAddOneRecordBalServId
+#define McDelOneRecord McDelOneRecordBalServId
+#define McCasOneRecord McCasOneRecordBalServId
+#define McGetsOneRecord McGetsOneRecordBalServId
+#define McReadOnlyOneRecord McReadOnlyOneRecordBalServId
+#define McLoadOneRecord McLoadOneRecordBalServId
+#define McStoreOneRecord McStoreOneRecordBalServId
+#define McInsertOneRecordToDB McInsertOneRecordToDBBalServId
+#define McSelectOneRecordFromDB McSelectOneRecordFromDBBalServId
+#define McUpdateOneRecordToDB McUpdateOneRecordToDBBalServId
+#define McDeleteOneRecordFromDB McDeleteOneRecordFromDBBalServId
 #else
 #define McGetForUpdate McGetForUpdateBalUserId
 #define McUpdate McUpdateBalUserId
@@ -410,18 +472,17 @@ CCacheOperate::DeleteOneRecordFromDB(ROUTE_BALANCE_USERID, userId, strKey)
 #define McLoad McLoadBalUserId
 #define McStore McStoreBalUserId
 // load all route by server id
-#define McLoadAll McLoadAllDirServId
 #define McDBInsert McDBInsertBalUserId
 #define McDBSelect McDBSelectBalUserId
 #define McDBUpdate McDBUpdateBalUserId
 #define McDBDelete McDBDeleteBalUserId
 // select all route by server id
-#define McDBSelectAll McDBSelectAllDirServId
 #define McDBEscapeString McDBEscapeStringBalUserId
 #define McAddOneRecord McAddOneRecordBalUserId
 #define McDelOneRecord McDelOneRecordBalUserId
 #define McCasOneRecord McCasOneRecordBalUserId
 #define McGetsOneRecord McGetsOneRecordBalUserId
+#define McReadOnlyOneRecord McReadOnlyOneRecordBalUserId
 #define McLoadOneRecord McLoadOneRecordBalUserId
 #define McStoreOneRecord McStoreOneRecordBalUserId
 #define McInsertOneRecordToDB McInsertOneRecordToDBBalUserId
@@ -429,6 +490,12 @@ CCacheOperate::DeleteOneRecordFromDB(ROUTE_BALANCE_USERID, userId, strKey)
 #define McUpdateOneRecordToDB McUpdateOneRecordToDBBalUserId
 #define McDeleteOneRecordFromDB McDeleteOneRecordFromDBBalUserId
 #endif
+
+#define McLoadAll(routeType, route, mcRequest, mcResponse)\
+CCacheOperate::HandleMultiRows(N_CMD_LOADALL, routeType, route, mcRequest, mcResponse)
+
+#define McDBSelectAll(routeType, route, mcRequest, mcResponse)\
+CCacheOperate::HandleMultiRows(N_CMD_DB_SELECTALL, routeType, route, mcRequest, mcResponse)
 
 #define SendCacheProtocol CCacheOperate::HandleProtocol
 
@@ -441,20 +508,20 @@ CCacheOperate::SendToClient(userId, cmd, message, __FILE__, __LINE__)
 #define SendCachePacketToClient(dataPacket)\
 CCacheOperate::SendToClient(dataPacket, __FILE__, __LINE__)
 
-#define BroadcastCacheCmdToClient(cmd, excludeId)\
-CCacheOperate::BroadcastToClient(cmd, excludeId, __FILE__, __LINE__)
+#define BroadcastCacheCmdToClient(route, cmd, includeIds, excludeIds)\
+CCacheOperate::BroadcastToClient(route, cmd, includeIds, excludeIds, __FILE__, __LINE__)
 
-#define BroadcastCacheToClient(cmd, message, excludeId)\
-CCacheOperate::BroadcastToClient(cmd, message, excludeId, __FILE__, __LINE__)
+#define BroadcastCacheToClient(route, cmd, message, includeIds, excludeIds)\
+CCacheOperate::BroadcastToClient(route, cmd, message, includeIds, excludeIds, __FILE__, __LINE__)
 
-#define BroadcastCachePacketToClient(dataPacket, excludeId)\
-CCacheOperate::BroadcastToClient(dataPacket, excludeId, __FILE__, __LINE__)
+#define BroadcastCachePacketToClient(dataPacket, includeIds, excludeIds)\
+CCacheOperate::BroadcastToClient(dataPacket, includeIds, excludeIds, __FILE__, __LINE__)
 
 #define CloseCacheClient(userId)\
 CCacheOperate::CloseClient(userId, __FILE__, __LINE__)
 
-#define CloseCacheAllClient()\
-CCacheOperate::CloseAllClient(__FILE__, __LINE__)
+#define CloseCacheAllClient(route, includeIds, excludeIds)\
+CCacheOperate::CloseAllClients(route, includeIds, excludeIds, __FILE__, __LINE__)
 
 #define SendCacheCmdToWorker(userId, cmd)\
 CCacheOperate::SendToWorker(userId, cmd, __FILE__, __LINE__)
@@ -467,6 +534,24 @@ CCacheOperate::SendToWorker(dataPacket, __FILE__, __LINE__)
 
 #define KickCacheLogged(userId)\
 CCacheOperate::KickLogged(userId, __FILE__, __LINE__)
+
+#define SendCacheCmdToPlayer(route, cmd, pResponse)\
+CCacheOperate::SendToPlayer(route, cmd, pResponse, __FILE__, __LINE__)
+
+#define SendCacheToPlayer(route, cmd, message, pResponse)\
+CCacheOperate::SendToPlayer(route, cmd, message, pResponse, __FILE__, __LINE__)
+
+#define SendCachePacketToPlayer(dataRequest, dataResponse)\
+CCacheOperate::SendToPlayer(dataRequest, dataResponse, __FILE__, __LINE__)
+
+#define PostCacheCmdToPlayer(route, cmd)\
+CCacheOperate::PostToPlayer(route, cmd, __FILE__, __LINE__)
+
+#define PostCacheToPlayer(route, cmd, message)\
+CCacheOperate::PostToPlayer(route, cmd, message, __FILE__, __LINE__)
+
+#define PostCachePacketToPlayer(dataRequest)\
+CCacheOperate::PostToPlayer(dataRequest, __FILE__, __LINE__)
 
 #define GetCacheRequestPacket(request)\
 CCacheOperate::GetRequestPacket(request, __FILE__, __LINE__)
@@ -558,7 +643,7 @@ public:
 			OutputError("NULL == pMcRecord");
 			return;
 		}
-		SetRecordCas(pMcRecord, cas);
+		SetRecordCasAndResult(pMcRecord, cas);
 	}
 
 	inline mc_request_t& GetRequest() {
@@ -595,19 +680,32 @@ private:
 class CRequestStoredProcs {
 public:
 	// The key only contain "name" field which is the field of "containers".
-	inline void SetKey(const util::CValueStream& key) {
+	inline void SetKey(const util::CValueStream& keyName) {
+		m_cacheRequest.set_key(keyName.GetData(), keyName.GetLength());
+	}
+	inline void SetKey(const char* szKeyName) {
+		util::CValueStream key;
+		key.Serialize(szKeyName, true);
 		m_cacheRequest.set_key(key.GetData(), key.GetLength());
 	}
 	// The Stored Procedures parameters.
 	inline void SetParams(const util::CValueStream& params) {
 		m_cacheRequest.set_data(params.GetData(), params.GetLength());
 	}
-	// AsyncStoredProcedures use
+	// No reply result
 	inline void SetNoReply(bool bNoReply) {
 		if(bNoReply) {
-			m_cacheRequest.set_result(MCERR_NOREPLY);
+			m_cacheRequest.set_result(m_cacheRequest.result() | MCERR_NOREPLY);
 		} else {
-			m_cacheRequest.clear_result();
+			m_cacheRequest.set_result(m_cacheRequest.result() & (~(MCERR_NOREPLY)));
+		}
+	}
+	// Set escape string
+	inline void SetEscapeString(bool bEscapeString) {
+		if (bEscapeString) {
+			m_cacheRequest.set_result(m_cacheRequest.result() | MCERR_ESCAPE_STRING);
+		} else {
+			m_cacheRequest.set_result(m_cacheRequest.result() & (~(MCERR_ESCAPE_STRING)));
 		}
 	}
 
@@ -619,28 +717,29 @@ private:
 	mc_request_t m_cacheRequest;
 };
 
+
 class CCacheOperate {
 public:
 
 	inline static int HandleNotification(const ::node::DataPacket& workerRequest,
 		::node::DataPacket& workerResponse, int nType = 0) {
 
-			util::CAutoPointer<::node::DataPacket> pDspRequest(&workerRequest, false);
-			CBodyMessage requestBody(pDspRequest);
-			util::CAutoPointer<CBodyMessage> pRequestBody(&requestBody, false);
-			mdl::CNotification notification(workerRequest.cmd(), pRequestBody, nType);
-			util::CAutoPointer<mdl::CNotification> pRequest(&notification, false);
+		util::CAutoPointer<::node::DataPacket> pDspRequest(&workerRequest, false);
+		CBodyMessage requestBody(pDspRequest);
+		util::CAutoPointer<CBodyMessage> pRequestBody(&requestBody, false);
+		mdl::CNotification notification(workerRequest.cmd(), pRequestBody, nType);
+		util::CAutoPointer<mdl::CNotification> pRequest(&notification, false);
 
-			util::CAutoPointer<::node::DataPacket> pDspResponse(&workerResponse, false);
-			CBodyMessage responseBody(pDspResponse);
-			util::CAutoPointer<CBodyMessage> pResponseBody(&responseBody, false);
-			mdl::CResponse mdlResponse(pResponseBody);
-			util::CAutoPointer<mdl::CResponse> pReply(&mdlResponse, false);
+		util::CAutoPointer<::node::DataPacket> pDspResponse(&workerResponse, false);
+		CBodyMessage responseBody(pDspResponse);
+		util::CAutoPointer<CBodyMessage> pResponseBody(&responseBody, false);
+		mdl::CResponse mdlResponse(pResponseBody);
+		util::CAutoPointer<mdl::CResponse> pReply(&mdlResponse, false);
 
-			mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
-			pFacade->NotifyObservers(pRequest, pReply, false);
+		mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
+		pFacade->NotifyObservers(pRequest, pReply, false);
 
-			return pReply->GetResult();
+		return workerResponse.result();
 	}
 
 	static eServerError HandleCache(int cmd, eRouteType routeType, uint64_t route,
@@ -660,6 +759,7 @@ public:
 		if(SERVER_SUCCESS == nResult) {
 			ParseCacheData(cacheResponse, dpResponse);
 		}
+		cacheResponse.set_result(nResult);
 		return nResult;
 	}
 
@@ -721,15 +821,9 @@ public:
 							pMCRequest->set_key(mcGets.key());
 							pMCRequest->set_value(mcGets.value());
 							pMCRequest->set_cas(mcGets.cas());
-							if(mcGets.has_expiry()) {
-								pMCRequest->set_expiry(mcGets.expiry());
-							}
-							if(mcGets.has_flags()) {
-								pMCRequest->set_flags(mcGets.flags());
-							}
-							if(mcGets.has_result()) {
-								pMCRequest->set_result(mcGets.result());
-							}
+							pMCRequest->set_expiry(mcGets.expiry());
+							pMCRequest->set_flags(mcGets.flags());
+							pMCRequest->set_result(mcGets.result());
 					}
 				}
 			}
@@ -799,7 +893,10 @@ public:
 			return MCERR_NOTSTORED;
 		}
 		MCResult nResult = (MCResult)GetCacheFirstRecordResult(cacheAddResponse);
-		if(MCERR_OK != nResult && MCCHANGE_NIL != oldChgType) {
+		if(MCERR_OK == nResult) {
+			const mc_record_t& mcRecord = GetRecord(cacheAddResponse, 0);
+			inValue.SetCas(GetRecordCas(mcRecord));
+		} else if(MCCHANGE_NIL != oldChgType) {
 			inValue.RecoverChgType(oldBitSigns, oldChgType);
 		}
         return nResult;
@@ -811,6 +908,7 @@ public:
         mc_request_t cacheLoadRequest;
         mc_record_t* mcGetRecord = SetRecord(cacheLoadRequest);
         SetRecordNKey(mcGetRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
+		SetRecordAttachCas(mcGetRecord);
         mc_response_t cacheLoadResponse;
         if(CCacheOperate::HandleCache(N_CMD_LOAD, routeType, route,
             cacheLoadRequest, cacheLoadResponse) != SERVER_SUCCESS) {
@@ -833,11 +931,11 @@ public:
 		util::BitSignSet oldBitSigns;
 		uint8_t oldChgType = MCCHANGE_NIL;
 		if(inValue.ChangeType() != MCCHANGE_NIL) {
-            SetRecordCas(pMCRecord, inValue.GetCas());
+			SetRecordCasAndResult(pMCRecord, inValue.GetCas());
 			util::CTransferStream strValues;
 			inValue.Serialize(strValues, oldBitSigns, oldChgType);
             SetRecordNValue(pMCRecord, strValues.GetData(), strValues.GetNumberOfBytesUsed());
-        }
+		}
 
         mc_response_t cacheStoreResponse;
 		if(CCacheOperate::HandleCache(N_CMD_STORE, routeType, route,
@@ -854,12 +952,33 @@ public:
         return nResult;
     }
 
+	static inline MCResult ReadOnlyOneRecord(eRouteType routeType, uint64_t route,
+		const util::CTransferStream& strKeys, ICacheValue& outValue)
+	{
+		mc_request_t cacheGetRequest;
+		mc_record_t* mcGetRecord = SetRecord(cacheGetRequest);
+		SetRecordNKey(mcGetRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
+		SetRecordAttachCas(mcGetRecord);
+		mc_response_t cacheGetResponse;
+		if (CCacheOperate::HandleCache(N_CMD_GETS, routeType, route,
+			cacheGetRequest, cacheGetResponse) != SERVER_SUCCESS) {
+			return MCERR_NOREPLY;
+		}
+		MCResult nResult = GetCacheFirstRecordResult(cacheGetResponse);
+		if (MCERR_OK == nResult) {
+			const mc_record_t& mcRecord = GetRecord(cacheGetResponse, 0);
+			outValue.Parse(GetRecordValue(mcRecord));
+		}
+		return nResult;
+	}
+
     static inline MCResult GetsOneRecord(eRouteType routeType, uint64_t route,
         const util::CTransferStream& strKeys, ICacheValue& outValue)
     {
         mc_request_t cacheGetRequest;
         mc_record_t* mcGetRecord = SetRecord(cacheGetRequest);
         SetRecordNKey(mcGetRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
+		SetRecordAttachCas(mcGetRecord);
         mc_response_t cacheGetResponse;
         if(CCacheOperate::HandleCache(N_CMD_GETS, routeType, route,
             cacheGetRequest, cacheGetResponse) != SERVER_SUCCESS) {
@@ -879,7 +998,7 @@ public:
         mc_request_t cacheCasRequest;
         mc_record_t* pMCRecord = SetRecord(cacheCasRequest);
         SetRecordNKey(pMCRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
-        SetRecordCas(pMCRecord, inValue.GetCas());
+		SetRecordCasAndResult(pMCRecord, inValue.GetCas());
 		util::CTransferStream strValues;
 		util::BitSignSet oldBitSigns;
 		uint8_t oldChgType = MCCHANGE_NIL;
@@ -953,6 +1072,7 @@ public:
         mc_request_t dbSelectRequest;
         mc_record_t* mcGetRecord = SetRecord(dbSelectRequest);
         SetRecordNKey(mcGetRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
+		SetRecordAttachCas(mcGetRecord);
         mc_response_t dbSelectResponse;
         if(CCacheOperate::HandleCache(N_CMD_DB_SELECT, routeType, route,
             dbSelectRequest, dbSelectResponse) != SERVER_SUCCESS) {
@@ -972,7 +1092,7 @@ public:
         mc_request_t dbUpdateRequest;
         mc_record_t* pMCRecord = SetRecord(dbUpdateRequest);
         SetRecordNKey(pMCRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
-        SetRecordCas(pMCRecord, inValue.GetCas());
+		SetRecordCasAndResult(pMCRecord, inValue.GetCas());
 		util::CTransferStream strValues;
 		util::BitSignSet oldBitSigns;
 		uint8_t oldChgType = MCCHANGE_NIL;
@@ -1028,6 +1148,47 @@ public:
         return nResult;
     }
 
+	inline static  MCResult CheckGlobalExist(
+		eRouteType routeType, uint64_t route,
+		const util::CTransferStream& strKeys)
+	{
+		mc_request_t cacheRequest;
+		mc_record_t* mcRecord = SetRecord(cacheRequest);
+		SetRecordNKey(mcRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
+
+		mc_response_t cacheResponse;
+		if (CCacheOperate::HandleCache(N_CMD_DB_CHECK_GLOBAL_EXISTS, routeType, route,
+			cacheRequest, cacheResponse) != SERVER_SUCCESS) {
+			return MCERR_NOTSTORED;
+		}
+		
+		return (MCResult)GetCacheFirstRecordResult(cacheResponse);
+	}
+
+	inline static  MCResult CheckExistEscapeString(
+		eRouteType routeType, uint64_t route,
+		const util::CTransferStream& strKeys,
+		util::CTransferStream& outNewKeys)
+	{
+		mc_request_t cacheRequest;
+		mc_record_t* mcRecord = SetRecord(cacheRequest);
+		SetRecordNKey(mcRecord, strKeys.GetData(), strKeys.GetNumberOfBytesUsed());
+
+		mc_response_t cacheResponse;
+		if (CCacheOperate::HandleCache(N_CMD_DB_CHKEXIST_ESCAPESTRING, routeType, route,
+			cacheRequest, cacheResponse) != SERVER_SUCCESS) {
+			return MCERR_NOTSTORED;
+		}
+
+		if(cacheResponse.values_size() > 0) {
+			const mc_record_t& mcRecordRespone = GetRecord(cacheResponse, 0);
+			const std::string& strNewKey = mcRecordRespone.key();
+			outNewKeys.WriteBytes(strNewKey.data(), strNewKey.length());
+		}
+
+		return (MCResult)GetCacheFirstRecordResult(cacheResponse);
+	}
+
 	inline static int HandleProtocol(const ::node::DataPacket& workerRequest,
 		::node::DataPacket& workerResponse, int nType = 0) {
 
@@ -1050,7 +1211,7 @@ public:
 	}
 
 	inline static int HandleProtocol(const ::node::DataPacket& workerRequest,
-		::node::DataPacket& workerResponse, util::CWeakPointer<CPlayerBase> pPlayer, int nType = 0) {
+		::node::DataPacket& workerResponse, util::CWeakPointer<CWrapPlayer> pPlayer, int nType = 0) {
 
 			util::CAutoPointer<::node::DataPacket> pDspRequest(&workerRequest, false);
 			CBodyMessage requestBody(pDspRequest);
@@ -1114,19 +1275,19 @@ public:
 		return pBodyReply->GetMessage();
 	}
 
-	inline static util::CWeakPointer<CPlayerBase> GetPlayer(
+	inline static util::CWeakPointer<CWrapPlayer> GetPlayer(
 		const util::CWeakPointer<mdl::INotification>& request,
 		const char* file, long line)
 	{
 		if(request.IsInvalid()) {
 			PrintError("file: %s line: %u @%s request.IsInvalid()", file, line, __FUNCTION__);
-			return util::CWeakPointer<CPlayerBase>();
+			return util::CWeakPointer<CWrapPlayer>();
 		}
 
 		util::CWeakPointer<const CBodyMessage> pBodyMessage(request->GetBody());
 		if(pBodyMessage.IsInvalid()) {
 			PrintError("file: %s line: %u @%s pBodyMessage.IsInvalid()", file, line, __FUNCTION__);
-			return util::CWeakPointer<CPlayerBase>();
+			return util::CWeakPointer<CWrapPlayer>();
 		}
 
 		if(pBodyMessage->GetPlayer().IsInvalid()) {
@@ -1136,16 +1297,16 @@ public:
 		return pBodyMessage->GetPlayer();
 	}
 
-	inline static util::CWeakPointer<CPlayerBase> GetPlayerSilence(
+	inline static util::CWeakPointer<CWrapPlayer> GetPlayerSilence(
 		const util::CWeakPointer<mdl::INotification>& request)
 	{
 		if(request.IsInvalid()) {
-			return util::CWeakPointer<CPlayerBase>();
+			return util::CWeakPointer<CWrapPlayer>();
 		}
 
 		util::CWeakPointer<CBodyMessage> pBodyMessage(request->GetBody());
 		if(pBodyMessage.IsInvalid()) {
-			return util::CWeakPointer<CPlayerBase>();
+			return util::CWeakPointer<CWrapPlayer>();
 		}
 
 		return pBodyMessage->GetPlayer();
@@ -1158,26 +1319,20 @@ public:
 			PrintError("file: %s line: %u @%s pDataPacket.IsInvalid()", file, line, __FUNCTION__);
 			return false;
 		}
-		int nByteSize = message.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!message.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !message.SerializeToArray", file, line, __FUNCTION__);
+		if(!message.SerializeToString(pDataPacket->mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString", file, line, __FUNCTION__);
 			return false;
 		}
-		pDataPacket->set_data((char*)smallbuf, nByteSize);
 		return true;
 	}
 
 	inline static bool SerializeData(::node::DataPacket& outPacket,
 		const ::google::protobuf::Message& message, const char* file, long line)
 	{
-		int nByteSize = message.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!message.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !message.SerializeToArray", file, line, __FUNCTION__);
+		if (!message.SerializeToString(outPacket.mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString", file, line, __FUNCTION__);
 			return false;
 		}
-		outPacket.set_data((char*)smallbuf, nByteSize);
 		return true;
 	}
 
@@ -1189,11 +1344,6 @@ public:
 			return false;
 		}
 		const std::string& bytes = pDataPacket->data();
-
-		if(bytes.empty()) {
-			PrintError("file: %s line: %u @%s bytes.empty()", file, line, __FUNCTION__);
-			return false;
-		}
 
 		if(!outMessage.ParseFromArray(bytes.data(), bytes.length())) {
 			PrintError("file: %s line: %u @%s !outMessage.ParseFromArray", file, line, __FUNCTION__);
@@ -1207,11 +1357,6 @@ public:
 	{
 		const std::string& bytes = packet.data();
 
-		if(bytes.empty()) {
-			PrintError("file: %s line: %u @%s bytes.empty()", file, line, __FUNCTION__);
-			return false;
-		}
-
 		if(!outMessage.ParseFromArray(bytes.data(), bytes.length())) {
 			PrintError("file: %s line: %u @%s !outMessage.ParseFromArray", file, line, __FUNCTION__);
 			return false;
@@ -1227,6 +1372,7 @@ public:
 		dataPacket.set_cmd(cmd);
 		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
 		dataPacket.set_route(userId);
+		dataPacket.set_result(SERVER_SUCCESS);
 
 		return SendToClient(dataPacket, file, line);
 	}
@@ -1240,15 +1386,13 @@ public:
 		dataPacket.set_cmd(cmd);
 		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
 		dataPacket.set_route(userId);
+		dataPacket.set_result(SERVER_SUCCESS);
 
-		int nByteSize = message.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!message.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !message.SerializeToArray"
+		if (!message.SerializeToString(dataPacket.mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString"
 				, file, line, __FUNCTION__);
-			return CACHE_ERROR_PARSE_REQUEST;
+			return CACHE_ERROR_SERIALIZE_REQUEST;
 		}
-		dataPacket.set_data((char*)smallbuf, nByteSize);
 		return SendToClient(dataPacket, file, line);
 	}
 
@@ -1268,14 +1412,11 @@ public:
 		cacheRequest.set_route_type(ROUTE_BALANCE_USERID);
 		cacheRequest.set_route(dataPacket.route());
 
-		int nByteSize = dataPacket.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!dataPacket.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !dataPacket.SerializeToArray"
+		if (!dataPacket.SerializeToString(cacheRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !dataPacket.SerializeToString"
 				, file, line, __FUNCTION__);
-			return CACHE_ERROR_PARSE_REQUEST;
+			return CACHE_ERROR_SERIALIZE_REQUEST;
 		}
-		cacheRequest.set_data((char*)smallbuf, nByteSize);
 
 		::node::DataPacket cacheResponse;
 		CCacheOperate::HandleNotification(cacheRequest, cacheResponse);
@@ -1284,48 +1425,57 @@ public:
 	}
 
 	inline static eServerError BroadcastToClient(
+		uint64_t route,
 		int32_t cmd,
-		uint64_t excludeId,
+		const std::set<uint64_t>* includeIds,
+		const std::set<uint64_t>* excludeIds,
 		const char* file, long line)
 	{
 		::node::DataPacket dataPacket;
 		dataPacket.set_cmd(cmd);
+		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
+		dataPacket.set_route(route);
+		dataPacket.set_result(SERVER_SUCCESS);
 
-		return BroadcastToClient(dataPacket, excludeId, file, line);
+		return BroadcastToClient(dataPacket, includeIds, excludeIds, file, line);
 	}
 
 	inline static eServerError BroadcastToClient(
+		uint64_t route,
 		int32_t cmd,
 		const ::google::protobuf::Message& message,
-		uint64_t excludeId,
+		const std::set<uint64_t>* includeIds,
+		const std::set<uint64_t>* excludeIds,
 		const char* file, long line)
 	{
 		::node::DataPacket dataPacket;
 		dataPacket.set_cmd(cmd);
+		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
+		dataPacket.set_route(route);
+		dataPacket.set_result(SERVER_SUCCESS);
 
-		int nByteSize = message.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!message.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !message.SerializeToArray"
+		if (!message.SerializeToString(dataPacket.mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString"
 				, file, line, __FUNCTION__);
-			return CACHE_ERROR_PARSE_REQUEST;
+			return CACHE_ERROR_SERIALIZE_REQUEST;
 		}
-		dataPacket.set_data((char*)smallbuf, nByteSize);
 
-		return BroadcastToClient(dataPacket, excludeId, file, line);
+		return BroadcastToClient(dataPacket, includeIds, excludeIds, file, line);
 	}
 
 	inline static eServerError BroadcastToClient(
 		const util::CWeakPointer<::node::DataPacket>& pDataPacket,
-		uint64_t excludeId,
+		const std::set<uint64_t>* includeIds,
+		const std::set<uint64_t>* excludeIds,
 		const char* file, long line)
 	{
-		return BroadcastToClient(*pDataPacket, excludeId, file, line);
+		return BroadcastToClient(*pDataPacket, includeIds, excludeIds, file, line);
 	}
 
 	inline static eServerError BroadcastToClient(
 		const ::node::DataPacket& dataPacket,
-		uint64_t excludeId,
+		const std::set<uint64_t>* includeIds,
+		const std::set<uint64_t>* excludeIds,
 		const char* file, long line)
 	{
 		::node::DataPacket cacheRequest;
@@ -1333,14 +1483,35 @@ public:
 		cacheRequest.set_route_type(ROUTE_BROADCAST_USER);
 		cacheRequest.set_route(dataPacket.route());
 
-		int nByteSize = dataPacket.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!dataPacket.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !dataPacket.SerializeToArray"
-				, file, line, __FUNCTION__);
-			return CACHE_ERROR_PARSE_REQUEST;
+		::node::BroadcastRequest broadcastRequest;
+		if (NULL == includeIds) {
+			if(NULL != excludeIds) {
+				std::set<uint64_t>::const_iterator itEx(excludeIds->begin());
+				for (; excludeIds->end() != itEx; ++itEx) {
+					broadcastRequest.add_excludeids(*itEx);
+				}
+			}
+		} else {
+			if(includeIds->empty()) {
+				return SERVER_SUCCESS;
+			} else {
+				std::set<uint64_t>::const_iterator itIn(includeIds->begin());
+				for (; includeIds->end() != itIn; ++itIn) {
+					broadcastRequest.add_includeids(*itIn);
+				}
+			}
 		}
-		cacheRequest.set_data((char*)smallbuf, nByteSize);
+		if (!dataPacket.SerializeToString(broadcastRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !dataPacket.SerializeToString(broadcastRequest)"
+				, file, line, __FUNCTION__);
+			return CACHE_ERROR_SERIALIZE_REQUEST;
+		}
+
+		if (!broadcastRequest.SerializeToString(cacheRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !dataPacket.SerializeToString(cacheRequest)"
+				, file, line, __FUNCTION__);
+			return CACHE_ERROR_SERIALIZE_REQUEST;
+		}
 
 		::node::DataPacket cacheResponse;
 		CCacheOperate::HandleNotification(cacheRequest, cacheResponse);
@@ -1361,11 +1532,41 @@ public:
 		return (eServerError)cacheResponse.result();
 	}
 
-	inline static eServerError CloseAllClient(const char* file, long line)
+	inline static eServerError CloseAllClients(
+		uint64_t route,
+		const std::set<uint64_t>* includeIds,
+		const std::set<uint64_t>* excludeIds,
+		const char* file, long line)
 	{
 		::node::DataPacket cacheRequest;
-		cacheRequest.set_cmd(N_CMD_CLOSE_ALLCLIENT);
+		cacheRequest.set_cmd(N_CMD_CLOSE_ALLCLIENTS);
 		cacheRequest.set_route_type(ROUTE_BROADCAST_USER);
+		cacheRequest.set_route(route);
+
+		::node::BroadcastRequest broadcastRequest;
+		if (NULL == includeIds) {
+			if(NULL != excludeIds) {
+				std::set<uint64_t>::const_iterator itEx(excludeIds->begin());
+				for (; excludeIds->end() != itEx; ++itEx) {
+					broadcastRequest.add_excludeids(*itEx);
+				}
+			}
+		} else {
+			if (includeIds->empty()) {
+				return SERVER_SUCCESS;
+			} else {
+				std::set<uint64_t>::const_iterator itIn(includeIds->begin());
+				for (; includeIds->end() != itIn; ++itIn) {
+					broadcastRequest.add_includeids(*itIn);
+				}
+			}
+		}
+
+		if (!broadcastRequest.SerializeToString(cacheRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !broadcastRequest.SerializeToString(cacheRequest)"
+				, file, line, __FUNCTION__);
+			return CACHE_ERROR_SERIALIZE_REQUEST;
+		}
 
 		::node::DataPacket cacheResponse;
 		CCacheOperate::HandleNotification(cacheRequest, cacheResponse);
@@ -1395,13 +1596,10 @@ public:
 		dataPacket.set_route(userId);
 		dataPacket.set_cmd(cmd);
 
-		int nByteSize = message.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!message.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !message.SerializeToArray", file, line, __FUNCTION__);
-			return CACHE_ERROR_PARSE_REQUEST;
+		if (!message.SerializeToString(dataPacket.mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString", file, line, __FUNCTION__);
+			return CACHE_ERROR_SERIALIZE_REQUEST;
 		}
-		dataPacket.set_data((char*)smallbuf, nByteSize);
 
 		return SendToWorker(dataPacket, file, line);
 	}
@@ -1422,14 +1620,11 @@ public:
 		cacheRequest.set_route_type(ROUTE_BALANCE_USERID);
 		cacheRequest.set_route(dataPacket.route());
 
-		int nByteSize = dataPacket.ByteSize();
-		ntwk::SmallBuffer smallbuf(nByteSize);
-		if(!dataPacket.SerializeToArray((char*)smallbuf, nByteSize)) {
-			PrintError("file: %s line: %u @%s !dataPacket.SerializeToArray"
+		if (!dataPacket.SerializeToString(cacheRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !dataPacket.SerializeToString"
 				, file, line, __FUNCTION__);
-			return CACHE_ERROR_PARSE_REQUEST;
+			return CACHE_ERROR_SERIALIZE_REQUEST;
 		}
-		cacheRequest.set_data((char*)smallbuf, nByteSize);
 
 		::node::DataPacket cacheResponse;
 		CCacheOperate::HandleNotification(cacheRequest, cacheResponse);
@@ -1449,6 +1644,156 @@ public:
 
 		return (eServerError)cacheResponse.result();
 	}
+
+	inline static eServerError SendToPlayer(
+		uint64_t route,
+		int32_t cmd,
+		::google::protobuf::Message* pResponse,
+		const char* file, long line)
+	{
+		::node::DataPacket dataPacket;
+		dataPacket.set_cmd(cmd);
+		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
+		dataPacket.set_route(route);
+
+		::node::DataPacket dataResponse;
+		eServerError nResult = SendToPlayer(dataPacket, dataResponse, file, line);
+		if (SERVER_SUCCESS == nResult) {
+			if (NULL != pResponse) {
+				if (!pResponse->ParseFromString(dataResponse.data())) {
+					PrintError("file: %s line: %u @%s !pResponse->ParseFromString(dataResponse)"
+						, file, line, __FUNCTION__);
+					return CACHE_ERROR_PARSE_REQUEST;
+				}
+			}
+		}
+		return nResult;
+	}
+
+	inline static eServerError SendToPlayer(
+		uint64_t route,
+		int32_t cmd,
+		const ::google::protobuf::Message& message,
+		::google::protobuf::Message* pResponse,
+		const char* file, long line)
+	{
+		::node::DataPacket dataPacket;
+		dataPacket.set_cmd(cmd);
+		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
+		dataPacket.set_route(route);
+
+		if (!message.SerializeToString(dataPacket.mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString"
+				, file, line, __FUNCTION__);
+			return CACHE_ERROR_SERIALIZE_REQUEST;
+		}
+		::node::DataPacket dataResponse;
+		eServerError nResult = SendToPlayer(dataPacket, dataResponse, file, line);
+		if (SERVER_SUCCESS == nResult) {
+			if (NULL != pResponse) {
+				if (!pResponse->ParseFromString(dataResponse.data())) {
+					PrintError("file: %s line: %u @%s !pResponse->ParseFromString(dataResponse)"
+						, file, line, __FUNCTION__);
+					return CACHE_ERROR_PARSE_REQUEST;
+				}
+			}
+		}
+		return nResult;
+	}
+
+	inline static eServerError SendToPlayer(
+		const util::CWeakPointer<::node::DataPacket>& pDataRequest,
+		util::CWeakPointer<::node::DataPacket>& pDataResponse,
+		const char* file, long line)
+	{
+		return SendToPlayer(*pDataRequest, *pDataResponse, file, line);
+	}
+
+	inline static eServerError SendToPlayer(
+		const ::node::DataPacket& dataPacket,
+		::node::DataPacket& dataResponse,
+		const char* file, long line)
+	{
+		::node::DataPacket cacheRequest;
+		cacheRequest.set_cmd(N_CMD_SEND_TO_PLAYER);
+		cacheRequest.set_route_type(ROUTE_BROADCAST_USER);
+		cacheRequest.set_route(dataPacket.route());
+
+		::node::ForwardRequest forwardRequest;
+		forwardRequest.mutable_data()->CopyFrom(dataPacket);
+
+		if (!forwardRequest.SerializeToString(cacheRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !dataPacket.SerializeToString(cacheRequest)"
+				, file, line, __FUNCTION__);
+			return CACHE_ERROR_SERIALIZE_REQUEST;
+		}
+
+		CCacheOperate::HandleNotification(cacheRequest, dataResponse);
+
+		return (eServerError)dataResponse.result();
+	}
+
+	inline static eServerError PostToPlayer(
+		uint64_t route,
+		int32_t cmd,
+		const char* file, long line)
+	{
+		::node::DataPacket dataPacket;
+		dataPacket.set_cmd(cmd);
+		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
+		dataPacket.set_route(route);
+
+		return PostToPlayer(dataPacket, file, line);
+	}
+
+	inline static eServerError PostToPlayer(
+		uint64_t route,
+		int32_t cmd,
+		const ::google::protobuf::Message& message,
+		const char* file, long line)
+	{
+		::node::DataPacket dataPacket;
+		dataPacket.set_cmd(cmd);
+		dataPacket.set_route_type(ROUTE_BALANCE_USERID);
+		dataPacket.set_route(route);
+
+		if (!message.SerializeToString(dataPacket.mutable_data())) {
+			PrintError("file: %s line: %u @%s !message.SerializeToString"
+				, file, line, __FUNCTION__);
+		}
+
+		return PostToPlayer(dataPacket, file, line);
+	}
+
+	inline static eServerError PostToPlayer(
+		const util::CWeakPointer<::node::DataPacket>& pDataRequest,
+		const char* file, long line)
+	{
+		return PostToPlayer(*pDataRequest, file, line);
+	}
+
+	inline static eServerError PostToPlayer(
+		const ::node::DataPacket& dataPacket,
+		const char* file, long line)
+	{
+		::node::DataPacket cacheRequest;
+		cacheRequest.set_cmd(N_CMD_POST_TO_PLAYER);
+		cacheRequest.set_route_type(ROUTE_BROADCAST_USER);
+		cacheRequest.set_route(dataPacket.route());
+
+		::node::ForwardRequest forwardRequest;
+		forwardRequest.mutable_data()->CopyFrom(dataPacket);
+
+		if (!forwardRequest.SerializeToString(cacheRequest.mutable_data())) {
+			PrintError("file: %s line: %u @%s !dataPacket.SerializeToString(cacheRequest)"
+				, file, line, __FUNCTION__);
+		}
+
+		::node::DataPacket dataResponse;
+		CCacheOperate::HandleNotification(cacheRequest, dataResponse);
+		return (eServerError)dataResponse.result();
+	}
+
 };
 
 #endif /* CACHEOPERATE_H */

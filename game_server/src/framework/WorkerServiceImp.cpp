@@ -7,34 +7,36 @@
 #include "ControlCentreStubImpEx.h"
 #include "Log.h"
 #include "msg_client_login.pb.h"
+#include "TimerManager.h"
+
 
 using namespace mdl;
 using namespace util;
 
 inline static bool HandleLogin(
 	::node::DataPacket& request,
-	const std::string& strBind,
+	const std::string& endPoint,
 	const std::string& servantAddress,
 	const std::string& serverName,
-	uint16_t serverId)
+	uint32_t serverId)
 {
-	assert(request.has_data());
-	assert(!strBind.empty());
+	assert(HasDataPacketData(request));
+	assert(!endPoint.empty());
 
 	uint64_t userId = request.route();
 
 	::node::LoginRequest loginRequest;
 	if(!ParseWorkerData(loginRequest, request)) {
-		OutputError("!ParseWorkerData userId = "I64FMTD, userId);
+		OutputError("!ParseWorkerData userId = " I64FMTD, userId);
 		return false;
 	}
 	uint32_t routeCount = loginRequest.routecount();
 	std::string originIp(loginRequest.originip());
 
-	loginRequest.set_originip(strBind);
+	loginRequest.set_originip(endPoint);
 	loginRequest.set_routecount(routeCount + 1);
 	if(!SerializeWorkerData(request, loginRequest)) {
-		OutputError("!SerializeWorkerData userId = "I64FMTD, userId);
+		OutputError("!SerializeWorkerData userId = " I64FMTD, userId);
 		return false;
 	}
 
@@ -63,15 +65,14 @@ inline static bool HandleLogout(
 }
 
 CWorkerServiceImp::CWorkerServiceImp(
-	const std::string& serverBind, 
+	const std::string& endPoint, 
 	const std::string& servantAddress,
 	const std::string& serverName,
-	uint16_t serverId,
+	uint32_t serverId,
 	CreatePlayerMethod createPlayerMethod /*= NULL*/,
 	ListInterestsMethod listProtoMethod /*= NULL*/,
-	ListInterestsMethod listNotifMethod /*= NULL*/
-	)
-	: m_serverBind(serverBind)
+	ListInterestsMethod listNotifMethod /*= NULL*/)
+	: m_endPoint(endPoint)
 	, m_servantAddress(servantAddress)
 	, m_serverName(serverName)
 	, m_serverId(serverId)
@@ -98,32 +99,29 @@ void CWorkerServiceImp::HandleProtocol(const ::node::DataPacket& request,
 	}
 
 	if(request.cmd() == P_CMD_C_LOGIN) {
-		if(!HandleLogin(const_cast<::node::DataPacket&>(request),
-			m_serverBind, m_servantAddress, m_serverName, m_serverId)) 
-		{
-			::node::DataPacket dspResponse;
-			dspResponse.set_cmd(request.cmd());
-			dspResponse.set_result(FALSE);
-			response.send(dspResponse);
-			return;
+		if (request.sub_cmd() != LOGIN_RECOVER) {
+			if (!HandleLogin(const_cast<::node::DataPacket&>(request),
+				m_endPoint, m_servantAddress, m_serverName, m_serverId))
+			{
+				::node::DataPacket dspResponse;
+				dspResponse.set_cmd(request.cmd());
+				dspResponse.set_result(SERVER_FAILURE);
+				response.send(dspResponse);
+				return;
+			}
 		}
 		::node::DataPacket dspResponse;
 
-		if(NULL == m_createPlayerMethod) {
-			SendWorkerProtocol(request, dspResponse);
-		} else {
+		if(NULL != m_createPlayerMethod) {
+			evt::CTimerManager::PTR_T pTMgr(evt::CTimerManager::Pointer());
+			pTMgr->Remove(request.route());
+
+			CAutoPointer<CWrapPlayer> pPlayer;
 			CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-			CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(request.route()));
-			if(pPlayer.IsInvalid()) {
-				CAutoPointer<CPlayerBase> pNewPlayer((*m_createPlayerMethod)(request.route()));
-				assert(!pNewPlayer.IsInvalid());
-				pChlMgr->SetPlayer(request.route(), pNewPlayer);
-				CScopedPlayerMutex scopedPlayerMutex(pNewPlayer);
-				SendWorkerProtocol(request, dspResponse, pNewPlayer);
-			} else {
-				CScopedPlayerMutex scopedPlayerMutex(pPlayer);
-				SendWorkerProtocol(request, dspResponse, pPlayer);
-			}
+			pChlMgr->CheckAndCreatePlayer(pPlayer, request.route(), m_createPlayerMethod);
+			SendWorkerProtocol(request, dspResponse, pPlayer);
+		} else {
+			SendWorkerProtocol(request, dspResponse);
 		}
 
 		dspResponse.set_cmd(request.cmd());
@@ -133,17 +131,12 @@ void CWorkerServiceImp::HandleProtocol(const ::node::DataPacket& request,
 
 		::node::DataPacket dspResponse;
 
-		if(NULL == m_createPlayerMethod) {
-			SendWorkerProtocol(request, dspResponse);
-		} else {
+		if(NULL != m_createPlayerMethod) {
 			CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-			CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(request.route()));
-			if(pPlayer.IsInvalid()) {
-				SendWorkerProtocol(request, dspResponse, pPlayer);
-			} else {
-				CScopedPlayerMutex scopedPlayerMutex(pPlayer);
-				SendWorkerProtocol(request, dspResponse, pPlayer);
-			}
+			CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(request.route()));
+			SendWorkerProtocol(request, dspResponse, pPlayer);
+		} else {
+			SendWorkerProtocol(request, dspResponse);
 		}
 
 		if(!HandleLogout(const_cast<::node::DataPacket&>(request),
@@ -151,7 +144,7 @@ void CWorkerServiceImp::HandleProtocol(const ::node::DataPacket& request,
 		{
 			::node::DataPacket dspResponse;
 			dspResponse.set_cmd(request.cmd());
-			dspResponse.set_result(FALSE);
+			dspResponse.set_result(SERVER_FAILURE);
 			response.send(dspResponse);
 		} else {
 			dspResponse.set_cmd(request.cmd());
@@ -161,17 +154,23 @@ void CWorkerServiceImp::HandleProtocol(const ::node::DataPacket& request,
 	} else {
 		::node::DataPacket dspResponse;
 
-		if(NULL == m_createPlayerMethod) {
-			SendWorkerProtocol(request, dspResponse);
-		} else {
+		if(NULL != m_createPlayerMethod) {
+			uint64_t userId = request.route();
+			CAutoPointer<CWrapPlayer> pPlayer;
+
 			CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-			CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(request.route()));
-			if(pPlayer.IsInvalid()) {
-				SendWorkerProtocol(request, dspResponse, pPlayer);
-			} else {
-				CScopedPlayerMutex scopedPlayerMutex(pPlayer);
-				SendWorkerProtocol(request, dspResponse, pPlayer);
+			if (pChlMgr->CheckAndCreatePlayer(pPlayer, userId)) {
+				assert(!pPlayer->IsObjectInvalid());
+				CAutoPointer<CallBackFuncP1<uint64_t> > callback(new CallBackFuncP1<uint64_t>(&CWorkerServiceImp::RemoveWrapPlayerCallback, userId));
+				evt::CTimerManager::PTR_T pTMgr(evt::CTimerManager::Pointer());
+				pTMgr->SetTimeout(userId, WRAP_PLAYER_KEEP_TIME, callback);
+			} else if (pPlayer->IsObjectInvalid()) {
+				evt::CTimerManager::PTR_T pTMgr(evt::CTimerManager::Pointer());
+				pTMgr->Modify(userId, evt::TIMER_OPERATER_RESET);
 			}
+			SendWorkerProtocol(request, dspResponse, pPlayer);
+		} else {
+			SendWorkerProtocol(request, dspResponse);
 		}
 
 		dspResponse.set_cmd(request.cmd());
@@ -192,21 +191,22 @@ void CWorkerServiceImp::HandleNotification(const ::node::DataPacket& request,
 
 	::node::DataPacket dspResponse;
 
-	if(NULL == m_createPlayerMethod || N_CMD_KICK_LOGGED == request.cmd()) {
-		SendWorkerNotification(request, dspResponse);
-	} else {
+	if(request.route_type() == ROUTE_BALANCE_USERID &&  NULL != m_createPlayerMethod && N_CMD_KICK_LOGGED != request.cmd()) {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-		CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(request.route()));
-		if(pPlayer.IsInvalid()) {
-			SendWorkerNotification(request, dspResponse, pPlayer);
-		} else {
-			CScopedPlayerMutex scopedPlayerMutex(pPlayer);
-			SendWorkerNotification(request, dspResponse, pPlayer);
+		CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(request.route()));
+		SendWorkerNotification(request, dspResponse, pPlayer);
+		dspResponse.set_cmd(request.cmd());
+		response.send(dspResponse);
+	} else {
+		SendWorkerNotification(request, dspResponse);
+		dspResponse.set_cmd(request.cmd());
+		response.send(dspResponse);
+
+		if (request.route_type() == ROUTE_BALANCE_SERVERID) {
+			CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+			pChlMgr->AddRouteServer(request.route());
 		}
 	}
-
-	dspResponse.set_cmd(request.cmd());
-	response.send(dspResponse);
 }
 
 void CWorkerServiceImp::ListProtocolInterests(const ::node::VoidPacket& request,
@@ -233,6 +233,34 @@ void CWorkerServiceImp::ListNotificationInterests(const ::node::VoidPacket& requ
 	response.send(workerInterest);
 }
 
+void CWorkerServiceImp::KickLogged(const ::node::DataPacket& request,
+	::rpcz::reply< ::node::DataPacket> response)
+{
+	::node::DataPacket dspResponse;
+	CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+	CAutoPointer<rpcz::rpc_channel> channel(
+		pChlMgr->GetRpczChannel(request.route()));
+
+	if (channel.IsInvalid()) {
+		dspResponse.set_cmd(request.cmd());
+		dspResponse.set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
+		response.send(dspResponse);
+		return;
+	}
+
+	::node::WorkerService_Stub workerService_stub(channel.operator->(), false);
+	rpcz::rpc_controller controller;
+	controller.set_deadline_ms(CALL_DEADLINE_MS);
+
+	workerService_stub.KickLogged(request, &dspResponse, &controller, NULL);
+	controller.wait();
+
+	pChlMgr->CheckClientChannel(request.route(), !controller.ok());
+
+	dspResponse.set_cmd(request.cmd());
+	response.send(dspResponse);
+}
+
 void CWorkerServiceImp::SendToClient(const ::node::DataPacket& request,
 	::rpcz::reply< ::node::DataPacket> response)
 {
@@ -243,12 +271,12 @@ void CWorkerServiceImp::SendToClient(const ::node::DataPacket& request,
 
 	if(channel.IsInvalid()) {
 		dspResponse.set_cmd(request.cmd());
-		dspResponse.set_result(FALSE);
+		dspResponse.set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		response.send(dspResponse);
 		return;
 	}
 
-	::node::WorkerService_Stub workerService_stub(&*channel, false);
+	::node::WorkerService_Stub workerService_stub(channel.operator->(), false);
 	rpcz::rpc_controller controller;
 	controller.set_deadline_ms(CALL_DEADLINE_MS);
 
@@ -259,6 +287,30 @@ void CWorkerServiceImp::SendToClient(const ::node::DataPacket& request,
 
 	dspResponse.set_cmd(request.cmd());
 	response.send(dspResponse);
+}
+
+void CWorkerServiceImp::BroadcastToClient(const ::node::BroadcastRequest& request,
+	::rpcz::reply< ::node::VoidPacket> response)
+{
+	BroadcastPacketToWorker(const_cast<::node::BroadcastRequest&>(request));
+	::node::VoidPacket voidResponse;
+	response.send(voidResponse);
+}
+
+void CWorkerServiceImp::SendToPlayer(const ::node::ForwardRequest& request,
+	::rpcz::reply< ::node::DataPacket> response)
+{
+	::node::DataPacket dataResponse;
+	SendWorkerPacketToPlayer(const_cast<::node::ForwardRequest&>(request), dataResponse);
+	response.send(dataResponse);
+}
+
+void CWorkerServiceImp::PostToPlayer(const ::node::ForwardRequest& request,
+	::rpcz::reply< ::node::VoidPacket> response)
+{
+	PostWorkerPacketToPlayer(const_cast<::node::ForwardRequest&>(request));
+	::node::VoidPacket voidPacket;
+	response.send(voidPacket);
 }
 
 void CWorkerServiceImp::CloseClient(const ::node::DataPacket& request,
@@ -272,12 +324,12 @@ void CWorkerServiceImp::CloseClient(const ::node::DataPacket& request,
 
 	if(channel.IsInvalid()) {
 		dspResponse.set_cmd(request.cmd());
-		dspResponse.set_result(FALSE);
+		dspResponse.set_result(SERVER_ERROR_NOTFOUND_CHANNEL);
 		response.send(dspResponse);
 		return;
 	}
 
-	::node::WorkerService_Stub workerService_stub(&*channel, false);
+	::node::WorkerService_Stub workerService_stub(channel.operator->(), false);
 	rpcz::rpc_controller controller;
 	controller.set_deadline_ms(CALL_DEADLINE_MS);
 
@@ -290,24 +342,27 @@ void CWorkerServiceImp::CloseClient(const ::node::DataPacket& request,
 	response.send(dspResponse);
 }
 
+void CWorkerServiceImp::CloseAllClients(const ::node::BroadcastRequest& request,
+	::rpcz::reply< ::node::VoidPacket> response)
+{
+	CloseWorkerAllClients(const_cast<::node::BroadcastRequest&>(request));
+	::node::VoidPacket voidResponse;
+	response.send(voidResponse);
+}
+
 void CWorkerServiceImp::SendToWorker(const ::node::DataPacket& request,
-    ::rpcz::reply< ::node::DataPacket> response)
+	::rpcz::reply< ::node::DataPacket> response)
 {
 	::node::DataPacket dspResponse;
-    CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+	CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 
-    CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(request.route()));
-    if(pPlayer.IsInvalid()) {
-		SendWorkerNotification(request, dspResponse, pPlayer);
-    } else {
-		CScopedPlayerMutex scopedPlayerMutex(pPlayer);
-		SendWorkerNotification(request, dspResponse, pPlayer);
-    }
+	CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(request.route()));
+	SendWorkerNotification(request, dspResponse, pPlayer);
 
 	CAutoPointer<rpcz::rpc_channel> channel(
 		pChlMgr->GetRpczChannel(request.route()));
-	if(!channel.IsInvalid()) {
-		::node::WorkerService_Stub workerService_stub(&*channel, false);
+	if (!channel.IsInvalid()) {
+		::node::WorkerService_Stub workerService_stub(channel.operator->(), false);
 		rpcz::rpc_controller controller;
 		controller.set_deadline_ms(CALL_DEADLINE_MS);
 		workerService_stub.SendToWorker(request, &dspResponse, &controller, NULL);
@@ -319,31 +374,8 @@ void CWorkerServiceImp::SendToWorker(const ::node::DataPacket& request,
 	response.send(dspResponse);
 }
 
-void CWorkerServiceImp::KickLogged(const ::node::DataPacket& request,
-	::rpcz::reply< ::node::DataPacket> response)
+void CWorkerServiceImp::RemoveWrapPlayerCallback(uint64_t& userId)
 {
-	::node::DataPacket dspResponse;
 	CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-	CAutoPointer<rpcz::rpc_channel> channel(
-		pChlMgr->GetRpczChannel(request.route()));
-
-	if(channel.IsInvalid()) {
-		dspResponse.set_cmd(request.cmd());
-		dspResponse.set_result(FALSE);
-		response.send(dspResponse);
-		return;
-	}
-
-	::node::WorkerService_Stub workerService_stub(&*channel, false);
-	rpcz::rpc_controller controller;
-	controller.set_deadline_ms(CALL_DEADLINE_MS);
-
-	workerService_stub.KickLogged(request, &dspResponse, &controller, NULL);
-	controller.wait();
-
-	pChlMgr->CheckClientChannel(request.route(), !controller.ok());
-
-	dspResponse.set_cmd(request.cmd());
-	response.send(dspResponse);
+	pChlMgr->RemoveWrapPlayer(userId);
 }
-

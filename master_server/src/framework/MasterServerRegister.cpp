@@ -20,7 +20,6 @@ using namespace mdl;
 using namespace evt;
 using namespace util;
 using namespace thd;
-using namespace ntwk;
 
 
 CMasterServerRegister::CMasterServerRegister()
@@ -78,23 +77,27 @@ void CMasterServerRegister::RegisterCommand()
 	pCmdMgr->AddCommand("erase", pCommandErase, "Erase the server that isn't alive by serverId. "
 		">> erase <serverId> ");
 
-	CAutoPointer<GlobalMethodRIP1> pCommandPlay(new GlobalMethodRIP1(CommandPlay));
-	pCmdMgr->AddCommand("play", pCommandPlay, "Play all the server. >> play");
+	CAutoPointer<GlobalMethodRIP1> pCommandPlay(new GlobalMethodRIP1(CommandBegin));
+	pCmdMgr->AddCommand("begin", pCommandPlay, "Begin all the server. >> begin");
 
 	CAutoPointer<GlobalMethodRIP1> pCommandStop(new GlobalMethodRIP1(CommandStop));
 	pCmdMgr->AddCommand("stop", pCommandPlay, "Stop all the server. >> stop");
 }
 
-void CMasterServerRegister::RegistModule()
+void CMasterServerRegister::RegisterModule()
 {
-	CFacade::PTR_T pFacade(CFacade::Pointer());
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
+	std::string endPoint(pConfig->GetString(APPCONFIG_ENDPOINT));
+	if (endPoint.empty()) {
+		endPoint = pConfig->GetString(APPCONFIG_SERVERBIND);
+	}
+	CFacade::PTR_T pFacade(CFacade::Pointer());
 	CMasterServer::PTR_T pMaster(CMasterServer::Pointer());
 	//register module
 	CAutoPointer<CMasterModule> pMasterModule(new CMasterModule(
 		pConfig->GetString(APPCONFIG_SERVERNAME).c_str(),
-		(uint16_t)pConfig->GetInt(APPCONFIG_SERVERID),
-		pConfig->GetString(APPCONFIG_SERVERBIND),
+		pConfig->GetInt(APPCONFIG_SERVERID),
+		endPoint,
 		pConfig->GetString(APPCONFIG_SERVERACCEPT),
 		pMaster->GetProcessPath(),
 		pConfig->GetString(APPCONFIG_PROJECTNAME)));
@@ -102,7 +105,7 @@ void CMasterServerRegister::RegistModule()
 	pFacade->RegisterModule(pMasterModule);
 }
 
-void CMasterServerRegister::UnregistModule()
+void CMasterServerRegister::UnregisterModule()
 {
 	CFacade::PTR_T pFacade(CFacade::Pointer());
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
@@ -117,12 +120,12 @@ int CMasterServerRegister::CommandSendMail(const util::CWeakPointer<ArgumentBase
         return COMMAND_RESULT_FAIL;
     }
 
-    char szServerName[eBUF_SIZE_128] = {'\0'};
+
     uint64_t nReceierId(0);
     char szTitle[eBUF_SIZE_128] = {'\0'};
     char szContent[eBUF_SIZE_512] = {'\0'};
-    if(sscanf(pCommArg->GetParams().c_str(),"%s "I64FMTD" %s %s",
-        szServerName, &nReceierId, szTitle, szContent) < 4)
+    if(sscanf(pCommArg->GetParams().c_str(),I64FMTD " %s %s",
+        &nReceierId, szTitle, szContent) < 3)
     {
         return COMMAND_RESULT_FAIL;
     }
@@ -142,7 +145,7 @@ int CMasterServerRegister::CommandSendMail(const util::CWeakPointer<ArgumentBase
 
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
     CMasterCmdManager::PTR_T pMasterCmdMgr(CMasterCmdManager::Pointer());
-    pMasterCmdMgr->SendByUserId(szServerName, nReceierId,
+    pMasterCmdMgr->SendByUserId(nReceierId,
 		C_CMD_CTM_SEND_MAIL, sendMailPacket);
     return COMMAND_RESULT_SUCCESS;
 }
@@ -178,8 +181,8 @@ int CMasterServerRegister::CommandRestart(const util::CWeakPointer<evt::Argument
 		return COMMAND_RESULT_FAIL;
 	}
 
-	uint16_t serverId = ID_NULL;
-	if(sscanf(pCommArg->GetParams().c_str(),"%hu", &serverId) < 1)
+	uint32_t serverId = ID_NULL;
+	if(sscanf(pCommArg->GetParams().c_str(),"%u", &serverId) < 1)
 	{
 		return COMMAND_RESULT_FAIL;
 	}
@@ -198,8 +201,8 @@ int CMasterServerRegister::CommandShutdown(const util::CWeakPointer<evt::Argumen
 		return COMMAND_RESULT_FAIL;
 	}
 
-	uint16_t serverId = ID_NULL;
-	if(sscanf(pCommArg->GetParams().c_str(),"%hu", &serverId) < 1)
+	uint32_t serverId = ID_NULL;
+	if(sscanf(pCommArg->GetParams().c_str(),"%u", &serverId) < 1)
 	{
 		return COMMAND_RESULT_FAIL;
 	}
@@ -218,8 +221,8 @@ int CMasterServerRegister::CommandErase(const util::CWeakPointer<evt::ArgumentBa
 		return COMMAND_RESULT_FAIL;
 	}
 
-	uint16_t serverId = ID_NULL;
-	if(sscanf(pCommArg->GetParams().c_str(),"%hu", &serverId) < 1)
+	uint32_t serverId = ID_NULL;
+	if(sscanf(pCommArg->GetParams().c_str(),"%u", &serverId) < 1)
 	{
 		return COMMAND_RESULT_FAIL;
 	}
@@ -232,11 +235,11 @@ int CMasterServerRegister::CommandErase(const util::CWeakPointer<evt::ArgumentBa
 	return COMMAND_RESULT_FAIL;
 }
 
-int CMasterServerRegister::CommandPlay(const util::CWeakPointer<evt::ArgumentBase>& arg)
+int CMasterServerRegister::CommandBegin(const util::CWeakPointer<evt::ArgumentBase>& arg)
 {
 	CMasterServer::PTR_T pMaster(CMasterServer::Pointer());
 	pMaster->RemoveAutoPlayTimer();
-	pMaster->OnServerPlay();
+	pMaster->OnServerPrepare();
 
 	return COMMAND_RESULT_SUCCESS;
 }

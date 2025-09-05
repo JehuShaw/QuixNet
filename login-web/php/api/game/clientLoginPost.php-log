@@ -1,0 +1,225 @@
+<?php
+include_once("config.php");
+include_once("define.php");
+include_once("../../db_config.php");
+include_once("../../log_file.php");
+
+if($logSavePath) {
+	save_log($logSavePath, 'clientLoginPost begin.');
+}
+// 判断访问类型
+$type = $_POST['type'];
+if(1 == $type) {
+	if($logSavePath) {
+		save_log($logSavePath, 'clientLoginPost type = 1.');
+	}
+	$equipmentId = $_POST['equipmentId'];
+	if(!$equipmentId) {
+		exit('{"code":0,"state":'.ERROR_EQUIPMENT_ID_EMPTY.'}');
+	}
+	$serAuth = md5($equipmentId.$type.$secretKey);
+	if($serAuth == $_POST['authKey']) {
+		if($logSavePath) {
+			save_log($logSavePath, 'clientLoginPost $serAuth == $_POST[\'authKey\']. $equipmentId = '.$equipmentId);
+		}
+		$loginIp = file_get_contents($loginUrl);
+		if($logSavePath) {
+			save_log($logSavePath, 'clientLoginPost file_get_contents($loginUrl). $equipmentId = '.$equipmentId);
+		}
+		if($loginIp) {
+			$conn = mysqli_connect($account_db_host, $account_db_username, $account_db_password, $account_db_database, $account_db_port);
+			if($logSavePath) {
+				save_log($logSavePath, 'clientLoginPost mysqli_connect. $equipmentId = '.$equipmentId);
+			}
+			$equipIdResult = mysqli_query($conn, "SELECT `index` FROM `users` WHERE `equipId` = '$equipmentId';");
+			if($logSavePath) {
+				save_log($logSavePath, 'clientLoginPost mysqli_query. $equipmentId = '.$equipmentId);
+			}
+			if(mysqli_num_rows($equipIdResult) > 0) {
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost mysqli_num_rows > 0. $equipmentId = '.$equipmentId);
+				}
+				if($idxRow = mysqli_fetch_array($equipIdResult)) {
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost mysqli_fetch_array. $equipmentId = '.$equipmentId);
+					}
+					$account = $idxRow[0];
+					
+					session_save_path($sessionSavePath);
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost session_save_path. $equipmentId = '.$equipmentId);
+					}
+					session_start();
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost session_start. $equipmentId = '.$equipmentId);
+					}
+					$sessionId = session_id();
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost session_id. $equipmentId = '.$equipmentId);
+					}
+					setcookie(session_name(), $sessionId, time() + $sessionLifeTime, "/");
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost setcookie. $equipmentId = '.$equipmentId);
+					}
+					$_SESSION["accountId"] = $account;
+					echo "{\"code\":1,\"accountId\":$account,\"sessionKey\":\"$sessionId\",\"loginIp\":\"$loginIp\"}";
+				} else {
+					echo '{"code":0,"state":'.ERROR_QUERY_DB_FAILT.',"num":1}';
+				}
+			} else {
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost mysqli_num_rows <= 0. $equipmentId = '.$equipmentId);
+				}
+				$maxIdx = 0;
+				$maxIdxResult = mysqli_query($conn, "SELECT max(`index`) FROM `users`;");
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 2 mysqli_query. $equipmentId = '.$equipmentId);
+				}
+				if($maxIdxRow = mysqli_fetch_array($maxIdxResult)) {
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost 2 mysqli_fetch_array. $equipmentId = '.$equipmentId);
+					}
+					$maxIdx = $maxIdxRow[0] + 1;
+					
+					$userName = 'anonymous'.$maxIdx;
+					if(mysqli_query($conn, "insert into `users` (`equipId`,`userName`,`password`) values('$equipmentId', '$userName', '')")) {
+						if($logSavePath) {
+							save_log($logSavePath, 'clientLoginPost 2 mysqli_query. $equipmentId = '.$equipmentId);
+						}
+						$account = mysqli_insert_id($conn);
+						if($logSavePath) {
+							save_log($logSavePath, 'clientLoginPost 2 mysqli_insert_id. $equipmentId = '.$equipmentId);
+						}
+						session_save_path($sessionSavePath);
+						if($logSavePath) {
+							save_log($logSavePath, 'clientLoginPost 2 session_save_path. $equipmentId = '.$equipmentId);
+						}
+						session_start();
+						if($logSavePath) {
+							save_log($logSavePath, 'clientLoginPost 2 session_start. $equipmentId = '.$equipmentId);
+						}
+						$sessionId = session_id();
+						if($logSavePath) {
+							save_log($logSavePath, 'clientLoginPost 2 session_id. $equipmentId = '.$equipmentId);
+						}
+						setcookie(session_name(), $sessionId, time() + $sessionLifeTime, "/");
+						if($logSavePath) {
+							save_log($logSavePath, 'clientLoginPost 2 setcookie. $equipmentId = '.$equipmentId);
+						}
+						$_SESSION["accountId"] = $account;
+						echo "{\"code\":1,\"accountId\":$account,\"sessionKey\":\"$sessionId\",\"loginIp\":\"$loginIp\"}";
+					} else {
+						echo '{"code":0,"state":'.ERROR_QUERY_DB_FAILT.',"num":2}';
+					}
+				} else {
+					echo '{"code":0,"state":'.ERROR_QUERY_DB_FAILT.',"num":3}';
+				}
+			}
+			mysqli_close($conn);
+		} else {
+			// 获取登录服失败返回json 格式错误 0
+			echo '{"code":0,"state":'.ERROR_GET_LOGIN_IP_FAILED.'}';
+		}
+	} else {
+		// 验证失败返回json 格式错误 0
+		echo '{"code":0,"state":'.ERROR_INCORRECT_URL_REQUEST.'}';
+	}
+} else if(2 == $type) {
+	if($logSavePath) {
+		save_log($logSavePath, 'clientLoginPost 3 type = 2.');
+	}
+	$equipmentId = $_POST['equipmentId'];
+	if(!$equipmentId) {
+		exit('{"code":0,"state":'.ERROR_EQUIPMENT_ID_EMPTY.'}');
+	}
+	if(!$_POST['username']) {
+		exit('{"code":0,"state":'.ERROR_USER_NAME_EMPTY.'}');
+	}
+	if(!$_POST['password']) {
+		exit('{"code":0,"state":'.ERROR_PASSWORD_EMPTY.'}');
+	}
+	
+	$serAuth = md5($equipmentId.$type.$_POST['username'].$_POST['password'].$secretKey);
+	
+	if($logSavePath) {
+		save_log($logSavePath, 'clientLoginPost 3 md5 . $equipmentId = '.$equipmentId);
+	}
+	if($serAuth == $_POST['authKey']) {
+		$loginIp = file_get_contents($loginUrl);
+		if($logSavePath) {
+			save_log($logSavePath, 'clientLoginPost 3 file_get_contents . $equipmentId = '.$equipmentId);
+		}
+		if($loginIp) {
+			$userName = addslashes($_POST['username']);
+			if($logSavePath) {
+				save_log($logSavePath, 'clientLoginPost 3 addslashes username . $equipmentId = '.$equipmentId);
+			}
+			$password = addslashes($_POST['password']);
+			if($logSavePath) {
+				save_log($logSavePath, 'clientLoginPost 3 addslashes password . $equipmentId = '.$equipmentId);
+			}
+			$conn = mysqli_connect($account_db_host, $account_db_username, $account_db_password, $account_db_database, $account_db_port);
+			if($logSavePath) {
+				save_log($logSavePath, 'clientLoginPost 3 mysqli_connect . $equipmentId = '.$equipmentId);
+			}
+			$loginSQL = "select `index`,`equipId` from users where userName='$userName' and password='$password' limit 1";
+			$resultLogin = mysqli_query($conn, $loginSQL);
+			if($logSavePath) {
+				save_log($logSavePath, 'clientLoginPost 3 mysqli_query . $equipmentId = '.$equipmentId);
+			}
+			if(mysqli_num_rows($resultLogin) > 0) {
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 3 mysqli_num_rows . $equipmentId = '.$equipmentId);
+				}
+				$row = mysqli_fetch_row($resultLogin);
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 3 mysqli_fetch_row . $equipmentId = '.$equipmentId);
+				}
+				$account = $row[0];
+				$equipId = $row[1];
+				if($equipId != $equipmentId) {
+					mysqli_query($conn, "update `users` set `equipId` = '$equipmentId' where `index` = $account; ");
+					if($logSavePath) {
+						save_log($logSavePath, 'clientLoginPost 3 mysqli_query . $equipmentId = '.$equipmentId);
+					}
+				}
+
+				session_save_path($sessionSavePath);
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 3 session_save_path . $equipmentId = '.$equipmentId);
+				}
+				session_start();
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 3 session_start . $equipmentId = '.$equipmentId);
+				}
+				$sessionId = session_id();
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 3 session_id . $equipmentId = '.$equipmentId);
+				}
+				setcookie(session_name(), $sessionId, time() + $sessionLifeTime, "/");
+				if($logSavePath) {
+					save_log($logSavePath, 'clientLoginPost 3 setcookie . $equipmentId = '.$equipmentId);
+				}
+				$_SESSION["accountId"] = $account;
+				echo "{\"code\":1,\"accountId\":$account,\"sessionKey\":\"$sessionId\",\"loginIp\":\"$loginIp\"}";
+			} else {
+				// 验证失败返回json 格式错误 0
+				echo '{"code":0,"state":'.ERROR_VERIFICATION_FAILED.'}';
+			}
+			mysqli_close($conn);
+		} else {
+			// 获取登录服失败返回json 格式错误 0
+			echo '{"code":0,"state":'.ERROR_GET_LOGIN_IP_FAILED.'}';
+		}
+	} else {
+		// 验证失败返回json 格式错误 0
+		echo '{"code":0,"state":'.ERROR_INCORRECT_URL_REQUEST.'}';
+	}
+} else {
+	// 返回json 格式错误 0
+	echo '{"code":0,"state":'.ERROR_TYPE_CANNT_IDENTIFIED.'}';
+}
+if($logSavePath) {
+	save_log($logSavePath, 'clientLoginPost end.');
+}
+?>

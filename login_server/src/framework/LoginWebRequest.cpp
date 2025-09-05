@@ -5,10 +5,14 @@
 #include "json/json.h"
 
 
-CLoginWebRequest::CLoginWebRequest(const char *pUrl,
-	uint64_t account, unsigned int socketIdx)
+CLoginWebRequest::CLoginWebRequest(
+	const char *pUrl,
+	uint64_t account,
+	const ntwk::SocketID& socketId)
 
-	: m_url(pUrl), m_account(account), m_socketIdx(socketIdx)
+	: m_url(pUrl)
+	, m_account(account)
+	, m_socketId(socketId)
 {
 
 }
@@ -18,10 +22,12 @@ CLoginWebRequest::~CLoginWebRequest()
 
 }
 
-CLoginWebRequest * CLoginWebRequest::Create(const char *pUrl,
-	uint64_t account, unsigned int socketIdx)
+CLoginWebRequest * CLoginWebRequest::Create(
+	const char *pUrl,
+	uint64_t account,
+	const ntwk::SocketID& socketId)
 {
-    return new CLoginWebRequest(pUrl, account, socketIdx);
+    return new CLoginWebRequest(pUrl, account, socketId);
 }
 
 void CLoginWebRequest::Release(CLoginWebRequest* pSession)
@@ -36,6 +42,7 @@ const char * CLoginWebRequest::GetUrl() const
 
 unsigned int CLoginWebRequest::OnData(const void *pData, unsigned int bytes)
 {
+	printf("CLoginWebRequest::OnData  Begin account = " I64FMTD " \n ", m_account);
 	if(NULL == pData) {
 		OutputDebug("NULL == pData ");
 		return bytes;
@@ -62,24 +69,27 @@ unsigned int CLoginWebRequest::OnData(const void *pData, unsigned int bytes)
 				body.WriteBool(jsonCode.asInt() == TRUE);
 			} else {
 				body.WriteBool(false);
-				OutputError("jsonAccountId.asUInt64()["I64FMTD
-					"] != m_account["I64FMTD"]", account, m_account);
+				OutputError("jsonAccountId.asUInt64()[" I64FMTD
+					"] != m_account[" I64FMTD "]", account, m_account);
 			}
 		} else {
 			body.WriteBool(false);
-			OutputError("!jsonAccountId.isUInt()");
+			OutputError("!jsonAccountId.isUInt64() type = %d ", jsonAccountId.type());
 		}
 	} else {
 		body.WriteBool(false);
-		OutputError("!jsonCode.isInt()");
+		OutputError("!jsonCode.isInt() type = %d ", jsonCode.type());
 	}
 
 	body.WriteUInt64(m_account);
+	body.WriteInt32(m_socketId.index);
+	body.WriteUInt32(m_socketId.binaryAddress);
+	body.WriteUInt16(m_socketId.port);
+
+	printf("CLoginWebRequest::OnData end account = " I64FMTD " \n ", m_account);
 
 	CBodyBitStream response;
-	CModuleOperate::SendNotification(N_CMD_LOGIN_CHECK_WEB_RESULT, body,
-		response, m_socketIdx, false);
-
+	SendModuleNotification(N_CMD_LOGIN_CHECK_WEB_RESULT, body, response);
     return bytes;
 }
 

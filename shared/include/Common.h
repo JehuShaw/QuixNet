@@ -4,13 +4,13 @@
  *
  */
 
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef COMMON_H
+#define COMMON_H
 
 // Do you want throw a bug
 #define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
-#ifdef WIN32
+#if defined(_WIN64) || defined(_WIN32)
 #pragma warning(disable:4996)
 #ifndef _CRT_SECURE_NO_DEPRECATE
 #define _CRT_SECURE_NO_DEPRECATE 1
@@ -20,7 +20,7 @@
 #endif
 
 
-#ifdef WIN32
+#if defined(_WIN64) || defined(_WIN32)
 #ifndef FORCEINLINE
 #define FORCEINLINE __forceinline
 #endif
@@ -30,6 +30,7 @@
 #define INLINE inline
 
 #include "ShareConfig.h"
+#include "ShareDefines.h"
 #include "ShareDll.h"
 
 
@@ -41,12 +42,13 @@
 #include <cmath>
 #include <cerrno>
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <windows.h>
 #else
 #  include <cstring>
+#  include <unistd.h>
 #  define MAX_PATH 1024
 #endif
 
@@ -63,33 +65,28 @@
 #define FD_SETSIZE 2048
 #endif
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 #include <winsock2.h>
-#include <ws2tcpip.h>
 #else
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <signal.h>
 #include <netdb.h>
 #endif
 
 // current platform and compiler
 #define PLATFORM_WIN32 0
-#define PLATFORM_UNIX  1
-#define PLATFORM_APPLE 2
-#define PLATFORM_BSD 3
+#define PLATFORM_WIN64 1
+#define PLATFORM_UNIX  2
+#define PLATFORM_APPLE 3
+#define PLATFORM_BSD 4
 
 #define UNIX_FLAVOUR_LINUX 1
 #define UNIX_FLAVOUR_BSD 2
 #define UNIX_FLAVOUR_OTHER 3
 #define UNIX_FLAVOUR_OSX 4
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN64__ ) || defined( WIN64 ) || defined( _WIN64 )
+#  define PLATFORM PLATFORM_WIN64
+// #  define PLATFORM PLATFORM_WIN32
+#elif defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
 #  define PLATFORM PLATFORM_WIN32
 #elif defined( __APPLE_CC__ ) || defined( __APPLE__ )
 #  define PLATFORM PLATFORM_APPLE
@@ -102,6 +99,7 @@
 #define COMPILER_MICROSOFT 0
 #define COMPILER_GNU	   1
 #define COMPILER_BORLAND   2
+#define COMPILER_INTEL	   3
 
 #ifdef _MSC_VER
 #  define COMPILER COMPILER_MICROSOFT
@@ -128,7 +126,9 @@
 #endif
 #endif
 
-#if PLATFORM == PLATFORM_WIN32
+#if PLATFORM == PLATFORM_WIN64
+#define PLATFORM_TEXT "Win64"
+#elif PLATFORM == PLATFORM_WIN32
 #define PLATFORM_TEXT "Win32"
 #endif
 
@@ -138,20 +138,20 @@
 #define CONFIG "Release"
 #endif
 
-#ifdef X64
+#ifdef _WIN64
     #define ARCH "X64"
 #else
     #define ARCH "X86"
 #endif
 
 
-#if PLATFORM == PLATFORM_WIN32
-    #define STRCASECMP stricmp
+#if PLATFORM == PLATFORM_WIN32 || PLATFORM == PLATFORM_WIN64
+    #define STRCASECMP _stricmp
 #else
     #define STRCASECMP strcasecmp
 #endif
 
-#if PLATFORM == PLATFORM_WIN32
+#if PLATFORM == PLATFORM_WIN32 || PLATFORM == PLATFORM_WIN64
 	#define ASYNC_NET
 #endif
 
@@ -176,7 +176,6 @@
 #undef max
 #endif
 
-#include <cstdlib>
 #include <set>
 #include <list>
 #include <string>
@@ -186,7 +185,6 @@
 #include <algorithm>
 #include <cstring>
 #include <climits>
-#include <cstdlib>
 
 #if defined ( __GNUC__ )
 #	define LIKELY( _x ) \
@@ -207,7 +205,7 @@
 #endif
 
 
-#ifndef WIN32
+#if !defined(_WIN32) || !defined(_WIN64)
 #ifndef X64
 #  if defined (__GNUC__)
 #	if GCC_VERSION >= 30400
@@ -224,6 +222,13 @@
 #  endif
 #else
 #define __fastcall
+#endif
+#endif
+
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1600)
+#define SUPPORT_CPLUSPLUS11
+#ifndef HAVE_STDCXX_0X
+#define HAVE_STDCXX_0X
 #endif
 #endif
 
@@ -245,10 +250,20 @@
 using std::hash_map;
 using std::hash_set;
 #elif COMPILER == COMPILER_MICROSOFT && _MSC_VER >= 1300
+
+#ifdef HAVE_STDCXX_0X
+#define HM_NAMESPACE std
+#define hash_map unordered_map
+#define hash_set unordered_set
+using std::unordered_map;
+using std::unordered_set;
+#else
 #define HM_NAMESPACE stdext
 using stdext::hash_map;
 using stdext::hash_set;
 #define ENABLE_SHITTY_STL_HACKS 1
+#endif
+
 
 // hacky stuff for vc++
 #define snprintf _snprintf
@@ -507,7 +522,7 @@ INLINE static uint32_t int32abs2uint32( const int32_t value )
 /// Fastest Method of float2int32
 INLINE static int32_t float2int32(const float value)
 {
-#if !defined(X64) && COMPILER == COMPILER_MICROSOFT && !defined(USING_BIG_ENDIAN)
+#if !defined(_WIN64) && COMPILER == COMPILER_MICROSOFT && !defined(USING_BIG_ENDIAN)
 	int32_t i;
 	__asm {
 		fld value
@@ -516,7 +531,7 @@ INLINE static int32_t float2int32(const float value)
 	}
 	return i;
 #else
-	union { int32_t asInt[2]; double asDouble; } n;
+	union { int32_t asInt[2]; double asDouble; } n{};
 	n.asDouble = value + 6755399441055744.0;
 
 	return n.asInt [0];
@@ -526,7 +541,7 @@ INLINE static int32_t float2int32(const float value)
 /// Fastest Method of double2int32
 INLINE static int32_t double2int32(const double value)
 {
-#if !defined(X64) && COMPILER == COMPILER_MICROSOFT && !defined(USING_BIG_ENDIAN)
+#if !defined(_WIN64) && COMPILER == COMPILER_MICROSOFT && !defined(USING_BIG_ENDIAN)
 	int32_t i;
 	__asm {
 		fld value
@@ -535,7 +550,7 @@ INLINE static int32_t double2int32(const double value)
 	}
 	return i;
 #else
-  union { int32_t asInt[2]; double asDouble; } n;
+	union { int32_t asInt[2]; double asDouble; } n{};
   n.asDouble = value + 6755399441055744.0;
 
   return n.asInt [0];
@@ -546,8 +561,11 @@ INLINE static int32_t double2int32(const double value)
 #pragma float_control(pop)
 #endif
 
-
+#if COMPILER == COMPILER_MICROSOFT
 #include <sys/timeb.h>
+#else
+#include <sys/time.h>
+#endif
 
 INLINE static time_t CurrentTime()
 {
@@ -579,12 +597,12 @@ INLINE static int64_t CurrentTimeMillis()
 #endif
 }
 
-#ifndef WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 #define FALSE   0
 #define TRUE	1
 #endif
 
-#ifndef WIN32
+#if !defined(_WIN32) && !defined(_WIN64)
 #define Sleep(ms) usleep(1000*ms)
 #endif
 
@@ -656,7 +674,7 @@ INLINE static bool ParseCIDRBan(unsigned int IP, unsigned int Mask, unsigned int
 
 INLINE static unsigned int MakeIP(const char * str)
 {
-	unsigned int bytes[4];
+	unsigned int bytes[4] = { 0,0,0,0 };
 	unsigned int res;
 	if(sscanf(str, "%u.%u.%u.%u", &bytes[0], &bytes[1], &bytes[2], &bytes[3]) != 4)
 		return 0;
@@ -730,28 +748,65 @@ INLINE static int ParseInt(const char* szValue) {
 	return atoi(p);
 }
 
-INLINE static uint64_t CombineUserId(uint16_t serverId, uint32_t index) {
-	uint64_t u64Field = 0;
-	u64Field <<= 16;
-	u64Field |= serverId;
-	u64Field <<= 32;
+INLINE static uint32_t GenerateU32Key(uint64_t account) {
+	return (account - 1) % ID_TYPE_29BIT_MASK + 1;
+}
+
+INLINE static uint64_t CombineUserId(uint32_t u32Key, uint32_t index) {
+	uint64_t u64Field = ID_TYPE_USER & ID_TYPE_3BIT_MASK;
+	u64Field <<= ID_TYPE_29BIT;
+	u64Field |= (u32Key & ID_TYPE_29BIT_MASK);
+	u64Field <<= ID_TYPE_32BIT;
 	u64Field |= index;
 	return u64Field;
 }
 
-INLINE static void DepartUserId(uint64_t userId, uint16_t& outServId, uint32_t& outIndex) {
-	outIndex = userId & 0xFFFFFFFF;
-	userId >>= 32;
-	outServId = userId & 0xFFFF;
+INLINE static void DepartUserId(uint64_t userId, uint32_t& outU32Key, uint32_t& outIndex) {
+	outIndex = userId & ID_TYPE_32BIT_MASK;
+	userId >>= ID_TYPE_32BIT;
+	outU32Key = userId & ID_TYPE_29BIT_MASK;
 }
 
-INLINE static uint16_t DepartUserId2ServId(uint64_t userId) {
-	userId >>= 32;
-	return userId & 0xFFFF;
+INLINE static uint32_t DepartUserId2U32Key(uint64_t userId) {
+	userId >>= ID_TYPE_32BIT;
+	return userId & ID_TYPE_29BIT_MASK;
 }
 
 INLINE static uint32_t DepartUserId2Index(uint64_t userId) {
-	return userId & 0xFFFFFFFF;
+	return userId & ID_TYPE_32BIT_MASK;
 }
 
-#endif /*_SERVER_COMMON_H*/
+INLINE static uint64_t GetServerKey(uint32_t serverId, uint16_t serverType) {
+	uint64_t u64Field = ID_TYPE_SERVERKEY & ID_TYPE_3BIT_MASK;
+	u64Field <<= ID_TYPE_29BIT;
+	u64Field |= (serverType & ID_TYPE_29BIT_MASK);
+	u64Field <<= ID_TYPE_32BIT;
+	u64Field |= serverId;
+	return u64Field;
+}
+
+/* Calc hash value for a key */
+static uint32_t HashNR(const char *key, uint32_t length)
+{
+	register uint32_t nr = 1, nr2 = 4;
+	while (length--)
+	{
+		nr ^= (((nr & 63) + nr2)*((uint32_t)(char)*key++)) + (nr << 8);
+		nr2 += 3;
+	}
+	return((uint32_t)nr);
+}
+
+/* Calc hash value for a key, case indepenently */
+static uint32_t HashNRCaseUp(const char *key, uint32_t length)
+{
+	register uint32_t nr = 1, nr2 = 4;
+	while (length--)
+	{
+		nr ^= (((nr & 63) + nr2)*((uint32_t)(char)toupper(*key++))) + (nr << 8);
+		nr2 += 3;
+	}
+	return((uint32_t)nr);
+}
+
+#endif /* COMMON_H */

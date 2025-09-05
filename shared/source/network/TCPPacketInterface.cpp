@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <string.h>
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
 #include <process.h>
 #endif
 
@@ -19,7 +19,7 @@ using namespace thd;
 
 namespace ntwk
 {
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
     unsigned int _stdcall DispatchInterfaceLoop(void * arguments) {
 #else
     void * DispatchInterfaceLoop(void * arguments) {
@@ -39,24 +39,25 @@ namespace ntwk
 
     };
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-TCPPacketInterface::TCPPacketInterface():TCPSocketWin32(), isDispatched(true),packetSizeLimit(0) {
+
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
+TCPPacketInterface::TCPPacketInterface():TCPSocketWin(), isDispatched_(true), packetSizeLimit_(0), linkCount_(0) {
 
 }
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
-TCPPacketInterface::TCPPacketInterface():TCPSocketBSD(sock_global_domain), isDispatched(true),packetSizeLimit(0) {
+TCPPacketInterface::TCPPacketInterface():TCPSocketBSD(sock_global_domain), isDispatched_(true), packetSizeLimit_(0), linkCount_(0) {
 
 }
 
-TCPPacketInterface::TCPPacketInterface(socket_domain domain):TCPSocketBSD(domain), isDispatched(true),packetSizeLimit(0) {
+TCPPacketInterface::TCPPacketInterface(socket_domain domain):TCPSocketBSD(domain), isDispatched_(true), packetSizeLimit_(0), linkCount_(0) {
 
 }
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
-TCPPacketInterface::TCPPacketInterface():TCPSocketLinux(sock_global_domain), isDispatched(true),packetSizeLimit(0) {
+TCPPacketInterface::TCPPacketInterface():TCPSocketLinux(sock_global_domain), isDispatched_(true), packetSizeLimit_(0), linkCount_(0) {
 
 }
 
-TCPPacketInterface::TCPPacketInterface(socket_domain domain):TCPSocketLinux(domain), isDispatched(true),packetSizeLimit(0) {
+TCPPacketInterface::TCPPacketInterface(socket_domain domain):TCPSocketLinux(domain), isDispatched_(true), packetSizeLimit_(0), linkCount_(0) {
 
 }
 #endif
@@ -65,23 +66,21 @@ TCPPacketInterface::~TCPPacketInterface() {
 }
 
 bool TCPPacketInterface::Start(const char* address,unsigned short maxLink, uint32_t maxPacketSize) {
-    this->packetSizeLimit = maxPacketSize;
+    this->packetSizeLimit_ = maxPacketSize;
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-    bool ret = this->TCPSocketWin32::Start(address,maxLink);
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
+    bool ret = this->TCPSocketWin::Start(address,maxLink);
     if(!ret) {
         return false;
     }
 
-	dispatchDone.Suspend();
     HANDLE threadHandle = (HANDLE)_beginthreadex(NULL, 0, DispatchInterfaceLoop, (LPVOID)this, 0, NULL);
     if(threadHandle == NULL) {
         TRACE_MSG("Dispatch, _beginthreadex failed\n");
-		dispatchDone.Resume();
-        this->TCPSocketWin32::Stop();
+        this->TCPSocketWin::Stop();
         return false;
     }
-    CloseHandle(threadHandle);
+	CloseHandle(threadHandle);
 #else
 #if defined( __NetBSD__ ) || defined( __APPLE__ )
     bool ret = this->TCPSocketBSD::Start(address,maxLink);
@@ -92,14 +91,12 @@ bool TCPPacketInterface::Start(const char* address,unsigned short maxLink, uint3
         return false;
     }
 
-	dispatchDone.Suspend();
     pthread_t tid;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if(pthread_create(&tid, &attr, DispatchInterfaceLoop, this) != 0){
         TRACE_MSG("Dispatch, pthread_create failed\n");
-		dispatchDone.Resume();
 #if defined( __NetBSD__ ) || defined( __APPLE__ )
 		this->TCPSocketBSD::Stop();
 #else
@@ -109,21 +106,23 @@ bool TCPPacketInterface::Start(const char* address,unsigned short maxLink, uint3
     }
 #endif
 
+	threadCtrler_.Setup();
     return ret;
 }
 
 bool TCPPacketInterface::Stop(void) {
 
-    if(atomic_cmpxchg8(&isDispatched
-        , false, true) != (char)true) {
+    if(atomic_cmpxchg8(&isDispatched_
+        , true, false) != (char)true) {
 
             return false;
     }
 
-    dispatchDone.Wait();
+	threadCtrler_.Resume();
+	threadDone_.Wait();
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-    if(this->TCPSocketWin32::Stop()){
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
+    if(this->TCPSocketWin::Stop()){
 #elif defined( __NetBSD__ ) || defined( __APPLE__ )
     if(this->TCPSocketBSD::Stop()){
 #elif defined( __LINUX__ ) || defined( __ANDROID__ ) || defined( ANDROID ) || defined (__GNUC__)
@@ -137,23 +136,21 @@ bool TCPPacketInterface::Stop(void) {
 }
 
 bool TCPPacketInterface::Connect(SocketID& socketId, const char* address, uint32_t maxPacketSize) {
-    this->packetSizeLimit = maxPacketSize;
+    this->packetSizeLimit_ = maxPacketSize;
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined ( _WIN64 )
 
-    if(!this->TCPSocketWin32::Connect(socketId, address)) {
+    if(!this->TCPSocketWin::Connect(socketId, address)) {
         return false;
     }
 
-	dispatchDone.Suspend();
     HANDLE threadHandle = (HANDLE)_beginthreadex(NULL, 0, DispatchInterfaceLoop, (LPVOID)this, 0, NULL);
     if(threadHandle == NULL) {
         TRACE_MSG("Dispatch, _beginthreadex failed\n");
-		dispatchDone.Resume();
-        this->TCPSocketWin32::Stop();
+        this->TCPSocketWin::Stop();
         return false;
     }
-    CloseHandle(threadHandle);
+	CloseHandle(threadHandle);
 #else
 #if defined( __NetBSD__ ) || defined( __APPLE__ )
     if(!this->TCPSocketBSD::Connect(socketId,address)) {
@@ -165,14 +162,12 @@ bool TCPPacketInterface::Connect(SocketID& socketId, const char* address, uint32
     }
 #endif
 
-	dispatchDone.Suspend();
     pthread_t tid;
     pthread_attr_t attr;
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if(pthread_create(&tid, &attr, DispatchInterfaceLoop, this) != 0){
         TRACE_MSG("Dispatch, pthread_create failed\n");
-		dispatchDone.Resume();
 #if defined( __NetBSD__ ) || defined( __APPLE__ )
 		this->TCPSocketBSD::Stop();
 #else
@@ -181,6 +176,8 @@ bool TCPPacketInterface::Connect(SocketID& socketId, const char* address, uint32
         return false;
     }
 #endif
+
+	threadCtrler_.Setup();
 
 	int* pInt = loginQueue.WriteLock();
 	*pInt = socketId.index;
@@ -197,52 +194,57 @@ int TCPPacketInterface::ReceiveCallback(
     const unsigned int moreLength)
 {
     //split packet
-    uint32_t offset(0);
-    int32_t leave(0);
-    for(;;) {
+    uint32_t offset = 0;
+    int32_t leave = 0;
+	bool bTrigger = false;
+    while(true) {
         leave = length + moreLength - offset;
-        if(leave > 7){
-            uint32_t len(0),total(0);
-            if(m_isLittleEndian){
-                // read total uint32
-                SwitchReverseBytes((unsigned char*)&total,sizeof(total),buffer
-                    ,length,moreBuffer,moreLength,offset);
-                // read len uint32
-                SwitchReverseBytes((unsigned char*)&len,sizeof(len),buffer,length
-                    ,moreBuffer,moreLength,offset+sizeof(total));
-            }else{
-                // read total uint32
-                SwitchCopyBytes((unsigned char*)&total,sizeof(total),buffer
-                    ,length, moreBuffer, moreLength,offset);
-                // read len uint32
-                SwitchCopyBytes((unsigned char*)&len,sizeof(len),buffer,length
-                    ,moreBuffer,moreLength,offset+sizeof(total));
-            }
-            if(len > packetSizeLimit) {
-                // Limit the size of packet
-                return -1;
-            }
-            if((len + 4) == total){
-                if((int)(4 + total) <= leave){
-                    offset += 8;
-                    //push the data
-                    PacketLinkData* ptr = dynamic_cast<PacketLinkData*>(socketLink.GetLinkerData());
-                    if(ptr != NULL){
-                        Packet * p = ptr->ingoingQueue.WriteLock();
-                        p->length = len;
-                        SwitchMemcpy(p->data,buffer,length,moreBuffer,moreLength,len,offset);
-                        ptr->ingoingQueue.WriteUnlock();
-                    }
-                    offset += len;
-                    continue;
-                }
-            }else{
-                return -1;
-            }
+        if(leave < 8) {
+			break;
+		}
+        uint32_t len(0),total(0);
+        if(m_isLittleEndian) {
+            // read total uint32
+            SwitchReverseBytes((unsigned char*)&total,sizeof(total),buffer
+                ,length,moreBuffer,moreLength,offset);
+            // read len uint32
+            SwitchReverseBytes((unsigned char*)&len,sizeof(len),buffer,length
+                ,moreBuffer,moreLength,offset+sizeof(total));
+        } else {
+            // read total uint32
+            SwitchCopyBytes((unsigned char*)&total,sizeof(total),buffer
+                ,length, moreBuffer, moreLength,offset);
+            // read len uint32
+            SwitchCopyBytes((unsigned char*)&len,sizeof(len),buffer,length
+                ,moreBuffer,moreLength,offset+sizeof(total));
         }
-        break;
+        if(len > packetSizeLimit_) {
+            // Limit the size of packet
+            return -1;
+        }
+		if((len + 4) != total) {
+			return -1;
+		}
+        if((int)(4 + total) > leave){
+			break;
+		}
+        offset += 8;
+        //push the data
+        PacketLinkData* ptr = dynamic_cast<PacketLinkData*>(socketLink.GetLinkerData());
+        if(ptr != NULL){
+            Packet * p = ptr->ingoingQueue.WriteLock();
+            p->length = len;
+            SwitchMemcpy(p->data,buffer,length,moreBuffer,moreLength,len,offset);
+            ptr->ingoingQueue.WriteUnlock();
+			bTrigger = true;
+        }
+        offset += len;
+		Sleep(1);
     }
 
+	if(bTrigger) {
+		threadCtrler_.Resume();
+	}
     return offset;
 }
 
@@ -281,50 +283,35 @@ ILinkData* TCPPacketInterface::AllocateLinkerData() {
     return new PacketLinkData();
 }
 
-void TCPPacketInterface::AcceptCallback(SocketLink& socketLink) {
-
-	size_t index = XQXTABLE0S_INDEX_NIL;
-	if(m_pSktLinks) {
-		index = m_pSktLinks->GetIndexByPtr(&socketLink);
-	} else {
-		assert(m_pSktLinks);
-	}
-
-	if(XQXTABLE0S_INDEX_NIL == index) {
-		assert(false);
-		return;
-	}
+void TCPPacketInterface::AcceptCallback(const SocketLink& socketLink) {
 
     SocketID *temp = newConnections.WriteLock();
-    socketLink.GetSocketID(*temp, index);
+    socketLink.GetSocketID(*temp);
     newConnections.WriteUnlock();
 
     int* pInt = loginQueue.WriteLock();
-    *pInt = (int)index;
+    *pInt = socketLink.GetIndex();
     loginQueue.WriteUnlock();
+
+	atomic_inc(&linkCount_);
+
+	threadCtrler_.Resume();
 }
 
-void TCPPacketInterface::DisconnectCallback(SocketLink& socketLink) {
+void TCPPacketInterface::DisconnectCallback(int nIndex, const SocketID& socketId, int nWhy) {
 
-	size_t index = XQXTABLE0S_INDEX_NIL;
-	if(m_pSktLinks) {
-		index = m_pSktLinks->GetIndexByPtr(&socketLink);
-	} else {
-		assert(m_pSktLinks);
-	}
+	atomic_dec(&linkCount_);
 
-	if(XQXTABLE0S_INDEX_NIL == index) {
-		assert(false);
-		return;
-	}
-
-    SocketID *temp = lostConnections.WriteLock();
-    socketLink.GetSocketID(*temp, index);
+    LostData *temp = lostConnections.WriteLock();
+    temp->socketId = socketId;
+	temp->nWhy = nWhy;
     lostConnections.WriteUnlock();
 
     int* pInt = logoutQueue.WriteLock();
-    *pInt = (int)index;
+    *pInt = nIndex;
     logoutQueue.WriteUnlock();
+
+	threadCtrler_.Resume();
 }
 
 #pragma warning( push )
@@ -340,27 +327,15 @@ void TCPPacketInterface::MisdataCallback(
 #pragma warning( pop )
 
 void TCPPacketInterface::DispatchRun() {
-    while(isDispatched){
+	threadDone_.Suspend();
 
-		int nLgnSize = loginQueue.Size();
-		for(int i = 0; i < nLgnSize; ++i) {
-			int* pIntLogin = loginQueue.ReadLock();
-			if(NULL == pIntLogin) {
-				break;
-			}
-			int nIndex = *pIntLogin;
-			loginQueue.ReadUnlock();
-			if(XQXTABLE0S_INDEX_NIL != nIndex){
-				registerList.insert(nIndex);
-			} else {
-				assert(false);
-			}
-		}
+	REGISTER_LIST_T registerList;
+    while(isDispatched_) {
 
 		int nLgoSize = logoutQueue.Size();
-		for(int i = 0; i < nLgoSize; ++i) {
+		for (int i = 0; i < nLgoSize; ++i) {
 			int* pIntLogout = logoutQueue.ReadLock();
-			if(NULL == pIntLogout) {
+			if (NULL == pIntLogout || !isDispatched_) {
 				break;
 			}
 			int nIndex = *pIntLogout;
@@ -368,8 +343,26 @@ void TCPPacketInterface::DispatchRun() {
 			registerList.erase(nIndex);
 		}
 
+		int nLgnSize = loginQueue.Size();
+		for(int i = 0; i < nLgnSize; ++i) {
+			int* pIntLogin = loginQueue.ReadLock();
+			if(NULL == pIntLogin || !isDispatched_) {
+				break;
+			}
+			int nIndex = *pIntLogin;
+			loginQueue.ReadUnlock();
+			if(XQXTABLE_INDEX_NIL != nIndex){
+				registerList.insert(nIndex);
+			} else {
+				assert(false);
+			}
+		}
+
 		REGISTER_LIST_T::iterator it = registerList.begin();
 		while(registerList.end() != it) {
+			if(!isDispatched_) {
+				break;
+			}
 			if(!m_isStarted) {
 				++it;
 				continue;
@@ -379,18 +372,12 @@ void TCPPacketInterface::DispatchRun() {
 				continue;
 			}
 
-			socket_links_t::value_t val(m_pSktLinks->Find(*it));
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+			SocketLink* pSktLink = m_pSktLinks->Find(*it);
+			if(NULL == pSktLink) {
 				++it;
 				continue;
 			}
 
-			SocketLink* pSktLink = val.pObject;
-			if(NULL == pSktLink) {
-				++it;
-				assert(pSktLink);
-				continue;
-			}
 			//assert(socketLink.GetIndex() != SOCKETID_INDEX_NULL);
 			PacketLinkData* ptr = dynamic_cast<PacketLinkData*>(pSktLink->GetLinkerData());
 			if(NULL == ptr){
@@ -407,7 +394,7 @@ void TCPPacketInterface::DispatchRun() {
 				pReceive->packet.data.Put(pPacket->length);
 				memcpy((char*)pReceive->packet.data, (char*)pPacket->data, pPacket->length);
 				pReceive->packet.length = pPacket->length;
-				pSktLink->GetSocketID(pReceive->socketId, val.nIndex);
+				pSktLink->GetSocketID(pReceive->socketId);
 				totalIngoingQueue.WriteUnlock();
 
 				ptr->ingoingQueue.ReadUnlock();
@@ -415,13 +402,10 @@ void TCPPacketInterface::DispatchRun() {
 			++it;
 		}
 
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
-        Sleep(1);
-#else
-        usleep(1000);
-#endif
+		threadCtrler_.Suspend();
     }
-    dispatchDone.Resume();
+
+	threadDone_.Resume();
 }
 
 } // end namespace ntwk

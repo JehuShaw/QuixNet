@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _REFEROBJECT_H_
-#define _REFEROBJECT_H_
+#ifndef REFEROBJECT_H
+#define REFEROBJECT_H
 
 #include <assert.h>
 #include "WeakPointer.h"
@@ -16,10 +16,17 @@ namespace util {
 template<class SubclassType>
 class CReferObject {
 public:
+	CReferObject() {}
+	CReferObject(const SubclassType* pObject) : m_pObject(pObject, false) {
+		if (NULL == pObject) {
+			throw std::logic_error("The instance can't be NULL!");
+		}
+	}
 	// deconstruction
 	~CReferObject() {
 		WaitUseClear();
 	}
+
 	void operator()(const SubclassType* pObject) {
 		if(NULL == pObject) {
 			throw std::logic_error("The instance can't be NULL!");
@@ -31,6 +38,15 @@ public:
 		assert(!m_pObject.IsInvalid());
 		return m_pObject;
 	}
+
+	inline SubclassType* operator->() {
+		return m_pObject.operator->();
+	}
+
+	inline const SubclassType* operator->() const {
+		return m_pObject->operator->();
+	}
+
 private:
 	void WaitUseClear() {
 		// Don't get pointer.
@@ -52,4 +68,4 @@ private:
 
 } // end namespace util
 
-#endif /* _REFEROBJECT_H_ */
+#endif /* REFEROBJECT_H */

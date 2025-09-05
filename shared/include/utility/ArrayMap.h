@@ -1,6 +1,6 @@
 
-#ifndef _ARRAYMAP_H
-#define _ARRAYMAP_H
+#ifndef ARRAYMAP_H
+#define ARRAYMAP_H
 
 #include "ArrayList.h"
 
@@ -234,4 +234,4 @@ namespace util
 	}
 }
 
-#endif // _ARRAYMAP_H
+#endif // ARRAYMAP_H

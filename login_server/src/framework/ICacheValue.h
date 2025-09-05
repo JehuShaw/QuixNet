@@ -5,12 +5,12 @@
  * Created on 2014_4_5 AM 23:37
  */
 
-#ifndef __ICACHEVALUE_H__
-#define __ICACHEVALUE_H__
+#ifndef ICACHEVALUE_H
+#define ICACHEVALUE_H
 
 #include <string>
+#include "TinyJson.h"
 #include "Common.h"
-#include "AutoPointer.h"
 #include "MCResult.h"
 
 enum MCChangeType {
@@ -50,12 +50,16 @@ public:
 
 	virtual void Parse(const std::string& inArray, uint64_t n64Cas) = 0;
 
+	virtual void Parse(const std::string& inArray) = 0;
+
 	virtual uint8_t ChangeType() const = 0;
 
 	virtual void SetCas(uint64_t n64Cas) = 0;
 
 	virtual void RecoverChgType(const util::BitSignSet& inBitSigns, uint8_t oldChgType) = 0;
 
+	virtual const char* GetCacheKeyName() const = 0;
+
 };
 
-#endif /* __ICACHEVALUE_H__ */
+#endif /* ICACHEVALUE_H */

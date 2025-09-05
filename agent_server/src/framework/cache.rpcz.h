@@ -24,9 +24,6 @@ class rpc_channel;
 #include "cache.pb.h"
 
 namespace node {
-void rpcz_protobuf_AssignDesc_cache_2eproto();
-void rpcz_protobuf_ShutdownFile_cache_2eproto();
-
 class CacheService_Stub;
 
 class CacheService : public rpcz::service {

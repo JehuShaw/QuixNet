@@ -5,8 +5,8 @@
  * Created on 2014_5_8, 14:09
  */
 
-#ifndef __STORESTREAM_H__
-#define __STORESTREAM_H__
+#ifndef STORESTREAM_H
+#define STORESTREAM_H
 
 #include "Common.h"
 #include "StreamDataType.h"
@@ -46,6 +46,7 @@ private:
 	int m_size;
 	int m_length;
 	int m_preOffset;
+	int m_nxtOffset;
 };
 
 class SHARED_DLL_DECL CStoreStream
@@ -564,13 +565,15 @@ class SHARED_DLL_DECL CStoreStream
 			if(nSize + readOffset > m_writeOffset) {
 				return;
 			}
-#ifdef SS_DANGER_AREA_CHECKING
-			assert(IsObjectArea(readOffset));
-#endif
-			CStoreObject* pObject = (CStoreObject*)(m_data + readOffset);
-			readOffset += nSize;
-			util::CStoreStream object(pObject->GetData(), pObject->GetLength(), false);
-			object >> output;
+
+			if(IsObjectType(readOffset)) {
+				CStoreObject* pObject = (CStoreObject*)(m_data + readOffset);
+				readOffset += nSize;
+				util::CStoreStream object(pObject->GetData(), pObject->GetLength(), false);
+				object >> output;
+			} else {
+				assert(false);
+			}
 		}
 
 		void ReadObject(int& readOffset, std::string& output) const;
@@ -627,13 +630,47 @@ class SHARED_DLL_DECL CStoreStream
 
 		inline CStoreObject* ReadObjectType(int objOffset) const {
 
-			if(objOffset < 0) {
-				return NULL;
-			}
-			if(objOffset > m_objOffset) {
+			if(!IsObjectType(objOffset)) {
 				return NULL;
 			}
 			return (CStoreObject*)(m_data + objOffset);
+		}
+
+		inline bool IsObjectType(int objOffset) const {
+
+			if(objOffset < 0) {
+				return false;
+			}
+			
+			if(objOffset > this->m_objOffset) {
+				return false;
+			}
+
+			CStoreObject* curPtr = (CStoreObject*)(m_data + objOffset);;
+			if(NULL == curPtr) {
+				return false;
+			}
+
+			if(curPtr->m_preOffset < 0) {
+				if (curPtr->m_nxtOffset < 0) {
+					if (objOffset == this->m_objOffset) {
+						return true;
+					}
+				} else if(curPtr->m_nxtOffset <= this->m_objOffset){
+					CStoreObject* nxtPtr = (CStoreObject*)(m_data + curPtr->m_nxtOffset);
+					if (NULL != nxtPtr && nxtPtr->m_preOffset == objOffset) {
+						return true;
+					}
+				}
+			} else {
+				if (curPtr->m_preOffset <= this->m_objOffset) {
+					CStoreObject* perPtr = (CStoreObject*)(m_data + curPtr->m_preOffset);
+					if (NULL != perPtr && perPtr->m_nxtOffset == objOffset) {
+						return true;
+					}
+				}
+			}		
+			return false;
 		}
 
 		inline void CheckDangerArea(int pos) {
@@ -662,12 +699,9 @@ class SHARED_DLL_DECL CStoreStream
 			void (util::CStoreStream::*m_pWriteFromString)(const char* szInput, int length, uint8_t nType);
 			void (util::CStoreStream::*m_pReadToString)(int& readOffset, std::string& output) const;
 		};
-		static bool s_bInitTypeOperator;
 		static struct TypeOperatorSet s_typeOperators[STREAM_DATA_SIZE];
-
-		void InitTypeOperator();
 };
 
 }
 
-#endif /* __STORESTREAM_H__ */
+#endif /* STORESTREAM_H */

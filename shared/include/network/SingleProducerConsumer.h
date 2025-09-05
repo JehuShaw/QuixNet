@@ -1,16 +1,16 @@
 
-#ifndef __SINGLE_PRODUCER_CONSUMER_H
-#define __SINGLE_PRODUCER_CONSUMER_H
+#ifndef SINGLE_PRODUCER_CONSUMER_H
+#define SINGLE_PRODUCER_CONSUMER_H
 
 #include <assert.h>
 #include "SpinLock.h"
+#include "SysTickCount.h"
 
 namespace ntwk
 {
-	static const int MINIMUM_LIST_SIZE=8;
 
     /// \brief A single producer consumer implementation without critical sections.
-    template <class SingleProducerConsumerType>
+    template <class SingleProducerConsumerType, int KeepSize = 8, int KeepTimeMS = 300000>
     class SingleProducerConsumer
     {
     public:
@@ -64,25 +64,28 @@ namespace ntwk
         struct DataPlusPtr
         {
             SingleProducerConsumerType object;
+
+            volatile DataPlusPtr *next;
+
+			uint32_t activeTime;
             // Ready to read is so we can use an equality boolean comparison, in case the writePointer var is trashed while context switching.
             volatile bool readyToRead;
-            volatile DataPlusPtr *next;
         };
         volatile DataPlusPtr *readAheadPointer;
         volatile DataPlusPtr *writeAheadPointer;
         volatile DataPlusPtr *readPointer;
         volatile DataPlusPtr *writePointer;
-        volatile unsigned long unreadCount;
 		volatile DataPlusPtr *readLastPointer;
-		volatile unsigned long circleSize;
         volatile DataPlusPtr *idleTailPointer;
         volatile DataPlusPtr *idleHeadPointer;
+		volatile unsigned long unreadCount;
+		volatile unsigned long circleSize;
 		thd::CSpinLock rLock;
 		thd::CSpinLock wLock;
     };
 
-    template <class SingleProducerConsumerType>
-            SingleProducerConsumer<SingleProducerConsumerType>::SingleProducerConsumer() throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::SingleProducerConsumer() throw()
     {
 		wLock.Lock();
 		rLock.Lock();
@@ -90,24 +93,29 @@ namespace ntwk
         idleHeadPointer = idleTailPointer;
         // Preallocate
         readPointer = new DataPlusPtr;
-        readPointer->readyToRead = false;
         readPointer->next = NULL;
+        readPointer->activeTime = static_cast<uint32_t>(GetSysTickCount());
+        readPointer->readyToRead = false;
         writePointer=readPointer;
         readPointer->next = new DataPlusPtr;
+		readPointer->next->next = NULL;
+        readPointer->next->activeTime = static_cast<uint32_t>(GetSysTickCount());
         readPointer->next->readyToRead = false;
-        readPointer->next->next = NULL;
+        
         int listSize;
 #ifdef _DEBUG
-        assert(MINIMUM_LIST_SIZE>=3);
+        assert(KeepSize >= 3);
 #endif
-        for(listSize=2; listSize < MINIMUM_LIST_SIZE; listSize++)
+        for(listSize=2; listSize < KeepSize; listSize++)
         {
             readPointer=readPointer->next;
             readPointer->next = new DataPlusPtr;
+			readPointer->next->next = NULL;
+            readPointer->next->activeTime = static_cast<uint32_t>(GetSysTickCount());
             readPointer->next->readyToRead = false;
-            readPointer->next->next = NULL;
+
         }
-		circleSize = MINIMUM_LIST_SIZE;
+		circleSize = KeepSize;
         readPointer->next->next=writePointer; // last to next = start
         // set last read pointer
         readLastPointer = readPointer->next;
@@ -119,8 +127,8 @@ namespace ntwk
 		rLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            SingleProducerConsumer<SingleProducerConsumerType>::~SingleProducerConsumer() throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::~SingleProducerConsumer() throw()
     {
 		wLock.Lock();
 		rLock.Lock();
@@ -150,8 +158,8 @@ namespace ntwk
 		rLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            SingleProducerConsumerType* SingleProducerConsumer<SingleProducerConsumerType>::WriteLock( void ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            SingleProducerConsumerType* SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::WriteLock( void ) throw()
     {
 		wLock.Lock();
         if (writeAheadPointer->next == readLastPointer ||
@@ -162,10 +170,12 @@ namespace ntwk
                 || NULL == idleTailPointer){
 
                 newNextNode = new DataPlusPtr;
-                newNextNode->readyToRead = false;
                 newNextNode->next = NULL;
+                newNextNode->activeTime = static_cast<uint32_t>(GetSysTickCount());
+				newNextNode->readyToRead = false;
             } else {
                 newNextNode = idleTailPointer;
+                newNextNode->activeTime = static_cast<uint32_t>(GetSysTickCount());
                 atomic_xchgptr(&idleTailPointer, idleTailPointer->next);
             }
             assert(NULL != newNextNode);
@@ -196,15 +206,15 @@ namespace ntwk
         return (SingleProducerConsumerType*) last;
     }
 
-    template <class SingleProducerConsumerType>
-            void SingleProducerConsumer<SingleProducerConsumerType>::CancelWriteLock( SingleProducerConsumerType* cancelToLocation ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            void SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::CancelWriteLock( SingleProducerConsumerType* cancelToLocation ) throw()
     {
         atomic_xchgptr(&writeAheadPointer, (DataPlusPtr *)cancelToLocation);
 		wLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            void SingleProducerConsumer<SingleProducerConsumerType>::WriteUnlock( void ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            void SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::WriteUnlock( void ) throw()
     {
 #ifdef _DEBUG
         assert(writePointer->next!=readPointer);
@@ -219,8 +229,8 @@ namespace ntwk
 		wLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            SingleProducerConsumerType* SingleProducerConsumer<SingleProducerConsumerType>::ReadLock( void ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            SingleProducerConsumerType* SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::ReadLock( void ) throw()
     {
 		rLock.Lock();
         if (readAheadPointer==writePointer ||
@@ -232,11 +242,14 @@ namespace ntwk
 
         volatile DataPlusPtr *last(readAheadPointer);
         atomic_xchgptr(&readAheadPointer, readAheadPointer->next);
+		if(!last) {
+			rLock.Unlock();
+		}
         return (SingleProducerConsumerType*)last;
     }
 
-    template <class SingleProducerConsumerType>
-            void SingleProducerConsumer<SingleProducerConsumerType>::CancelReadLock( SingleProducerConsumerType* cancelToLocation ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            void SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::CancelReadLock( SingleProducerConsumerType* cancelToLocation ) throw()
     {
 #ifdef _DEBUG
         assert(readPointer!=writePointer);
@@ -245,8 +258,8 @@ namespace ntwk
 		rLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            void SingleProducerConsumer<SingleProducerConsumerType>::ReadUnlock( void ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            void SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::ReadUnlock( void ) throw()
     {
 #ifdef _DEBUG
         assert(readAheadPointer!=readPointer); // If hits, then called ReadUnlock before ReadLock
@@ -273,10 +286,8 @@ namespace ntwk
         long nLeaveSize = circleSize - atomic_dec(&unreadCount);
 		if(
             (nLeaveSize > 2 || nLeaveSize < 1) // leave 2,1 empty node,don't push into delete list
-			&& circleSize > (unsigned long)MINIMUM_LIST_SIZE
-/*            && readLastPointer->next == readPointer
-            && readAheadPointer != readPointer
-            && writePointer != readPointer*/)
+			&& circleSize > (unsigned long)KeepSize
+            && (static_cast<uint32_t>(GetSysTickCount()) - readPointer->activeTime) > KeepTimeMS)
         {
             atomic_xchgptr(&readLastPointer->next, readPointer->next);
 
@@ -308,8 +319,8 @@ namespace ntwk
 		rLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            void SingleProducerConsumer<SingleProducerConsumerType>::Clear( void ) throw()
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            void SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::Clear( void ) throw()
     {
 		wLock.Lock();
 		rLock.Lock();
@@ -326,7 +337,7 @@ namespace ntwk
         //}
         //assert(listSize == circleSize);
 
-        while (listSize-- > MINIMUM_LIST_SIZE)
+        while (listSize-- > KeepSize)
         {
             next=writePointer->next;
 #ifdef _DEBUG
@@ -335,7 +346,7 @@ namespace ntwk
             delete writePointer;
             writePointer = next;
         }
-        circleSize = MINIMUM_LIST_SIZE;
+        circleSize = KeepSize;
 
         readPointer->next = writePointer;
         writePointer = readPointer;
@@ -355,23 +366,23 @@ namespace ntwk
 		rLock.Unlock();
     }
 
-    template <class SingleProducerConsumerType>
-            int SingleProducerConsumer<SingleProducerConsumerType>::Size(void) const
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            int SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::Size(void) const
     {
         return (int)unreadCount;
     }
 
-    template <class SingleProducerConsumerType>
-            bool SingleProducerConsumer<SingleProducerConsumerType>::CheckReadUnlockOrder(const SingleProducerConsumerType* data) const
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            bool SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::CheckReadUnlockOrder(const SingleProducerConsumerType* data) const
     {
         return const_cast<const SingleProducerConsumerType *>(&readPointer->object) == data;
     }
 
-    template <class SingleProducerConsumerType>
-            bool SingleProducerConsumer<SingleProducerConsumerType>::ReadIsLocked(void) const
+    template <class SingleProducerConsumerType, int KeepSize, int KeepTimeMS>
+            bool SingleProducerConsumer<SingleProducerConsumerType, KeepSize, KeepTimeMS>::ReadIsLocked(void) const
     {
         return readAheadPointer!=readPointer;
     }
 }
 
-#endif
+#endif /* SINGLE_PRODUCER_CONSUMER_H */

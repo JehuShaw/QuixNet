@@ -5,8 +5,8 @@
  * Created on 2010_9_17, 9:45
  */
 
-#ifndef _TIMERMANAGERHELPER_H
-#define	_TIMERMANAGERHELPER_H
+#ifndef TIMERMANAGERHELPER_H
+#define	TIMERMANAGERHELPER_H
 
 #include "TimerManager.h"
 #include "GuidFactory.h"
@@ -141,5 +141,5 @@ namespace evt
 		return pTMgr->Remove(id, bWaitResult);
 	}
 }
-#endif	/* _TIMERMANAGERHELPER_H */
+#endif	/* TIMERMANAGERHELPER_H */
 

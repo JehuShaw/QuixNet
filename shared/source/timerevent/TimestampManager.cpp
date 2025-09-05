@@ -4,7 +4,7 @@
  * 
  * Created on 2011_7_26, 11:09
  */
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>
 #endif
 
@@ -13,7 +13,7 @@
 #include "Log.h"
 #include "AtomicLock.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 
 #pragma comment(lib, "WS2_32")
 
@@ -56,43 +56,44 @@ const char* TimeServerURL[] = {
 	"utcnist.colorado.edu",
 };
 
-SHARED_DLL_DECL volatile uint64_t CTimestampManager::m_uTimestamp(0);
+SHARED_DLL_DECL volatile time_t CTimestampManager::m_uTimestamp = 0;
 
 CTimestampManager::CTimestampManager() {
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	WSADATA wsaData;
 	WORD sockVersion = MAKEWORD(2, 2);
-	if(::WSAStartup(sockVersion, &wsaData) != 0)
-	{
+	if(::WSAStartup(sockVersion, &wsaData) != 0) {
 		OutputError("WSAStartup failed with error code: %d\n", GetLastError());
 	}
-#endif
+#ifdef _USE_32BIT_TIME_T
+	atomic_xchg(&m_uTimestamp, time(NULL));
+#else
+	atomic_xchg64(&m_uTimestamp, time(NULL));
+#endif // _USE_32BIT_TIME_T
+#else
+	atomic_xchg(&m_uTimestamp, time(NULL));
+#endif // defined(_WIN32) || defined(_WIN64)
 
 	startTick();
-	atomic_xchg64(&m_uTimestamp, time(NULL));
 }
 
 CTimestampManager::~CTimestampManager() {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	::WSACleanup();
 #endif
 	stopTick();
 }
 
-time_t CTimestampManager::GetNetTimestamp()
+time_t CTimestampManager::GetUnixTimeOnline()
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	SOCKET s = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if(s == INVALID_SOCKET)
-#else
-        int s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); 
-        if(s == -1)
-#endif
-	{
-#ifdef _WIN32
+	if(s == INVALID_SOCKET) {
 		OutputError("::socket() failed with error code: %d\n", GetLastError());
 #else
+    int s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); 
+	if(s == -1) {
 		OutputError("::socket() failed with error code: %d\n", errno);
 #endif
 		return 0;
@@ -137,40 +138,43 @@ time_t CTimestampManager::GetNetTimestamp()
 		break;
 	}
 
-	unsigned long ulTime = 0;
+	uint32_t ulTime = 0;
 	int nRecv = ::recv(s, (char*)&ulTime, sizeof(ulTime), 0);
-	if(nRecv > 0)
-	{
+	if(nRecv > 0) {
 		ulTime = ntohl(ulTime);
 	}
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	::shutdown(s, SD_BOTH);
 	::closesocket(s);
 #else
-        ::shutdown(s, SHUT_RDWR);
-        ::close(s);
+    ::shutdown(s, SHUT_RDWR);
+    ::close(s);
 #endif
+
 	if(ulTime < UNIXEPOCH) {
-		return (time_t)ulTime;
+		return ulTime;
 	}
-	return (time_t)(ulTime - UNIXEPOCH);
+	return ulTime - UNIXEPOCH;
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 void WINAPI CTimestampManager::onTimeFunc(UINT wTimerID, UINT msg,
 	DWORD dwUser, DWORD dwl, DWORD dw2) {
+#ifdef _USE_32BIT_TIME_T
+		atomic_inc(&m_uTimestamp);
+#else
 		atomic_inc64(&m_uTimestamp);
+#endif
 }
 #else
-void CTimestampManager::onTimeFunc(int signo)
-{
-	atomic_inc64(&m_uTimestamp);
+void CTimestampManager::onTimeFunc(int signo) {
+	atomic_inc(&m_uTimestamp);
 	signal(signo, onTimeFunc);
 }
 #endif
 
 bool CTimestampManager::startTick(){
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN64)
 	UINT wMsecInterval = 1000;
 	m_iTimerID = timeSetEvent(wMsecInterval, 1, 
 		(LPTIMECALLBACK)onTimeFunc, DWORD(1), TIME_PERIODIC);
@@ -185,22 +189,22 @@ bool CTimestampManager::startTick(){
 	value.it_interval.tv_usec = 0;
 	value.it_value.tv_sec = 1;
 	value.it_value.tv_usec = 0;
-        if((oldOnTimeFunc = signal(SIGALRM, onTimeFunc)) != SIG_ERR){
-            if(setitimer(ITIMER_REAL, &value, &m_ovalue) == 0){
-                return true;
-            }
+    if((oldOnTimeFunc = signal(SIGALRM, onTimeFunc)) != SIG_ERR) {
+        if(setitimer(ITIMER_REAL, &value, &m_ovalue) == 0) {
+            return true;
         }
+    }
 	return false;
 #endif
 }
 
-bool CTimestampManager::stopTick(){
-#ifdef _WIN32
+bool CTimestampManager::stopTick() {
+#if defined(_WIN32) || defined(_WIN64)
 	return timeKillEvent(m_iTimerID) == 0;
 #else
     struct itimerval value;
-    if(signal(SIGALRM, oldOnTimeFunc) != SIG_ERR){
-        if(setitimer(ITIMER_REAL, &m_ovalue, &value) == 0){
+    if(signal(SIGALRM, oldOnTimeFunc) != SIG_ERR) {
+        if(setitimer(ITIMER_REAL, &m_ovalue, &value) == 0) {
             return true;
         }
     }

@@ -11,7 +11,7 @@ using namespace thd;
 
 namespace db {
 
-Database::Database() : CThread(), m_queQuery(32), m_queExecute(32)
+Database::Database() : CThread(), m_queQuery(), m_queExecute()
 	, m_arrConnections(NULL), m_nConnectionSize(-1), m_nCurConCount(0)
 	, m_nCurThdCount(0)
 {

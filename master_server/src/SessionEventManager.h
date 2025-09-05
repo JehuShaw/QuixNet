@@ -4,7 +4,9 @@
  *
  * Created on 2015_3_5 15:12
  */
-#pragma once
+
+#ifndef SESSIONEVENTMANAGER_H
+#define	SESSIONEVENTMANAGER_H
 
 #include "SimpleEvent.h"
 #include "AgentMethod.h"
@@ -45,3 +47,4 @@ private:
     evt::SimpleEvent<int> m_event;
 };
 
+#endif /* SESSIONEVENTMANAGER_H */

@@ -5,8 +5,8 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _PLAYERBASE_H
-#define	_PLAYERBASE_H
+#ifndef PLAYERBASE_H
+#define	PLAYERBASE_H
 
 #include "AutoPointer.h"
 
@@ -19,8 +19,8 @@ public:
     virtual ~CPlayerBase() { 
     }
 
-	virtual uint64_t GetUserId() const {
-		throw std::runtime_error("Method GetUserId() not implemented.");
+	virtual uint64_t GetUserID() const {
+		throw std::runtime_error("Method GetUserID() not implemented.");
 	}
 
 protected:
@@ -84,4 +84,4 @@ private:
 	PLAYER_BASE_SET_T& m_players;
 };
 
-#endif /* _PLAYERBASE_H */
+#endif /* PLAYERBASE_H */

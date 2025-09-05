@@ -1,6 +1,6 @@
 
-#ifndef __CONDVAR_H_
-#define __CONDVAR_H_
+#ifndef CONDVAR_H
+#define CONDVAR_H
 
 #include "Common.h"
 
@@ -80,6 +80,6 @@ class SHARED_DLL_DECL CCondVar
 
 }; // namespace thd
 
-#endif // __CONDVAR_H_
+#endif // CONDVAR_H
 
 /* end of header file */

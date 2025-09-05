@@ -15,13 +15,13 @@
 #include "ControlCentreStubImp.h"
 #include "ControlCentreStubImpEx.h"
 #include "ProtoRpczServiceImpl.h"
-#include "GuidFactory.h"
+#include "LocalIDFactory.h"
 #include "CacheDBManager.h"
 #include "CacheMemoryManager.h"
 #include "CommandManager.h"
 #include "ServerRegisterHelper.h"
 #include "CacheServiceImpHelper.h"
-#include "dbstl_common.h"
+#include "WorkerOperateHelper.h"
 
 using namespace mdl;
 using namespace util;
@@ -55,13 +55,13 @@ CCacheServer::~CCacheServer() {
 bool CCacheServer::Init(int argc, char** argv) {
 
 	if(atomic_cmpxchg8(&m_isStarted,
-		true, false) == (char)true) {
+		false, true) == (char)true) {
 		return false;
 	}
 
 	if(argc > 0) {
 		m_strProcessPath = argv[0];
-#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 )
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
 		std::replace(m_strProcessPath.begin(), m_strProcessPath.end(), '\\', '/');
 #endif
 	} else {
@@ -73,14 +73,13 @@ bool CCacheServer::Init(int argc, char** argv) {
     bool rc = true;
     // open log file
 	
-	std::string strCurPath;
+	std::string strLogPath;
 	std::string::size_type idx = m_strProcessPath.find_last_of('/');
 	if(std::string::npos != idx) {
-		strCurPath = m_strProcessPath.substr(0, idx);
+		strLogPath = m_strProcessPath.substr(0, idx);
 	} else {
-		strCurPath = ".";
+		strLogPath = ".";
 	}
-	std::string strLogPath(strCurPath);
 	strLogPath += "/log/";
 	LogInit(5, strLogPath.c_str());
 	PrintBasic("%s %s %s", CONFIG, PLATFORM_TEXT, ARCH);
@@ -101,24 +100,25 @@ bool CCacheServer::Init(int argc, char** argv) {
 	if(ZmqioThreads < 1) {
 		ZmqioThreads = 1;
 	}
-	uint16_t u16ServerId = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERID);
+	uint32_t uServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 	std::string strServerName(pConfig->GetString(APPCONFIG_SERVERNAME));
 	std::string strBind(pConfig->GetString(APPCONFIG_SERVERBIND));
+	assert(!strBind.empty());
+	std::string endPoint(pConfig->GetString(APPCONFIG_ENDPOINT));
+	if(endPoint.empty()) {
+		endPoint = strBind;
+	}
 	int32_t nRecordExpireMin = pConfig->GetInt(APPCONFIG_CACHERECORDEXPIRE, 5);
 	if(nRecordExpireMin < 1) {
 		nRecordExpireMin = 1;
 	}
 	g_recordExpireSec = nRecordExpireMin * 60;
 	std::string strServant(pConfig->GetString(APPCONFIG_SERVANTCONNECT));
+	std::string strAgentName(pConfig->GetString(APPCONFIG_AGENTSERVERNAME));
 	uint16_t u16ServerRegoin = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERREGION);
-	// must have server.
-	assert(!strBind.empty());
-	// set the config
-
-	CGuidFactory::Pointer()->SetCodeInt16(u16ServerId);
 
     // load db config
-    CCacheDBManager::Pointer()->Init(u16ServerId);
+    CCacheDBManager::Pointer()->Init();
 
 	if(!m_pServerRegister.IsInvalid()) {
 		// init status callback
@@ -126,23 +126,20 @@ bool CCacheServer::Init(int argc, char** argv) {
 		// init register command
 		m_pServerRegister->RegisterCommand();
 		// register module
-		m_pServerRegister->RegistModule();
+		m_pServerRegister->RegisterModule();
 	}
-	// startup Berkeley DB
-	dbstl::dbstl_startup();
 
 	rpcz::application::set_connection_manager_threads(RpczThreads);
 	rpcz::application::set_zmq_io_threads(ZmqioThreads);
 
 	m_pServer.SetRawPointer(new rpcz::server);
 	// register CacheService
-	m_pCacheService.SetRawPointer(new CCacheServiceImp(strBind,
-		strServant, strServerName, u16ServerId, CreateCachePlayer));
+	m_pCacheService.SetRawPointer(new CCacheServiceImp(endPoint,
+		strServant, strServerName, strAgentName, uServerId, CreateCachePlayer));
 	m_pServer->register_rpc_service(new node::CProtoRpcServiceImpl(*m_pCacheService),
 		m_pCacheService->GetDescriptor()->name());
 	// register ControlCentreService
-	m_pControlService.SetRawPointer(new CControlCentreServiceImp(
-		u16ServerRegoin, u16ServerId, strCurPath));
+	m_pControlService.SetRawPointer(new CControlCentreServiceImp(u16ServerRegoin));
 	m_pServer->register_rpc_service(new node::CProtoRpcServiceImpl(*m_pControlService),
 		m_pControlService->GetDescriptor()->name());
 
@@ -150,14 +147,15 @@ bool CCacheServer::Init(int argc, char** argv) {
 	// start thread pool.
 	ThreadPool.Startup(GameThreads);
 	// connect server
-	ConnectServers(strServerName, strBind, u16ServerId, u16ServerRegoin);
+	ConnectServers(strServerName, endPoint, uServerId, u16ServerRegoin);
 	// connect control servant
-	ConnectControlServant(strServant, strServerName, strBind, u16ServerId, u16ServerRegoin);
+	ConnectControlServant(strServant, strServerName, endPoint, uServerId, u16ServerRegoin);
 	// start thread
 	ThreadPool.ExecuteTask(this);
     // auto update cache record
     CCacheMemoryManager::Pointer()->Init();
-	printf("The server started id = %d address = %s name = %s \n", u16ServerId, strBind.c_str(), strServerName.c_str());
+	printf("The server started id = %u bind = %s endpoint = %s name = %s \n", 
+		uServerId, strBind.c_str(), endPoint.c_str(), strServerName.c_str());
     return rc;
 }
 
@@ -169,41 +167,59 @@ void CCacheServer::Dispose() {
 	atomic_xchg(&g_serverStatus, SERVER_STATUS_IDLE);
     // remove auto update cache record
     CCacheMemoryManager::Pointer()->Dispose();
+	CCacheMemoryManager::Release();
+	printf("CCacheMemoryManager::Pointer()->Dispose done! \n");
     // unregister keep reg timer
 	DisposeKeepRegTimer();
+	printf("DisposeKeepRegTimer done! \n");
 	// unregister Module
 	if(!m_pServerRegister.IsInvalid()) {
-		m_pServerRegister->UnregistModule();
+		m_pServerRegister->UnregisterModule();
 	}
+	printf("UnregistModule done! \n");
 	// unregister control servant
 	DisconnectControlServant();
+	printf("DisconnectControlServant done! \n");
 	// unregister this server
 	DisconnectServers();
+	printf("DisconnectServers done! \n");
 	// set break the loop
 	atomic_xchg8(&m_isStarted, false);
     // dispose db config
     CCacheDBManager::Pointer()->Dispose();
+	CCacheDBManager::Release();
+	printf("CCacheDBManager::Pointer()->Dispose done! \n");
 	// close game thread
 	ThreadPool.Shutdown();
+	printf("ThreadPool.Shutdown done! \n");
     // close timer event
     CTimerManager::Release();
+	printf("CTimerManager::Release done! \n");
+	// clear channel manager
+	CChannelManager::Pointer()->Dispose();
+	CChannelManager::Release();
+	printf("CChannelManager::Pointer()->Dispose done! \n");
 	// close command
 	CommandManager::Release();
+	printf("CommandManager::Release done! \n");
 	// close Timestamp
 	CTimestampManager::Release();
+	printf("CTimestampManager::Release done! \n");
 	// close facade
 	CFacade::Release();
+	printf("CFacade::Release done! \n");
 	// release service
 	m_pServer.SetRawPointer(NULL);
 	m_pControlService.SetRawPointer(NULL);
 	m_pCacheService.SetRawPointer(NULL);
 	// close log thread
 	LogRelease();
-	// exit Berkeley DB
-	dbstl::dbstl_exit();
+	printf("LogRelease done! \n");
+	AppConfig::Release();
+	printf("AppConfig::Release done! \n");
 }
 
-bool CCacheServer::Run() {
+bool CCacheServer::OnRun() {
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 	while (m_isStarted) {
 		// timer
@@ -228,8 +244,8 @@ void CCacheServer::DisposeKeepRegTimer()
 
 void CCacheServer::ConnectServers(
 	const std::string& strServerName,
-	const std::string& strBind,
-	uint16_t u16ServerId,
+	const std::string& endPoint,
+	uint32_t uServerId,
 	uint16_t u16ServerRegion)
 {
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
@@ -237,9 +253,8 @@ void CCacheServer::ConnectServers(
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 	std::string strConnect;
 	char szBuff[MAX_PATH];
-
 	for(int i = 0; ; ++i) {
-		sprintf(szBuff, APPCONFIG_SERVERCONNECT"%d", i);
+		sprintf(szBuff, APPCONFIG_SERVERCONNECT "%d", i);
 		strConnect = pConfig->GetString(szBuff);
 		if(strConnect.empty()) {
 			break;
@@ -247,23 +262,26 @@ void CCacheServer::ConnectServers(
 
 		printf("Register to \"%s\" please wait... \n", strConnect.c_str());
 		int nResult = pCtrlCenStubImp->RegisterServer(strConnect, strServerName,
-			strBind, u16ServerId, u16ServerRegion, CALL_REGISTER_MS);
+			endPoint, uServerId, u16ServerRegion, CALL_REGISTER_MS);
 
-		if(nResult < CSR_SUCCESS) {
+		if(nResult < CSR_TIMEOUT) {
 			OutputError("[connect = %s, name = %s, endPint = %s,"
 				" errorCode = %d] Can't Register this server!", strConnect.c_str(),
-				strServerName.c_str(), strBind.c_str(), nResult);
-			printf("Register to \"%s\" fail. \n", strConnect.c_str());
+				strServerName.c_str(), endPoint.c_str(), nResult);
+			printf("Register to \"%s\" fail. %d \n", strConnect.c_str(), nResult);
 			continue;
+		} else if (nResult == CSR_TIMEOUT) {
+			printf("Register to \"%s\" timeout. \n", strConnect.c_str());
+		} else {
+			printf("Register to \"%s\" success. \n", strConnect.c_str());
 		}
-		printf("Register to \"%s\" success. \n", strConnect.c_str());
 
-		uint64_t timerKey = CGuidFactory::Pointer()->CreateGuid();
+		uint64_t timerKey = CLocalIDFactory::Pointer()->GenerateID();
 		m_keepRegTimerKeys.push_back(timerKey);
 
-		CAutoPointer<CallbackMFnP2<CCacheServer, std::string, volatile bool> >
-			callback(new CallbackMFnP2<CCacheServer, std::string, volatile bool>
-			(s_instance, &CCacheServer::KeepServersRegister, strConnect, false));
+		CAutoPointer<CallbackMFnP3<CCacheServer, std::string, volatile bool, volatile long> >
+			callback(new CallbackMFnP3<CCacheServer, std::string, volatile bool, volatile long>
+			(s_instance, &CCacheServer::KeepServersRegister, strConnect, false, 0));
 		pTMgr->SetInterval(timerKey, KEEP_REGISTER_INTERVAL, callback);
 	}
 }
@@ -274,20 +292,20 @@ void CCacheServer::DisconnectServers()
 
 	AppConfig::PTR_T pConfig(AppConfig::Pointer());
 	std::string strServerName(pConfig->GetString(APPCONFIG_SERVERNAME));
-	uint16_t u16ServerId = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERID);
+	uint32_t uServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 	std::string strConnect;
 	char szBuff[MAX_PATH];
 	for(int i = 0; ; ++i) {
-		sprintf(szBuff, APPCONFIG_SERVERCONNECT"%d", i);
+		sprintf(szBuff, APPCONFIG_SERVERCONNECT "%d", i);
 		strConnect = pConfig->GetString(szBuff);
 		if(strConnect.empty()) {
 			break;
 		}
 
 		int nResult = pCtrlCenStubImp->UnregisterServer(strConnect, strServerName,
-			u16ServerId, CALL_UNREGISTER_MS);
+			uServerId, CALL_UNREGISTER_MS);
 
-		if(nResult < CSR_SUCCESS && CSR_WITHOUT_THIS_MODULE != nResult && CSR_TIMEOUT != nResult) {
+		if(nResult < CSR_TIMEOUT && CSR_WITHOUT_THIS_MODULE != nResult) {
 			OutputError("[connect = %s, name = %s, errorCode = %d]"
                 " Can't Unregister this server!", strConnect.c_str(),
 				strServerName.c_str(), nResult);
@@ -296,20 +314,37 @@ void CCacheServer::DisconnectServers()
 	}
 }
 
-void CCacheServer::KeepServersRegister(std::string& connect, volatile bool& bRun)
+void CCacheServer::KeepServersRegister(
+	std::string& connect,
+	volatile bool& bRun,
+	volatile long& nTimeoutCount)
 {
-	if(atomic_cmpxchg8(&bRun, true, false) == false) {
+	if(atomic_cmpxchg8(&bRun, false, true) == (char)false) {
 		AppConfig::PTR_T pConfig(AppConfig::Pointer());
-		uint16_t u16ServerId = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERID);
+		uint32_t uServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 
 		CControlCentreStubImp::PTR_T pCtrlCenStubImp(CControlCentreStubImp::Pointer());
-		if(pCtrlCenStubImp->KeepRegister(connect, u16ServerId)) {
-			std::string strBind(pConfig->GetString(APPCONFIG_SERVERBIND));
+		int nResult = pCtrlCenStubImp->KeepRegister(connect, uServerId);
+		if(CSR_NOT_FOUND == nResult) {
+			std::string endPoint(pConfig->GetString(APPCONFIG_ENDPOINT));
+			if(endPoint.empty()) {
+				endPoint = pConfig->GetString(APPCONFIG_SERVERBIND);
+			}
 			std::string strServerName(pConfig->GetString(APPCONFIG_SERVERNAME));
 			uint16_t u16ServerRegion = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERREGION);
 
-			pCtrlCenStubImp->RegisterServer(connect, strServerName, strBind,
-				u16ServerId, u16ServerRegion);
+			nResult = pCtrlCenStubImp->RegisterServer(connect, strServerName, endPoint,
+				uServerId, u16ServerRegion);
+			if (CSR_SUCCESS_AND_START == nResult || CSR_SUCCESS == nResult) {
+				atomic_xchg(&nTimeoutCount, 0);
+			}
+		} else if (CSR_TIMEOUT == nResult) {
+			if (atomic_inc(&nTimeoutCount) >= TIMEOUT_MAX_TIMES_REMOVE_SERVER) {
+				CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+				pChlMgr->RemoveRpczChannel(connect);
+			}
+		} else {
+			atomic_xchg(&nTimeoutCount, 0);
 		}
 		atomic_xchg8(&bRun, false);
 	}
@@ -318,8 +353,8 @@ void CCacheServer::KeepServersRegister(std::string& connect, volatile bool& bRun
 void CCacheServer::ConnectControlServant(
 	const std::string& strServant,
 	const std::string& strServerName,
-	const std::string& strBind,
-	uint16_t u16ServerId,
+	const std::string& endPoint,
+	uint32_t uServerId,
 	uint16_t u16ServerRegion)
 {
 	if(!strServant.empty()) {
@@ -330,17 +365,21 @@ void CCacheServer::ConnectControlServant(
 
 		CControlCentreStubImpEx::PTR_T pCtrlCenStubImpEx(CControlCentreStubImpEx::Pointer());
 		int nResult = pCtrlCenStubImpEx->RegisterServer(strServant, strServerName,
-			strBind, u16ServerId, u16ServerRegion, strProjectName, std::string(),
+			endPoint, uServerId, u16ServerRegion, strProjectName, std::string(),
 			m_strProcessPath, CALL_REGISTER_MS);
 
-		if(nResult < CSR_SUCCESS && CSR_CHANNEL_ALREADY_EXIST != nResult) {
+		if(nResult < CSR_TIMEOUT && CSR_CHANNEL_ALREADY_EXIST != nResult) {
 			OutputError("[connect = %s, name = %s, endPint = %s,"
 				" errorCode = %d] Can't Register this server!", strServant.c_str(),
-				strServerName.c_str(), strBind.c_str(), nResult);
+				strServerName.c_str(), endPoint.c_str(), nResult);
 			printf("Register to Control Servant \"%s\" fail. \n", strServant.c_str());
 			return;
+		} else if (nResult == CSR_TIMEOUT) {
+			printf("Register to Control Servant \"%s\" timeout. %d \n", strServant.c_str(), nResult);
+		} else {
+			printf("Register to Control Servant \"%s\" success. %d \n", strServant.c_str(), nResult);
 		}
-		printf("Register to Control Servant \"%s\" success. \n", strServant.c_str());
+
 		if(CSR_SUCCESS_AND_START == nResult) {
 			atomic_xchg(&g_serverStatus, SERVER_STATUS_START);
 		}
@@ -349,7 +388,7 @@ void CCacheServer::ConnectControlServant(
 			callback(new CallbackMFnP2<CCacheServer, std::string, volatile bool>
 			(s_instance, &CCacheServer::KeepControlServantRegister, strServant, false));
 
-		uint64_t timerKey = CGuidFactory::Pointer()->CreateGuid();
+		uint64_t timerKey = CLocalIDFactory::Pointer()->GenerateID();
 		m_keepRegTimerKeys.push_back(timerKey);
 
 		CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -364,12 +403,13 @@ void CCacheServer::DisconnectControlServant()
 	if(!strServant.empty()) {
 
 		std::string strServerName(pConfig->GetString(APPCONFIG_SERVERNAME));
-		uint16_t u16ServerId = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERID);
+		uint32_t uServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 
 		CControlCentreStubImpEx::PTR_T pCtrlCenStubImpEx(CControlCentreStubImpEx::Pointer());
 		int nResult = pCtrlCenStubImpEx->UnregisterServer(strServant, strServerName,
-			u16ServerId, CALL_UNREGISTER_MS);
-		if(nResult < CSR_SUCCESS && CSR_WITHOUT_THIS_MODULE != nResult && CSR_TIMEOUT != nResult) {
+			uServerId, CALL_UNREGISTER_MS);
+
+		if(nResult < CSR_TIMEOUT && CSR_WITHOUT_THIS_MODULE != nResult) {
 			OutputError("[connect = %s, name = %s, errorCode = %d]"
                 " Can't Unregister this server!", strServant.c_str(),
 				strServerName.c_str(), nResult);
@@ -380,26 +420,28 @@ void CCacheServer::DisconnectControlServant()
 
 void CCacheServer::KeepControlServantRegister(std::string& connect, volatile bool& bRun)
 {
-	if(atomic_cmpxchg8(&bRun, true, false) == false) {
+	if(atomic_cmpxchg8(&bRun, false, true) == (char)false) {
 		AppConfig::PTR_T pConfig(AppConfig::Pointer());
 		std::string strServerName(pConfig->GetString(APPCONFIG_SERVERNAME));
-		uint16_t u16ServerId = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERID);
+		uint32_t uServerId = pConfig->GetInt(APPCONFIG_SERVERID);
 
         CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		CControlCentreStubImpEx::PTR_T pCtrlCenStubImpEx(CControlCentreStubImpEx::Pointer());
-		if(pCtrlCenStubImpEx->KeepRegister(connect, strServerName, u16ServerId,
-			g_serverStatus, pChlMgr->GetClientSize())) {
-
-			std::string strBind(pConfig->GetString(APPCONFIG_SERVERBIND));
+		int nResult = pCtrlCenStubImpEx->KeepRegister(connect, strServerName, uServerId,
+			g_serverStatus, pChlMgr->GetClientSize());
+		if(CSR_NOT_FOUND == nResult) {
+			std::string endPoint(pConfig->GetString(APPCONFIG_ENDPOINT));
+			if(endPoint.empty()) {
+				endPoint = pConfig->GetString(APPCONFIG_SERVERBIND);
+			}
 			std::string strProjectName(pConfig->GetString(APPCONFIG_PROJECTNAME));
 			uint16_t u16ServerRegion = (uint16_t)pConfig->GetInt(APPCONFIG_SERVERREGION);
 
-			pCtrlCenStubImpEx->RegisterServer(connect, strServerName, strBind, u16ServerId,
+			nResult = pCtrlCenStubImpEx->RegisterServer(connect, strServerName, endPoint, uServerId,
 				u16ServerRegion, strProjectName, std::string(), m_strProcessPath);
 		}
 		atomic_xchg8(&bRun, false);
 	}
 }
-
 
 

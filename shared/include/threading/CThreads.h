@@ -7,8 +7,8 @@
 // Class CThread - Base class for all threads in the
 // server, and allows for easy management .
 
-#ifndef _CTHREADS_H
-#define _CTHREADS_H
+#ifndef CTHREADS_H
+#define CTHREADS_H
 
 #include "ThreadBase.h"
 #include "AtomicLock.h"
@@ -23,7 +23,7 @@ enum CThreadState
 	THREADSTATE_AWAITING,
 };
 
-class SHARED_DLL_DECL CThread : public ThreadBase
+class SHARED_DLL_DECL CThread : virtual public ThreadBase
 {
 public:
 	CThread() {
@@ -75,4 +75,4 @@ protected:
 
 }
 
-#endif /* _CTHREADS_H */
+#endif /* CTHREADS_H */

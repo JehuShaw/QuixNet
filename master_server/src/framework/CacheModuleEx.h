@@ -5,7 +5,8 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#pragma once
+#ifndef CACHEMODULEEX_H
+#define	CACHEMODULEEX_H
 
 #include "CacheModule.h"
 
@@ -13,21 +14,15 @@
 class CCacheModuleEx : public CCacheModule
 {
 public:
-	CCacheModuleEx(void);
-
 	CCacheModuleEx(const std::string& moduleName,
 		const std::string& endPoint,
-		uint16_t serverId);
-
-	CCacheModuleEx(const std::string& moduleName,
-		const std::string& endPoint,
-		uint16_t serverId,
-		const std::string& acceptAddress,
-		const std::string& processPath,
-		const std::string& projectName,
-		uint16_t serverRegion);
+		uint32_t serverId,
+		bool routeServer,
+		uint64_t routeAddressId,
+		const ROUTE_USERIDS_T& routeUserIds);
 
 protected:
 	virtual bool FilterProtocolInterest(int nProtocal);
 };
 
+#endif /* CACHEMODULEEX_H */

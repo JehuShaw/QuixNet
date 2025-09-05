@@ -6,10 +6,10 @@
  * Created on 2014.01.17
  */
 
-#ifndef TCPTHREADINFO_H_
-#define TCPTHREADINFO_H_
+#ifndef TCPTHREADINFO_H
+#define TCPTHREADINFO_H
 
-#if !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ))
+#if !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 ))
 
 #include <pthread.h>
 
@@ -105,7 +105,7 @@ namespace ntwk
 
 }
 
-#endif /* !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )) */
+#endif /* !(defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 )) */
 
-#endif /* TCPTHREADINFO_H_ */
+#endif /* TCPTHREADINFO_H */
 

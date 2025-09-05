@@ -5,7 +5,8 @@
  * Created on 2014_4_5 AM 23:37
  */
 
-#pragma once
+#ifndef MASTERSTUBIMP_H
+#define	MASTERSTUBIMP_H
 
 #include <map>
 #include "controlcentre.rpcz.h"
@@ -27,7 +28,7 @@ public:
 	void KeepRegister(
 		const std::string& serverName,
 		const std::string& endPoint,
-		uint16_t serverId,
+		uint32_t serverId,
 		int32_t serverStatus,
 		uint32_t serverLoad)
 	{
@@ -50,7 +51,7 @@ public:
 		refreshRequest.SetParams(datas);
 
 		CResponseRows refreshResponse;
-		McDBStoredProcBalServId(serverId, refreshRequest, refreshResponse);
+		McDBStoredProcHash32Key(serverId, refreshRequest, refreshResponse);
 	}
 
 	inline void AddInfoMethod(std::string strName,
@@ -106,3 +107,4 @@ private:
 	thd::CSpinRWLock m_rwInfoLock;
 };
 
+#endif /* MASTERSTUBIMP_H */

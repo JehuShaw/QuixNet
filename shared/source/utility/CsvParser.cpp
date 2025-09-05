@@ -198,7 +198,8 @@ void csv_parser::_get_fields_without_enclosure(csv_row_ptr row, const char * lin
 				/* This is the starting point of the next field */
 				field_start = char_pos + 1;
 
-			} else if (curr_char == line_term_char || '\0' == curr_char)
+			} else if (curr_char == line_term_char || '\0' == curr_char 
+				|| (curr_char == LINE_END_CHAR1 && line[char_pos + 1] == LINE_END_CHAR2))
 			{
 				field_end = char_pos;
 
@@ -375,7 +376,7 @@ void csv_parser::_get_fields_with_optional_enclosure(csv_row_ptr row, const char
 				unsigned int field_width = field_end - field_start;
 
 				const char line_first_char = field_starts_at[0];
-				const char line_final_char = field_starts_at[field_width - 1];
+				const char line_final_char = field_starts_at[(field_width != 0)?(field_width - 1):0];
 
 				/* If the enclosure char is found at either ends of the string */
 				unsigned int first_adjustment = (line_first_char == enclosed_char) ? 1U : 0U;
@@ -388,11 +389,13 @@ void csv_parser::_get_fields_with_optional_enclosure(csv_row_ptr row, const char
 				}
 
 				/* We do not want to have any negative or zero field widths */
-				field_width = (field_width > (first_adjustment + final_adjustment)) ?
+				field_width = (field_width >= (first_adjustment + final_adjustment)) ?
 					(field_width - first_adjustment - final_adjustment) : field_width;
 
-				/* Copy exactly field_width bytes from field_starts_at to field */
-				memcpy(field, field_starts_at + first_adjustment, field_width);
+				if (field_width > 0) {
+					/* Copy exactly field_width bytes from field_starts_at to field */
+					memcpy(field, field_starts_at + first_adjustment, field_width);
+				}
 
 				/* This must be a null-terminated character array */
 				field[field_width] = 0x00;
@@ -404,7 +407,8 @@ void csv_parser::_get_fields_with_optional_enclosure(csv_row_ptr row, const char
 				/* This is the starting point of the next field */
 				field_start = char_pos + 1;
 
-			} else if (curr_char == line_term_char || '\0' == curr_char)
+			} else if (curr_char == line_term_char || '\0' == curr_char
+				|| (curr_char == LINE_END_CHAR1 && line[char_pos + 1] == LINE_END_CHAR2))
 			{
 				field_end = char_pos;
 
@@ -414,7 +418,7 @@ void csv_parser::_get_fields_with_optional_enclosure(csv_row_ptr row, const char
 				unsigned int field_width = field_end - field_start;
 
 				const char line_first_char = field_starts_at[0];
-				const char line_final_char = field_starts_at[field_width - 1];
+				const char line_final_char = field_starts_at[(field_width != 0)?(field_width - 1):0];
 
 				/* If the enclosure char is found at either ends of the string */
 				unsigned int first_adjustment = (line_first_char == enclosed_char) ? 1U : 0U;
@@ -422,12 +426,13 @@ void csv_parser::_get_fields_with_optional_enclosure(csv_row_ptr row, const char
 
 
 				/* We do not want to have any negative or zero field widths */
-				field_width = (field_width > (first_adjustment + final_adjustment)) ? 
+				field_width = (field_width >= (first_adjustment + final_adjustment)) ? 
 					(field_width - first_adjustment - final_adjustment) : field_width;
 
-
-				/* Copy exactly field_width bytes from field_starts_at to field */
-				memcpy(field, field_starts_at + first_adjustment, field_width);
+				if(field_width > 0) {
+					/* Copy exactly field_width bytes from field_starts_at to field */
+					memcpy(field, field_starts_at + first_adjustment, field_width);
+				}
 
 				/* This must be a null-terminated character array */
 				field[field_width] = 0x00;

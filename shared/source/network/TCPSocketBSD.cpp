@@ -26,6 +26,8 @@
 #include <string.h>
 #include <iconv.h>
 #include <time.h>
+#include <sys/types.h>
+#include <signal.h>
 #include "TCPThreadPool.h"
 
 #if defined(__APPLE__)
@@ -124,14 +126,14 @@ bool TCPSocketBSD::Start(const char* address, unsigned short maxLink, unsigned s
     m_maxLink = maxLink;
 
     if(atomic_cmpxchg8((volatile char*)&m_isListened
-        , (char)true, (char)false) != (char)false) {
+        , (char)false, (char)true) != (char)false) {
 
 		TRACE_MSG("Start, Already listened \n");
 		return false;
     }
 
     if(atomic_cmpxchg8((volatile char*)&m_isStarted
-        , (char)true, (char)false) != (char)false) {
+        , (char)false, (char)true) != (char)false) {
 
 		m_isListened = false;
 		TRACE_MSG("Start, Already started \n");
@@ -292,7 +294,7 @@ bool TCPSocketBSD::Start(const char* address, unsigned short maxLink, unsigned s
 bool TCPSocketBSD::Stop(void) {
 
     if(atomic_cmpxchg8((volatile char*)&m_isListened
-        , (char)false, (char)true) == (char)true){
+        , (char)true, (char)false) == (char)true){
 
         shutdown(m_listenfd,SHUT_RDWR);
         if(m_listenfd != -1){
@@ -304,7 +306,7 @@ bool TCPSocketBSD::Stop(void) {
     }
 
 	if(atomic_cmpxchg8((volatile char*)&m_isStarted
-		, (char)false, (char)true) != (char)true) {
+		, (char)true, (char)false) != (char)true) {
 
 		TRACE_MSG("Stop, Already started \n");
 		return false;
@@ -313,11 +315,11 @@ bool TCPSocketBSD::Stop(void) {
 	if(m_pSktLinks) {
 		socket_links_t::iterator it(m_pSktLinks->Begin());
 		for(; m_pSktLinks->End() != it; ++it) {
-			socket_links_t::value_t val(it.GetValue());
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+			socket_links_t::pair_t pair(it.GetPair());
+			if(XQXTABLE_INDEX_NIL == pair.GetIndex()) {
 				continue;
 			}
-			SocketLink* pSktLink = val.pObject;
+			const SocketLink* pSktLink = pair.GetValue();
 			if(pSktLink) {
 				shutdown(pSktLink->fd, SHUT_RDWR);
 			} else {
@@ -327,13 +329,13 @@ bool TCPSocketBSD::Stop(void) {
 	} else {
 		TRACE_MSG("Stop, NULL == m_pSktLinks \n");
 	}
-
-	close(m_kefd);
-
+	
     if(NULL != m_pThreadPool) {
 		m_pThreadPool->Release();
 		m_pThreadPool = NULL;
     }
+
+	close(m_kefd);
 
 	atomic_xchg(&m_eventNum, 0);
 
@@ -349,7 +351,7 @@ bool TCPSocketBSD::Stop(void) {
 bool TCPSocketBSD::Connect(SocketID& socketId, const char* address, unsigned short threadNum /* = 0*/) {
 
     if(atomic_cmpxchg8((volatile char*)&m_isStarted
-        , (char)true, (char)false) != (char)false) {
+        , (char)false, (char)true) != (char)false) {
         TRACE_MSG("Connect, Already started \n");
         return false;
     }
@@ -497,20 +499,31 @@ bool TCPSocketBSD::Connect(SocketID& socketId, const char* address, unsigned sho
     }
 
     // add client
-	socket_links_t::value_t val(m_pSktLinks->Add());
-	SocketLink* pSktLink = val.pObject;
-	assert(pSktLink);
+	SocketLink sktLink;
 	// write data
 	SetNonblocking(sockfd);
-	pSktLink->fd = sockfd;
-    pSktLink->binaryAddress = inet_addr(hostname);
-    pSktLink->port = port;
-    pSktLink->CreateBuffer();
-    if(NULL == pSktLink->ptr){
-        pSktLink->ptr = AllocateLinkerData();
+	sktLink.fd = sockfd;
+    sktLink.binaryAddress = inet_addr(hostname);
+    sktLink.port = port;
+    sktLink.CreateBuffer();
+    if(NULL == sktLink.ptr){
+        sktLink.ptr = AllocateLinkerData();
     }
-    pSktLink->recLock = false;
-    pSktLink->senLock = false;
+    sktLink.recLock = false;
+    sktLink.senLock = false;
+	SocketLink* pSktLink = m_pSktLinks->AddSetIndex(sktLink, (uint32_t&)sktLink.index);
+	if(NULL == pSktLink) {
+		m_isStarted = false;
+        close(sockfd);
+        close(m_kefd);
+        delete [] m_pEvents;
+        m_pEvents = NULL;
+		delete m_pSktLinks;
+		m_pSktLinks = NULL;
+		TRACE_MSG("Can't operate more then %d sockets \n", m_pSktLinks->Size());
+		assert(false);
+		return false;
+	}
 
     // set file describe
     struct kevent changes[2] = {{0,0,0,0,0,NULL},{0,0,0,0,0,NULL}};
@@ -529,11 +542,11 @@ bool TCPSocketBSD::Connect(SocketID& socketId, const char* address, unsigned sho
         return false;
     }
 
-    pSktLink->GetSocketID(socketId, 0);
+    pSktLink->GetSocketID(socketId);
     return true;
 }
 
-void TCPSocketBSD::CloseConnection(const SocketID& socketId) {
+void TCPSocketBSD::CloseConnection(const SocketID& socketId, int nWhy) {
 
 	if(!m_isStarted) {
 		TRACE_MSG("CloseConnection, !m_isStarted \n");
@@ -545,26 +558,21 @@ void TCPSocketBSD::CloseConnection(const SocketID& socketId) {
 		return;
 	}
 
-	socket_links_t::value_t val(m_pSktLinks->Find(socketId.index));
-	if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-		TRACE_MSG("CloseConnection, XQXTABLE0S_INDEX_NIL == val.nIndex"
-			" : socketId.index = %d \n", socketId.index);
-		return;
-	}
+	SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+    if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
+        TRACE_MSG("CloseConnection, NULL == pSktLink || !pSktLink->IsSocketID(socketId)"
+            " : socketId.index = %d,  pSktLink = %x \n", socketId.index, pSktLink);
+        return;
+    }
 
-	SocketLink* pSktLink = val.pObject;
-	if(NULL == pSktLink) {
-		assert(pSktLink);
-		return;
-	}
-
+	atomic_xchg(&pSktLink->lostReason, nWhy);
     shutdown(pSktLink->fd, SHUT_RDWR);
 }
 
 bool TCPSocketBSD::Send(
 	unsigned char* data,
 	unsigned int length,
-	int socketIdx,
+	const SocketID& socketId,
 	unsigned char* prefixData,
 	unsigned int prefixLength){
 
@@ -585,14 +593,9 @@ bool TCPSocketBSD::Send(
 		return false;
 	}
 
-	socket_links_t::value_t val(m_pSktLinks->Find(socketIdx));
-	if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-		return false;
-	}
-
-	SocketLink* pSktLink = val.pObject;
-	if(NULL == pSktLink) {
-		assert(pSktLink);
+	SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+	if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
+		TRACE_MSG("Send, NULL == m_pSktLinks || !pSktLink->IsSocketID(socketId) pSktLink = %x \n", pSktLink);
 		return false;
 	}
 
@@ -601,19 +604,43 @@ bool TCPSocketBSD::Send(
     SendCallback(*p,data,length,prefixData, prefixLength);
     pSktLink->outgoingMessages.WriteUnlock();
 
-	int nSize = pSktLink->outgoingMessages.Size();
-	if(1 == nSize) {
+	if(atomic_xchg(&pSktLink->events, EV_ENABLE) != EV_ENABLE) {
 		struct kevent changes = {0, 0, 0, 0, 0, NULL};
 		EV_SET(&changes, pSktLink->fd, EVFILT_WRITE, EV_ENABLE, 0, 0, pSktLink);
 
         if(kevent(m_kefd, &changes, 1, NULL, 0, NULL) == -1) {
+			atomic_xchg(&pSktLink->events, EV_DISABLE);
             TRACE_MSG("Send, kevent failed with error: %d fd = %d\n ", errno, pSktLink->fd);
 			return false;
 		}
-	} else {
-		assert(nSize > -1);
 	}
 	return true;
+}
+
+bool TCPSocketBSD::Exist(const SocketID& socketId) const {
+	if (!m_isStarted) {
+		return false;
+	}
+
+	if (NULL == m_pSktLinks) {
+		TRACE_MSG("Exist, NULL == m_pSktLinks \n");
+		return false;
+	}
+
+	SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+	if (NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
+		return false;
+	}
+
+	return true;
+}
+
+uint32_t TCPSocketBSD::Size() const {
+	if(NULL == m_pSktLinks) {
+		TRACE_MSG("Size, NULL == m_pSktLinks \n");
+		return 0;
+	}
+	return m_pSktLinks->Size();
 }
 
 void TCPSocketBSD::ClearSocketLink(){
@@ -625,30 +652,29 @@ void TCPSocketBSD::ClearSocketLink(){
 
 	socket_links_t::iterator it(m_pSktLinks->Begin());
 	for(; m_pSktLinks->End() != it; ++it) {
-		socket_links_t::value_t val(it.GetValue());
-		if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+		socket_links_t::pair_t pair(it.GetPair());
+		if(XQXTABLE_INDEX_NIL == pair.GetIndex()) {
 			continue;
 		}
-		SocketLink* pSktLink = val.pObject;
+		SocketLink* pSktLink = pair.GetValue();
 		if(pSktLink) {
-			RemoveSocketLink(*pSktLink, val.nIndex);
+			RemoveSocketLink(*pSktLink);
 		} else {
 			assert(pSktLink);
 		}
 	}
 }
 
-bool TCPSocketBSD::RemoveSocketLink(SocketLink& socketLink, size_t index){
+bool TCPSocketBSD::RemoveSocketLink(SocketLink& socketLink){
 
 	if(NULL == m_pSktLinks) {
 		return false;
 	}
 
-	if(XQXTABLE0S_INDEX_NIL == m_pSktLinks->Find(index).nIndex) {
-		return false;
-	}
-
-	DisconnectCallback(socketLink);
+	int nIndex = socketLink.index;
+	SocketID socketId;
+	socketLink.GetSocketID(socketId);
+	int nWhy = socketLink.GetLostReason();
 
 	struct kevent changes[2] = {{0,0,0,0,0,NULL},{0,0,0,0,0,NULL}};
 	EV_SET(&changes[0], socketLink.fd, EVFILT_READ, EV_DELETE, 0, 0, &socketLink);
@@ -659,10 +685,11 @@ bool TCPSocketBSD::RemoveSocketLink(SocketLink& socketLink, size_t index){
 	}
 	close(socketLink.fd);
 
-	// clear RemoteClient
-	socketLink.Clear();
+	if (XQXTABLE_INDEX_NIL != nIndex) {
+		m_pSktLinks->Remove(nIndex, &SocketLink::Clear);
+	}
 
-	m_pSktLinks->Remove(index);
+	DisconnectCallback(nIndex, socketId, nWhy);
 	return true;
 }
 
@@ -741,53 +768,18 @@ bool TCPSocketBSD::OnRecvCompletion(SocketLink& socketLink) {
 
 bool TCPSocketBSD::OnSendCompletion(SocketLink& socketLink) {
 
-    const int nMsgSize = socketLink.outgoingMessages.Size();
-    int nCount(0);
+	for(;;) { // To avoid the accumulation of packet.
+		Packet * p = socketLink.outgoingMessages.ReadLock();
+		if(NULL == p) {
+			break;
+		}
 
-    for(;;) { // To avoid the accumulation of packet.
-        Packet * p = socketLink.outgoingMessages.ReadLock();
-        if(NULL == p) {
-            break;
-        }
-
-		if(send(socketLink.fd, (char*)p->data,
-			p->length, MSG_HAVEMORE) == -1)
-		{
-            if(EAGAIN == errno
-				// nonblocking socket no EINTR error.
-				//|| EINTR == errno
-                || EWOULDBLOCK == errno)
-			{
-				socketLink.outgoingMessages.CancelReadLock(p);
-				return true;
-            }
+		if(!SendCompletion(socketLink.fd, static_cast<char*>(p->data), static_cast<ssize_t>(p->length))) {
 			TRACE_MSG((char*)"send errno ........ = %d\n",errno);
 			socketLink.outgoingMessages.ReadUnlock();
-            return false;
-        }
-
-        if(++nCount < nMsgSize) {
-			socketLink.outgoingMessages.ReadUnlock();
-            continue;
-        }
-
+			return false;
+		}
 		socketLink.outgoingMessages.ReadUnlock();
-        break;
-    }
-
-	if(socketLink.outgoingMessages.Size() < 1) {
-			struct kevent changes = {0,0,0,0,0,NULL};
-			EV_SET(&changes, socketLink.fd, EVFILT_WRITE, EV_DISABLE, 0, 0, &socketLink);
-		do {
-            if(kevent(m_kefd, &changes, 1, NULL, 0, NULL) == -1) {
-               TRACE_MSG("OnSendCompletion, kevent failed with error: %d\n", errno);
-            }
-			if(socketLink.outgoingMessages.Size() > 0 && (changes.flags & EV_DISABLE)) {
-				// If send is be doing and have a data, the flag can't be canceled.
-				EV_SET(&changes, socketLink.fd, EVFILT_WRITE, EV_ENABLE, 0, 0, &socketLink);
-				continue;
-			}
-		} while(false);
 	}
 	return true;
 }
@@ -809,12 +801,6 @@ void TCPSocketBSD::ListenRun(){
 			continue;
 		}
 
-		socket_links_t::value_t val(m_pSktLinks->Add());
-		if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-			close(clientfd);
-			TRACE_MSG("Can't operate more then %d sockets \n", m_pSktLinks->Size());
-			continue;
-		}
 
 		int keepAlive = 1;
 		int keepSecs = KEEPALIVE_SECS;
@@ -832,23 +818,24 @@ void TCPSocketBSD::ListenRun(){
 		}
 
         //create remoteClient
-		SocketLink* pSktLink = val.pObject;
+		SocketLink sktLink;
+		SetNonblocking(clientfd);
+        sktLink.fd = clientfd;
+        sktLink.binaryAddress=sin.sin_addr.s_addr;
+        sktLink.port=ntohs( sin.sin_port);
+        sktLink.CreateBuffer();
+        if(NULL == sktLink.ptr){
+            sktLink.ptr = AllocateLinkerData();
+        }
+        sktLink.recLock = false;
+        sktLink.senLock = false;
+		SocketLink* pSktLink = m_pSktLinks->AddSetIndex(sktLink, (uint32_t&)sktLink.index);
 		if(NULL == pSktLink) {
 			close(clientfd);
-			m_pSktLinks->Remove(val.nIndex);
+			TRACE_MSG("Can't operate more then %d sockets \n", m_pSktLinks->Size());
 			assert(false);
 			continue;
 		}
-		SetNonblocking(clientfd);
-        pSktLink->fd = clientfd;
-        pSktLink->binaryAddress=sin.sin_addr.s_addr;
-        pSktLink->port=ntohs( sin.sin_port);
-        pSktLink->CreateBuffer();
-        if(NULL == pSktLink->ptr){
-            pSktLink->ptr = AllocateLinkerData();
-        }
-        pSktLink->recLock = false;
-        pSktLink->senLock = false;
 
 		//set read event
 		struct kevent changes[2] = {{0,0,0,0,0,NULL},{0,0,0,0,0,NULL}};
@@ -858,8 +845,7 @@ void TCPSocketBSD::ListenRun(){
 		if(kevent(m_kefd, changes, 2, NULL, 0, NULL) == -1) {
 			TRACE_MSG("ListenRun, kevent failed with error: %d\n", errno);
 			close(clientfd);
-            pSktLink->Clear();
-            m_pSktLinks->Remove(val.nIndex);
+            m_pSktLinks->Remove(pSktLink->index, &SocketLink::Clear);
 			continue;
 		}
 
@@ -868,7 +854,7 @@ void TCPSocketBSD::ListenRun(){
     m_listenDone.Resume();
 }
 
-#define EVERY_THREAD_PROCESS_EVENT_NUM 128
+// #define EVERY_THREAD_PROCESS_EVENT_NUM 128
 /* get need resume thread number. */
 int TCPSocketBSD::LeaderFunc(void *argv)
 {
@@ -878,7 +864,10 @@ int TCPSocketBSD::LeaderFunc(void *argv)
     if (!mgr->m_isStarted) {
 		return -1;
     } else {
-		int num = kevent(mgr->m_kefd, NULL, 0, mgr->m_pEvents, mgr->m_maxLink + 1, NULL);
+		struct timespec timeout;
+		timeout.tv_sec = 1;
+		timeout.tv_nsec = 0;
+		int num = kevent(mgr->m_kefd, NULL, 0, mgr->m_pEvents, mgr->m_maxLink + 1, &timeout);
 		if (num > 0) {
 			atomic_xchg(&mgr->m_eventNum, num);
 			//num = (num+(int)(EVERY_THREAD_PROCESS_EVENT_NUM)-1)/(int)(EVERY_THREAD_PROCESS_EVENT_NUM);
@@ -897,8 +886,7 @@ int TCPSocketBSD::LaskFunc(void *argv)
 {
     TCPSocketBSD * mgr = (TCPSocketBSD *) argv;
 
-    for(;;)
-    {
+   do {
 		if(!mgr->m_isStarted) {
             return -1;
 		}
@@ -910,45 +898,29 @@ int TCPSocketBSD::LaskFunc(void *argv)
 
         assert(ev->udata != NULL);
 
-        bool bRet = !(ev->flags & EV_DELETE) && !(ev->flags & EV_ERROR);
+        bool bRemove = ev->flags & EV_DELETE || ev->flags & EV_ERROR;
             
-		if(bRet) {
+		if(!bRemove) {
 			if(ev->filter & EVFILT_READ) {
 				SocketLink& socketLink = *static_cast<SocketLink*>(ev->udata);
-				if(atomic_cmpxchg8(&socketLink.recLock, true, false) == false) {
-					if(!mgr->OnRecvCompletion(socketLink)) {
-						bRet = false;
-					}
-					atomic_xchg8(&socketLink.recLock, false);
+				if (!TaskRecvCompletion(mgr, socketLink)) {
+					bRemove = true;
 				}
 			}
 
-			if(ev->filter & EVFILT_WRITE) {
+			if (ev->filter & EVFILT_WRITE) {
 				SocketLink& socketLink = *static_cast<SocketLink*>(ev->udata);
-            	if(atomic_cmpxchg8(&socketLink.senLock, true, false) == false) {
-					if(!mgr->OnSendCompletion(socketLink)) {
-						bRet = false;
-					}
-					atomic_xchg8(&socketLink.senLock, false);
+            	if (!TaskSendCompletion(mgr, socketLink)) {
+					bRemove = true;
 				}
 			}
 		}
 
-		if(!bRet) {
+		if (bRemove) {
 			SocketLink& socketLink = *static_cast<SocketLink*>(ev->udata);
-			if(atomic_cmpxchg8(&socketLink.removeLock, true, false) == false) {
-				size_t index = XQXTABLE0S_INDEX_NIL;
-                socket_links_t* pSktLinks = mgr->m_pSktLinks;
-				if(pSktLinks) {
-					index = pSktLinks->GetIndexByPtr(&socketLink);
-				} else {
-					assert(pSktLinks);
-				}
-				mgr->RemoveSocketLink(socketLink, index);
-				atomic_xchg8(&socketLink.removeLock, false);
-			}
+			TaskRemoveSocket(mgr, socketLink);
 		}
-	}
+	} while (true);
 
     return 0;
 }

@@ -5,10 +5,10 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _PLAYERBASE_H
-#define	_PLAYERBASE_H
+#ifndef PLAYERBASE_H
+#define	PLAYERBASE_H
 
-#include "AutoPointer.h"
+#include "WrapObject.h"
 
 class CPlayerBase {
 public:
@@ -19,69 +19,28 @@ public:
     virtual ~CPlayerBase() { 
     }
 
-	virtual uint64_t GetUserId() const {
-		throw std::runtime_error("Method GetUserId() not implemented.");
-	}
-
-protected:
-	/** %Lock operation. */
-	virtual void Lock() = 0;
-
-	/** Unlock operation. */
-	virtual void Unlock() = 0;
-
-private:
-	friend class CScopedPlayerMutex;
-	friend class CScopedPlayersMutex;
-    
+	virtual uint64_t GetUserID() const {
+		throw std::runtime_error("Method GetUserID() not implemented.");
+	} 
 };
 
-class CScopedPlayerMutex {
+class CWrapPlayer : public thd::CWrapObject<CPlayerBase> {
 public:
-    explicit CScopedPlayerMutex(const util::CAutoPointer<CPlayerBase>& player) throw()
-        : m_player(player) 
-    {
-        m_player->Lock();
-    }
+	CWrapPlayer() : thd::CWrapObject<CPlayerBase>() {}
 
-    ~CScopedPlayerMutex() throw()
-    {
-        m_player->Unlock();
-    }
-private:
-    util::CAutoPointer<CPlayerBase> m_player;
-};
+	CWrapPlayer(util::CAutoPointer<CPlayerBase>& pPlayer) : thd::CWrapObject<CPlayerBase>(pPlayer) {}
 
-typedef std::vector<util::CAutoPointer<CPlayerBase> > PLAYER_BASE_SET_T;
-typedef std::vector<uint64_t> PLAYER_ID_SET_T;
-
-class CScopedPlayersMutex {
-public:
-	explicit CScopedPlayersMutex(PLAYER_BASE_SET_T& players) throw()
-		: m_players(players)
-	{
-		if(m_players.empty()) {
-			return;
+	uint64_t GetUserID() const {
+		if (m_object.IsInvalid()) {
+			return ID_NULL;
 		}
-		int nSize = (int)m_players.size();
-		for(int i = 0; i < nSize; ++i) {
-			m_players[i]->Lock();
-		}
+
+		return m_object->GetUserID();
 	}
 
-	~CScopedPlayersMutex() throw()
-	{
-		if(m_players.empty()) {
-			return;
-		}
-		int nSize = (int)m_players.size();
-		for(int i = 0; i < nSize; ++i) {
-			m_players[i]->Unlock();
-		}
+	inline bool IsObjectInvalid() const {
+		return m_object.IsInvalid();
 	}
-
-private:
-	PLAYER_BASE_SET_T& m_players;
 };
 
-#endif /* _PLAYERBASE_H */
+#endif /* PLAYERBASE_H */

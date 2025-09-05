@@ -7,15 +7,9 @@
 #include "SpinLock.h"
 #include "rpc_channel.hpp"
 #include "TimerManager.h"
-#include "db_cxx.h"
-#include "dbstl_common.h"
+#include "ChannelManager.h"
+#include "BodyBitStream.h"
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
-#include <io.h>
-#include <direct.h>
-#else
-#include <sys/stat.h>
-#endif
 
 using namespace mdl;
 using namespace util;
@@ -26,35 +20,23 @@ thd::CSpinRWLock CControlCentreServiceImp::s_wrLock;
 
 CControlCentreServiceImp::CControlCentreServiceImp(
 	uint16_t serverRegion,
-	uint16_t serverId,
-	const std::string& strCurPath)
+	CreateMethod createWorkerMethod /*=NULL*/,
+	CreateMethod createCacheMethod /*=NULL*/)
 
 	: m_serverRegion(serverRegion)
-	, m_serverId(serverId)
+	, m_createWorkerMethod(createWorkerMethod)
+	, m_createCacheMethod(createCacheMethod)
 {
-	std::string strEnvHome(strCurPath);
-	strEnvHome += "/store/";
-
-	if(access(strEnvHome.c_str(), 0) == -1) {
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
-		mkdir(strEnvHome.c_str());
-#else
-		mkdir(strEnvHome.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-#endif
-	}
-
-	m_pDbEnv = dbstl::open_env(strEnvHome.c_str(), 0);
 }
 
 
 CControlCentreServiceImp::~CControlCentreServiceImp(void)
 {
 	ClearAllTimer();
-	dbstl::close_db_env(m_pDbEnv);
 }
 
 void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& request,
-	::rpcz::reply< ::node::OperateResponse> response)
+	::rpcz::reply< ::node::RegisterResponse> response)
 {
 	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
 	// read data
@@ -63,42 +45,55 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 		&& ID_NULL != m_serverRegion 
 		&& serverRegion != m_serverRegion)
 	{
-		::node::OperateResponse operateResponse;
-		operateResponse.set_result(CSR_REGION_INCONFORMITY);
-		response.send(operateResponse);
+		::node::RegisterResponse registerResponse;
+		registerResponse.set_result(CSR_REGION_INCONFORMITY);
+		response.send(registerResponse);
 		return;
 	}
 
-	uint16_t serverId = (uint16_t)request.serverid();
+	uint32_t serverId = request.serverid();
 	if(!InsertServerId(serverId)) {
-		::node::OperateResponse operateResponse;
-		operateResponse.set_result(CSR_CHANNEL_ALREADY_EXIST);
-		response.send(operateResponse);
+		::node::RegisterResponse registerResponse;
+		registerResponse.set_result(CSR_CHANNEL_ALREADY_EXIST);
+		response.send(registerResponse);
 		return;
 	}
 
 	int32_t registerType = request.servertype();
 	const std::string serverName(request.servername());
 	const std::string& endPoint = request.endpoint();
+	bool routServer = request.routeserver();
+	uint64_t routeAddressId = request.routeaddressid();
 	
 	CAutoPointer<IModule> module(pFacade->RetrieveModule(serverName));
 	if(module.IsInvalid()) {
 
 		switch(registerType) {
 		case REGISTER_TYPE_WORKER:
-			module.SetRawPointer(new CWorkerModule(m_pDbEnv,
-				m_serverId, serverName, endPoint, serverId));
+			if(NULL != m_createWorkerMethod) {
+				module.SetRawPointer((*m_createWorkerMethod)(serverName, endPoint,
+					serverId, routServer, routeAddressId, request.routeuserids()));
+			} else {
+				module.SetRawPointer(new CWorkerModule(serverName, endPoint,
+					serverId, routServer, routeAddressId, request.routeuserids()));
+			}
 			break;
 		case REGISTER_TYPE_CACHE:
-			module.SetRawPointer(new CCacheModule(serverName, endPoint, serverId));
+			if(NULL != m_createCacheMethod) {
+				module.SetRawPointer((*m_createCacheMethod)(serverName, endPoint, 
+					serverId, routServer, routeAddressId, request.routeuserids()));
+			} else {
+				module.SetRawPointer(new CCacheModule(serverName, endPoint,
+					serverId, routServer, routeAddressId, request.routeuserids()));
+			}
 			break;
 		default:
 			break;
 		};
 		if(module.IsInvalid()) {
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_WITHOUT_REGISTER_TYPE);
-			response.send(operateResponse);
+			::node::RegisterResponse registerResponse;
+			registerResponse.set_result(CSR_WITHOUT_REGISTER_TYPE);
+			response.send(registerResponse);
 			EraseServerId(serverId);
 			return;
 		}
@@ -107,20 +102,27 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 	} else {
 		CAutoPointer<IChannelControl> pChannelModule(module);
 		if(pChannelModule.IsInvalid()) {
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_NO_ICHANNELCONTROL);
-			response.send(operateResponse);
+			::node::RegisterResponse registerResponse;
+			registerResponse.set_result(CSR_NO_ICHANNELCONTROL);
+			response.send(registerResponse);
 			EraseServerId(serverId);
 			return;
 		}
-		if(!pChannelModule->CreatChannel(serverId, endPoint, registerType)) {
+		if(!pChannelModule->CreatChannel(serverId, endPoint, registerType,
+			routServer, routeAddressId, request.routeuserids())) {
 			// send result
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_SUCCESS);
-			response.send(operateResponse);
+			::node::RegisterResponse registerResponse;
+			if(SERVER_STATUS_START == g_serverStatus) {
+				registerResponse.set_result(CSR_SUCCESS_AND_START);
+			} else {
+				registerResponse.set_result(CSR_SUCCESS);
+			}
+			CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+			pChlMgr->CheckAndGetAgentIDs(request.agentsize(), registerResponse.mutable_agentids());
+			response.send(registerResponse);
 			/////////////////////////////////////////////////////////////////
-			CAutoPointer<CallBackFuncP1<uint16_t> >
-				callback(new CallBackFuncP1<uint16_t> 
+			CAutoPointer<CallBackFuncP1<uint32_t> >
+				callback(new CallBackFuncP1<uint32_t> 
 				(&CControlCentreServiceImp::KeepTimeoutCallback, serverId));
 
 			CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -129,14 +131,24 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 		}
 	}
 	// send result
-	::node::OperateResponse operateResponse;
-	operateResponse.set_result(CSR_SUCCESS);
-	response.send(operateResponse);
+	::node::RegisterResponse registerResponse;
+	if(SERVER_STATUS_START == g_serverStatus) {
+		registerResponse.set_result(CSR_SUCCESS_AND_START);
+	} else {
+		registerResponse.set_result(CSR_SUCCESS);
+	}
+	CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+	pChlMgr->CheckAndGetAgentIDs(request.agentsize(), registerResponse.mutable_agentids());
+	response.send(registerResponse);
 	// notification register
-	pFacade->SendNotification(N_CMD_NODE_REGISTER, serverId);
+	CBodyBitStream bsArg;
+	bsArg.WriteInt32(registerType);
+	bsArg.WriteUInt32(serverId);
+	CAutoPointer<CBodyBitStream> pArg(&bsArg, false);
+	pFacade->SendNotification(N_CMD_NODE_REGISTER, pArg);
 	////////////////////////////////////////////////////////////////////
-	CAutoPointer<CallBackFuncP1<uint16_t> >
-		callback(new CallBackFuncP1<uint16_t> 
+	CAutoPointer<CallBackFuncP1<uint32_t> >
+		callback(new CallBackFuncP1<uint32_t> 
 		(&CControlCentreServiceImp::KeepTimeoutCallback, serverId));
 
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -144,11 +156,11 @@ void CControlCentreServiceImp::RegisterModule(const ::node::RegisterRequest& req
 }
 
 void CControlCentreServiceImp::RemoveModule(const ::node::RemoveRequest& request,
-	::rpcz::reply< ::node::OperateResponse> response)
+	::rpcz::reply< ::node::RemoveResponse> response)
 {
 	// read data
 	const std::string& serverName = request.servername();
-	uint16_t serverId = (uint16_t)request.serverid();
+	uint32_t serverId = request.serverid();
 
 	///////////////////////////////////////////////////////////
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
@@ -157,16 +169,16 @@ void CControlCentreServiceImp::RemoveModule(const ::node::RemoveRequest& request
 	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
 	CAutoPointer<IModule> module(pFacade->RetrieveModule(serverName));
 	if(module.IsInvalid()) {
-		::node::OperateResponse operateResponse;
-		operateResponse.set_result(CSR_WITHOUT_THIS_MODULE);
-		response.send(operateResponse);
+		::node::RemoveResponse removeResponse;
+		removeResponse.set_result(CSR_WITHOUT_THIS_MODULE);
+		response.send(removeResponse);
 	} else {
 
 		CAutoPointer<IChannelControl> pChannelModule(module);
 		if(pChannelModule.IsInvalid()) {
-			::node::OperateResponse operateResponse;
-			operateResponse.set_result(CSR_NO_ICHANNELCONTROL);
-			response.send(operateResponse);
+			::node::RemoveResponse removeResponse;
+			removeResponse.set_result(CSR_NO_ICHANNELCONTROL);
+			response.send(removeResponse);
 		} else {
 			// notification register
 			pFacade->SendNotification(N_CMD_NODE_REMOVE, serverId);
@@ -176,13 +188,13 @@ void CControlCentreServiceImp::RemoveModule(const ::node::RemoveRequest& request
 			}
 
 			if(pChannelModule->RemoveChannel(serverId)) {
-				::node::OperateResponse operateResponse;
-				operateResponse.set_result(CSR_SUCCESS);
-				response.send(operateResponse);
+				::node::RemoveResponse removeResponse;
+				removeResponse.set_result(CSR_SUCCESS);
+				response.send(removeResponse);
 			} else {
-				::node::OperateResponse operateResponse;
-				operateResponse.set_result(CSR_REMOVE_CHANNEL_FAIL);
-				response.send(operateResponse);
+				::node::RemoveResponse removeResponse;
+				removeResponse.set_result(CSR_REMOVE_CHANNEL_FAIL);
+				response.send(removeResponse);
 			}
 		}
 	}
@@ -192,26 +204,35 @@ void CControlCentreServiceImp::RemoveModule(const ::node::RemoveRequest& request
 void CControlCentreServiceImp::KeepRegister(const ::node::KeepRegisterRequest& request,
 	::rpcz::reply< ::node::KeepRegisterResponse> response)
 {
-	uint16_t serverId = (uint16_t)request.serverid();
+	uint32_t serverId = request.serverid();
 	if(ID_NULL == serverId) {
 		// If serverId is NULL, can be used to check if this server exists.  
-		node::KeepRegisterResponse registerResponse;
-		registerResponse.set_reregister(false);
-		response.send(registerResponse);
+		node::KeepRegisterResponse keepResponse;
+		keepResponse.set_result(CSR_FAIL);
+		response.send(keepResponse);
 		return;
 	}
 	bool bExist = FindServerId(serverId);
 	//////////////////////////////////////////////////////////
+	node::KeepRegisterResponse keepResponse;
 	if(bExist) {
 		CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 		pTMgr->Modify(serverId, TIMER_OPERATER_RESET);
+
+		if (SERVER_STATUS_START == g_serverStatus) {
+			keepResponse.set_result(CSR_SUCCESS_AND_START);
+		} else {
+			keepResponse.set_result(CSR_SUCCESS);
+		}
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		pChlMgr->CheckAndGetAgentIDs(request.agentsize(), keepResponse.mutable_agentids());
+	} else {
+		keepResponse.set_result(CSR_NOT_FOUND);
 	}
-	node::KeepRegisterResponse registerResponse;
-	registerResponse.set_reregister(!bExist);
-	response.send(registerResponse);
+	response.send(keepResponse);
 }
 
-void CControlCentreServiceImp::KeepTimeoutCallback(uint16_t& serverId)
+void CControlCentreServiceImp::KeepTimeoutCallback(uint32_t& serverId)
 {
 	EraseServerId(serverId);
 	CFacade::PTR_T pFacade(CFacade::Pointer());
@@ -223,7 +244,7 @@ void CControlCentreServiceImp::ClearAllTimer()
 	thd::CScopedReadLock rdLock(s_wrLock);
 	CTimerManager::PTR_T pTMgr(CTimerManager::Pointer());
 	SERVER_ID_SET_T::const_iterator it = s_serverIds.begin();
-	for(; s_serverIds.end() != it; ++it) {		
+	for(; s_serverIds.end() != it; ++it) {
 		pTMgr->Remove(*it, true);
 	}
 }

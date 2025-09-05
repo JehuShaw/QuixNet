@@ -5,7 +5,8 @@
  * Created on 2013_10_1 10:32
  */
 
-#pragma once
+#ifndef ITCOMPARER_H
+#define ITCOMPARER_H
 
 namespace util {
 
@@ -36,3 +37,4 @@ public:
 
 }
 
+#endif /* ITCOMPARER_H */

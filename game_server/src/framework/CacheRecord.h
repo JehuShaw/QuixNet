@@ -5,8 +5,8 @@
  * Created on 2014_8_4, 16:00
  */
 
-#ifndef _CACHERECORD_H
-#define	_CACHERECORD_H
+#ifndef CACHERECORD_H
+#define	CACHERECORD_H
 
 #include "Common.h"
 #include "ICacheRecord.h"
@@ -91,10 +91,28 @@ public:
 
     virtual uint64_t ObjectId() const {
         if(m_pValue.IsInvalid()) {
-            return NULL;
+            return ID_NULL;
         }
         return m_pValue->ObjectId();
     }
+
+	virtual uint64_t Cas() const {
+		if (m_pValue.IsInvalid()) {
+			return 0;
+		}
+		return m_pValue->GetCas();
+	}
+
+	virtual const char* CacheKeyName() const {
+		if (m_pValue.IsInvalid()) {
+			return "";
+		}
+		const char* szCacheKeyName = m_pValue->GetCacheKeyName();
+		if (NULL == szCacheKeyName) {
+			return "";
+		}
+		return szCacheKeyName;
+	}
 
 private:
     uint64_t m_u64Route;
@@ -103,7 +121,7 @@ private:
     int m_nIndex;
 };
 
-#endif /* _CACHERECORD_H */
+#endif /* CACHERECORD_H */
 
 
 

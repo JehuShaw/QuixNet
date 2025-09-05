@@ -45,6 +45,9 @@ using namespace std;
 
 namespace util {
 
+#define LINE_END_CHAR1 '\r'
+#define LINE_END_CHAR2 '\n'
+
 /**
  * @typedef csv_row
  *

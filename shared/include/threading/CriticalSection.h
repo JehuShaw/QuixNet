@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef __CRITICALSECTION_H_
-#define __CRITICALSECTION_H_
+#ifndef CRITICALSECTION_H
+#define CRITICALSECTION_H
 
 #include "Common.h"
 #include "ILock.h"
@@ -14,7 +14,7 @@
 
 namespace thd {
 
-class SHARED_DLL_DECL CCriticalSection : public ILock
+class CCriticalSection : public ILock
 {
 public:
 
@@ -143,5 +143,5 @@ protected:
 
 }
 
-#endif /*__CRITICALSECTION_H_*/
+#endif /* CRITICALSECTION_H */
 

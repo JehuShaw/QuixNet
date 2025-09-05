@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _CURLMULTIMT_H
-#define _CURLMULTIMT_H
+#ifndef CURLMULTIMT_H
+#define CURLMULTIMT_H
 
 #include "SpinLock.h"
 
@@ -43,4 +43,4 @@ private:
 
 }
 
-#endif /* _CURLMULTIMT_H */
+#endif /* CURLMULTIMT_H */

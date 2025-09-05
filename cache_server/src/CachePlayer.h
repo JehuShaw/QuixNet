@@ -5,8 +5,8 @@
  * Created on 2014_7_9, 16:00
  */
 
-#ifndef _CACHEPLAYER_H_
-#define	_CACHEPLAYER_H_
+#ifndef CACHEPLAYER_H
+#define	CACHEPLAYER_H
 
 #include "PlayerBase.h"
 #include "PoolBase.h"
@@ -35,4 +35,4 @@ private:
 
 };
 
-#endif /* _CACHEPLAYER_H_ */
+#endif /* CACHEPLAYER_H */

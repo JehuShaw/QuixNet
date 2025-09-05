@@ -5,12 +5,11 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _SERVANTSERVERREGISTER_H_
-#define	_SERVANTSERVERREGISTER_H_
+#ifndef SERVANTSERVERREGISTER_H
+#define	SERVANTSERVERREGISTER_H
 
 #include <set>
 #include <map>
-#include <zmq.hpp>
 #include "NodeDefines.h"
 #include "CThreads.h"
 #include "rpcz.hpp"
@@ -33,10 +32,10 @@ public:
 
 	void RegisterCommand();
 
-	void RegistModule();
+	void RegisterModule();
 
-	void UnregistModule();
+	void UnregisterModule();
 };
 
-#endif	/* _SERVANTSERVERREGISTER_H_ */
+#endif	/* SERVANTSERVERREGISTER_H */
 

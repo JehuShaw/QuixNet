@@ -5,8 +5,8 @@
  * Created on 2014_4_5 AM 23:37
  */
 
-#ifndef __ICACHERECORD_H__
-#define __ICACHERECORD_H__
+#ifndef ICACHERECORD_H
+#define ICACHERECORD_H
 
 #include "AutoPointer.h"
 #include "Common.h"
@@ -43,10 +43,14 @@ public:
 
     virtual uint64_t ObjectId() const = 0;
 
+	virtual uint64_t Cas() const = 0;
+
+	virtual const char* CacheKeyName() const = 0;
+
 private:
-	friend class CCacheRecordManager;
+	template<typename T> friend class CCacheRecordPool;
 	volatile bool m_bLock;
 
 };
 
-#endif /* __ICACHERECORD_H__ */
+#endif /* ICACHERECORD_H */

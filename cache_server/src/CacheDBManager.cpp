@@ -4,7 +4,6 @@
 #include "SeparatedStream.h"
 #include "StreamDataType.h"
 
-
 #define DBSERVER_WAIT_TIME 1800000
 
 using namespace db;
@@ -85,8 +84,7 @@ static void MinLoadDBIdCallback(db::QueryResultVector & arg, uint16_t & p1, util
 				}
 				p2->m_u16DBId = p1;
 			} while (atomic_cmpxchg64(&p2->m_u64MinLoad,
-				u64Count,
-				u64Old) != u64Old);
+				u64Old, u64Count) != u64Old);
 		}
 	}
 
@@ -95,13 +93,70 @@ static void MinLoadDBIdCallback(db::QueryResultVector & arg, uint16_t & p1, util
 	}
 }
 
+struct SCheckKeyExist {
+	const uint32_t m_nSize;
+	volatile uint32_t m_nCount;
+	thd::CSpinEvent m_event;
+	bool m_bFound;
+
+	SCheckKeyExist(uint32_t nSize)
+		: m_nSize(nSize)
+		, m_nCount(0)
+		, m_event()
+		, m_bFound(false)
+	{
+		m_event.Suspend();
+	}
+};
+
+static void SelectKeyExistCallback(db::QueryResultVector & arg, util::CAutoPointer<SCheckKeyExist> & p1) {
+	for (size_t i = 0; i < arg.size(); ++i) {
+		if (!arg[i].result.IsInvalid()) {
+			p1->m_bFound = true;
+		}
+	}
+
+	if (p1->m_bFound || (uint32_t)atomic_inc(&p1->m_nCount) >= p1->m_nSize) {
+		p1->m_event.Resume();
+	}
+}
+
+struct SSelectResults {
+	const uint32_t m_nSize;
+	volatile uint32_t m_nCount;
+	thd::CSpinEvent m_event;
+	DB_RESUTLT_VEC_T* m_pResults;
+
+	SSelectResults(uint32_t nSize, DB_RESUTLT_VEC_T* pResults)
+		: m_nSize(nSize)
+		, m_nCount(0)
+		, m_event()
+		, m_pResults(pResults)
+	{
+		m_event.Suspend();
+	}
+};
+
+static void SelectResultsCallback(db::QueryResultVector & arg, util::CAutoPointer<SSelectResults> & p1) {
+
+	if (NULL != p1->m_pResults) {
+		for (size_t i = 0; i < arg.size(); ++i) {
+			if (!arg[i].result.IsInvalid()) {
+				p1->m_pResults->push_back(arg[i].result);
+			}
+		}
+	}
+
+	if ((uint32_t)atomic_inc(&p1->m_nCount) >= p1->m_nSize) {
+		p1->m_event.Resume();
+	}
+}
 
 
 CCacheDBManager::CCacheDBManager()
 	: m_bInit(false)
 	, m_cSeparator(0)
 	, m_cTableMapDelimiter(0)
-	, m_u16ServerId(0)
 {
 }
 
@@ -109,13 +164,12 @@ CCacheDBManager::~CCacheDBManager()
 {
 }
 
-void CCacheDBManager::Init(uint16_t u16ServerId) {
+void CCacheDBManager::Init() {
 	if(m_bInit) {
         OutputError("m_bInit");
 		return;
 	}
 	m_bInit = true;
-	m_u16ServerId = u16ServerId;
 
     AppConfig::PTR_T pConfig(AppConfig::Pointer());
 
@@ -648,6 +702,26 @@ uint64_t CCacheDBManager::GetMaskByTypeSize(int nTypeSize)
 	}
 }
 
+bool CCacheDBManager::IsDBString(int nDBType)
+{
+	switch (nDBType) {
+	case DB_TYPE_VARCHAR:
+	case DB_TYPE_CHAR:
+	case DB_TYPE_TINYBLOB:
+	case DB_TYPE_MEDIUMBLOB:
+	case DB_TYPE_LONGBLOB:
+	case DB_TYPE_BLOB:
+	case DB_TYPE_TINYTEXT:
+	case DB_TYPE_MEDIUMTEXT:
+	case DB_TYPE_LONGTEXT:
+	case DB_TYPE_TEXT:
+		return true;
+	default:
+		break;
+	}
+	return false;
+}
+
 void CCacheDBManager::GetValidDbs(std::vector<SDBInfo>& outDbServers)
 {
 	thd::CScopedReadLock rLock(m_dbSerRwLock);
@@ -710,13 +784,13 @@ uint16_t CCacheDBManager::SelectDBId(uint64_t u64Route, const CContainerData& ta
 			uint16_t, util::CAutoPointer<SCBCtrlDBID> >(SelectDBIdCallback, u16DBId, pCBCtrl));
 		util::CAutoPointer<db::AsyncQueryCb> pAsyncQuery(new AsyncQueryCb(pCallback));
 
-		std::string strSQL("SELECT "SQL_FIELD_START);
+		std::string strSQL("SELECT " SQL_FIELD_START);
 		strSQL += vecKeyColumns[0].c_str();
-		strSQL += SQL_FIELD_END" FROM "SQL_FIELD_START;
+		strSQL += SQL_FIELD_END " FROM " SQL_FIELD_START;
 		strSQL += tableInfo.GetSchema().c_str();
-		strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+		strSQL += SQL_FIELD_END "." SQL_FIELD_START;
 		strSQL += tableInfo.GetDbTable().c_str();
-		strSQL += SQL_FIELD_END" WHERE ";
+		strSQL += SQL_FIELD_END " WHERE ";
 
 		int nUseTypeSize = 0;
 		int nKeySize = (int)std::min(vecKeyColumns.size(), vecKeyTypes.size());
@@ -725,7 +799,7 @@ uint16_t CCacheDBManager::SelectDBId(uint64_t u64Route, const CContainerData& ta
 			nUseTypeSize += nCurTypeSize;
 			strSQL += SQL_FIELD_START;
 			strSQL += vecKeyColumns[0].c_str();
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			char szValue[MAX_NUMBER_SIZE] = {0};
 			ulltostr(szValue, (u64Route & GetMaskByTypeSize(nCurTypeSize)), 10, 0);
 			strSQL += szValue;
@@ -740,9 +814,9 @@ uint16_t CCacheDBManager::SelectDBId(uint64_t u64Route, const CContainerData& ta
 					break;
 				}
 				
-				strSQL += " AND "SQL_FIELD_START;
+				strSQL += " AND " SQL_FIELD_START;
 				strSQL += vecKeyColumns[i].c_str();
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				ulltostr(szValue, ((u64Route >> nUseTypeSize)
 					& GetMaskByTypeSize(nCurTypeSize)), 10, 0);
 				strSQL += szValue;	
@@ -750,7 +824,7 @@ uint16_t CCacheDBManager::SelectDBId(uint64_t u64Route, const CContainerData& ta
 		} else {
 			strSQL += SQL_FIELD_START;
 			strSQL += vecKeyColumns[0].c_str();
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			char szValue[MAX_NUMBER_SIZE] = {0};
 			ulltostr(szValue, u64Route, 10, 0);
 			strSQL += szValue;
@@ -792,13 +866,13 @@ uint16_t CCacheDBManager::MinLoadDBId(uint64_t u64Route, const CContainerData& t
 		util::CAutoPointer<db::AsyncQueryCb> pAsyncQuery(new AsyncQueryCb(pCallback));
 
 
-		std::string strSQL("SELECT COUNT("SQL_FIELD_START);
+		std::string strSQL("SELECT COUNT(" SQL_FIELD_START);
 		strSQL += vecKeyColumns[0].c_str();
-		strSQL += SQL_FIELD_END") FROM "SQL_FIELD_START;
+		strSQL += SQL_FIELD_END ") FROM " SQL_FIELD_START;
 		strSQL += tableInfo.GetSchema().c_str();
-		strSQL += SQL_FIELD_END"."SQL_FIELD_START;
+		strSQL += SQL_FIELD_END "." SQL_FIELD_START;
 		strSQL += tableInfo.GetDbTable().c_str();
-		strSQL += SQL_FIELD_END" WHERE ";
+		strSQL += SQL_FIELD_END " WHERE ";
 
 		int nUseTypeSize = 0;
 		int nKeySize = (int)std::min(vecKeyColumns.size(), vecKeyTypes.size());
@@ -807,7 +881,7 @@ uint16_t CCacheDBManager::MinLoadDBId(uint64_t u64Route, const CContainerData& t
 			nUseTypeSize += nCurTypeSize;
 			strSQL += SQL_FIELD_START;
 			strSQL += vecKeyColumns[0].c_str();
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			char szValue[MAX_NUMBER_SIZE] = {0};
 			ulltostr(szValue, (u64Route & GetMaskByTypeSize(nCurTypeSize)), 10, 0);
 			strSQL += szValue;
@@ -822,9 +896,9 @@ uint16_t CCacheDBManager::MinLoadDBId(uint64_t u64Route, const CContainerData& t
 					break;
 				}
 
-				strSQL += " AND "SQL_FIELD_START;
+				strSQL += " AND " SQL_FIELD_START;
 				strSQL += vecKeyColumns[i].c_str();
-				strSQL += SQL_FIELD_END" = ";
+				strSQL += SQL_FIELD_END " = ";
 				ulltostr(szValue, ((u64Route >> nUseTypeSize)
 					& GetMaskByTypeSize(nCurTypeSize)), 10, 0);
 				strSQL += szValue;	
@@ -832,7 +906,7 @@ uint16_t CCacheDBManager::MinLoadDBId(uint64_t u64Route, const CContainerData& t
 		} else {
 			strSQL += SQL_FIELD_START;
 			strSQL += vecKeyColumns[0].c_str();
-			strSQL += SQL_FIELD_END" = ";
+			strSQL += SQL_FIELD_END " = ";
 			char szValue[MAX_NUMBER_SIZE] = {0};
 			ulltostr(szValue, u64Route, 10, 0);
 			strSQL += szValue;
@@ -865,6 +939,64 @@ bool CCacheDBManager::SaveRoute(uint16_t u16DBId, const CContainerData& tableInf
 		tableInfo.GetDbTable().c_str(),
 		vecKeyColumns[0].c_str(),
 		u64Route);
+}
+
+bool CCacheDBManager::CheckKeyExist(const std::string& strSQL)
+{
+	if (strSQL.empty()) {
+		OutputError("strSQL.empty()");
+		assert(false);
+		return false;
+	}
+
+	std::vector<SDBInfo> dbServers;
+	GetValidDbs(dbServers);
+
+	size_t nSize = dbServers.size();
+	util::CAutoPointer<SCheckKeyExist> pCBCtrl(new SCheckKeyExist(nSize));
+	for (size_t i = 0; i < nSize; ++i) {
+		uint16_t u16DBId = dbServers[i].m_u16DBId;
+		util::CAutoPointer<db::Database> pDatabase(dbServers[i].m_pDatabase);
+
+		util::CAutoPointer<db::SQLCallbackBase> pCallback(new db::SQLFuncCallbackP1<
+			util::CAutoPointer<SCheckKeyExist> >(SelectKeyExistCallback, pCBCtrl));
+		util::CAutoPointer<db::AsyncQueryCb> pAsyncQuery(new AsyncQueryCb(pCallback));
+
+
+		pAsyncQuery->AddQueryNA(strSQL.c_str());
+		pDatabase->AddAsyncQuery(pAsyncQuery);
+	}
+	pCBCtrl->m_event.Wait(DBSERVER_WAIT_TIME);
+	return pCBCtrl->m_bFound;
+}
+
+bool CCacheDBManager::QueryFromAllDB(const std::string& strSQL, DB_RESUTLT_VEC_T* pResults)
+{
+	if (strSQL.empty()) {
+		OutputError("strSQL.empty()");
+		assert(false);
+		return false;
+	}
+
+	std::vector<SDBInfo> dbServers;
+	GetValidDbs(dbServers);
+
+	size_t nSize = dbServers.size();
+	util::CAutoPointer<SSelectResults> pCBCtrl(new SSelectResults(nSize, pResults));
+	for (size_t i = 0; i < nSize; ++i) {
+		uint16_t u16DBId = dbServers[i].m_u16DBId;
+		util::CAutoPointer<db::Database> pDatabase(dbServers[i].m_pDatabase);
+
+		util::CAutoPointer<db::SQLCallbackBase> pCallback(new db::SQLFuncCallbackP1<
+			util::CAutoPointer<SSelectResults> >(SelectResultsCallback, pCBCtrl));
+		util::CAutoPointer<db::AsyncQueryCb> pAsyncQuery(new AsyncQueryCb(pCallback));
+
+
+		pAsyncQuery->AddQueryNA(strSQL.c_str());
+		pDatabase->AddAsyncQuery(pAsyncQuery);
+	}
+	pCBCtrl->m_event.Wait(DBSERVER_WAIT_TIME);
+	return true;
 }
 
 void CCacheDBManager::DisposeAllDBServer()

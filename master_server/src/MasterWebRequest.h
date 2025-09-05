@@ -4,7 +4,9 @@
  *
  * Created on 2014_6_5 15:19
  */
-#pragma once
+
+#ifndef MASTERWEBREQUEST_H
+#define	MASTERWEBREQUEST_H
 
 #include "Common.h"
 #include "HttpRequest.h"
@@ -14,7 +16,7 @@ class CMasterWebRequest : public ntwk::HttpRequest, public util::PoolBase<CMaste
 {
 public:
     static CMasterWebRequest *Create(const char *pUrl,
-		unsigned int socketIdx, unsigned int account);
+		unsigned int socketIdx, uint64_t account);
     static void Release(CMasterWebRequest*);
 
     const char *  GetUrl() const;		
@@ -26,12 +28,12 @@ public:
 	
 protected:
 private:
-    CMasterWebRequest(const char *pUrl,
-		unsigned int socketIdx, unsigned int account);
+    CMasterWebRequest(const char *pUrl, unsigned int socketIdx, uint64_t account);
     ~CMasterWebRequest();
 
     std::string m_url;
+	uint64_t m_account;
 	unsigned int m_socketIdx;
-	unsigned int m_account;
 };
 
+#endif /* MASTERWEBREQUEST_H */

@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _SERVER_LOG_H
-#define _SERVER_LOG_H
+#ifndef SERVER_LOG_H
+#define SERVER_LOG_H
 
 #include "Common.h"
 #include "Singleton.h"
@@ -23,9 +23,6 @@ namespace util {
 #define ERROR_LOG_FILE_NAME "error"
 
 static const long MAX_LOG_FILE_SIZE = 1024 * 1024 * 16;
-static const unsigned int MININUM_LOG_QUEUE_SIZE = 64;
-
-template<class ElementType> class CCircleQueue;
 
 struct OutputData {
 	std::string strfileName;
@@ -35,8 +32,8 @@ struct OutputData {
 class SHARED_DLL_DECL CLog : public Singleton< CLog > {
 public:
 	CLog();
-	~CLog();
 	void Init(int32_t fileLogLevel, const std::string strLogPath = "./log/");
+	void Dispose();
 	// set print log level
 	void SetFileLoggingLevel(int32_t level);
 	//log level 0
@@ -80,11 +77,11 @@ private:
 	volatile long m_fileLogLevel;
 	thd::CSpinEvent m_event;
 	volatile bool m_bStarted;
-	thd::CCircleQueue<struct OutputData> m_queue;
+	thd::CCircleQueue<struct OutputData, 64> m_queue;
 	std::string m_strLogPath;
 
 
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 )
 friend unsigned int _stdcall threadLoop(void * arguments);
 #else
 friend void * threadLoop(void * arguments);
@@ -93,7 +90,7 @@ friend void * threadLoop(void * arguments);
 };
 
 #define LogInit(fileLogLevel, strLogPath) util::CLog::Pointer()->Init(fileLogLevel, strLogPath)
-#define LogRelease util::CLog::Pointer()->Release
+#define LogRelease util::CLog::Pointer()->Dispose(); util::CLog::Pointer()->Release
 #define LogLevel(level) util::CLog::Pointer()->SetFileLoggingLevel(level)
 #define PrintFile(szFileName, szMsg, bPrintTime) util::CLog::Pointer()->OutFile(szFileName, szMsg, bPrintTime)
 #define PrintLog(szFileName, fmt, ...) util::CLog::Pointer()->OutLog(szFileName, NULL, fmt, ## __VA_ARGS__)
@@ -111,4 +108,4 @@ friend void * threadLoop(void * arguments);
 #define OutputDebug(fmt, ...) util::CLog::Pointer()->OutDebug(" [Function:\"%s\", Line:%d, File:\"%s\"] ", fmt, ## __VA_ARGS__, __FUNCTION__, __LINE__, __FILE__)
 }
 
-#endif
+#endif /* SERVER_LOG_H */

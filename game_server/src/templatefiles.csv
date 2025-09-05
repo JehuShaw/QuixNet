@@ -1,0 +1,5 @@
+template_name,file_name
+global_config,Data_Global.csv
+character,Data_Role.csv
+map,Data_Map.csv
+level_exp,Data_LevelExp.csv

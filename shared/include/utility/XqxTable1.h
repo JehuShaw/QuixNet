@@ -4,132 +4,193 @@
  * 
  * Created on 2017_7_5, 23:15
  */
-#ifndef __XQXTABLE1_H__
-#define __XQXTABLE1_H__
+#ifndef XQXTABLE1_H
+#define XQXTABLE1_H
 
 #include <assert.h>
 #include <stdexcept>
+#include <stdint.h>
 
 namespace util {
 
 #define XQXTABLE1_ALLOCATE_SIZE 8
-#define XQXTABLE1_INDEX_NIL (size_t)-1
+
+#ifndef XQXTABLE_INDEX_NIL
+#define XQXTABLE_INDEX_NIL -1
+#endif
+
+#ifndef XQXTABLE_MAX_SIZE
+#define XQXTABLE_MAX_SIZE 0x7FFFFFFF
+#endif
 
 template<class T>
 class CXqxTable1
 {
-	struct SXqxItem {
-		T object;
-		size_t nIndex;
-
-		SXqxItem(size_t idx)
-			: nIndex(idx)
-		{}
-
-		SXqxItem(size_t idx, const T& obj)
-			: nIndex(idx), object(obj)
-		{}
-	};
-	class CXqxTableIterator {
+private:
+	class CXqxItem {
 	public:
-		CXqxTableIterator(const CXqxTable1<T>* pXqxTable, size_t nIndex)
-			: m_pXqxTable(pXqxTable)
-			, m_nIndex(nIndex)
-			, m_bEnd(false)
-		{
-			assert(m_pXqxTable);
-			if(pXqxTable && pXqxTable->m_nCurSize == nIndex) {
-				m_bEnd = true;
-			}
+		CXqxItem(uint32_t idx)
+			: m_nIndex(idx)
+			, m_object()
+			, m_nCount(0)
+		{}
+
+		CXqxItem(uint32_t idx, const CXqxItem& orig)
+			: m_nIndex(idx)
+			, m_object(orig.m_object)
+			, m_nCount(orig.m_nCount)
+		{}
+
+		const T& GetValue() const {
+			return m_object;
 		}
 
-		bool operator==(const CXqxTableIterator& x) const {
+		uint64_t GetKey() const {
+			uint64_t nKey = m_nCount;
+			nKey <<= 32;
+			nKey |= m_nIndex;
+			return nKey;
+		}
+
+	private:
+		friend class CXqxTable1<T>;
+		friend class CIteratorBase;
+
+	private:
+		T m_object;
+		uint32_t m_nIndex;
+		uint32_t m_nCount;
+	};
+
+public:
+	typedef CXqxItem pair_t;
+
+private:
+	class CIteratorBase {
+	public:
+		CIteratorBase(const CXqxTable1<T>* pXqxTable, uint32_t nIndex)
+			: m_pXqxTable(pXqxTable)
+			, m_nIndex(nIndex)
+		{
+			assert(m_pXqxTable);
+		}
+
+		bool operator==(const CIteratorBase& x) const {
 			if(m_pXqxTable != x.m_pXqxTable) {
 				throw std::logic_error("The table is not the same.");
-			}
-			if(m_bEnd && m_pXqxTable->m_nCurSize != m_nIndex) {
-				throw std::logic_error("The end iterator of this is invalid !");
-			}
-			if(x.m_bEnd && x.m_pXqxTable->m_nCurSize != x.m_nIndex) {
-				throw std::logic_error("The end iterator of x is invalid !");
 			}
 			return m_nIndex == x.m_nIndex;
 		}
 
-		bool operator!=(const CXqxTableIterator& x) const {
+		bool operator!=(const CIteratorBase& x) const {
 			if(m_pXqxTable != x.m_pXqxTable) {
 				throw std::logic_error("The table is not the same.");
-			}
-			if(m_bEnd && m_pXqxTable->m_nCurSize != m_nIndex) {
-				throw std::logic_error("The end iterator of this is invalid !");
-			}
-			if(x.m_bEnd && x.m_pXqxTable->m_nCurSize != x.m_nIndex) {
-				throw std::logic_error("The end iterator of x is invalid !");
 			}
 			return m_nIndex != x.m_nIndex;
 		}
 
-		CXqxTableIterator& operator++() {
-			if(m_nIndex >= m_pXqxTable->m_nCurSize) {
-				m_bEnd = true;
-				m_nIndex = m_pXqxTable->m_nCurSize;
-				return *this;
-			}
-			if(++m_nIndex == m_pXqxTable->m_nCurSize) {
-				m_bEnd = true;
-			}
-			return *this;
-		}
-
-		CXqxTableIterator operator++(int) {
-			CXqxTableIterator tmp(*this);
-			++*this;
-			return tmp;
-		}
-
-		CXqxTableIterator& operator--() {
-			if(0 == m_nIndex) {
-				m_bEnd = false;
-				return *this;
-			}
-			if(m_nIndex-- == m_pXqxTable->m_nCurSize) {
-				m_bEnd = false;
-			}
-			return *this;
-		}
-
-		CXqxTableIterator operator--(int) {
-			CXqxTableIterator tmp(*this);
-			--*this;
-			return tmp;
-		}
-
-		SXqxItem GetValue() const {
+		pair_t GetPair() const {
 			if(m_nIndex >= m_pXqxTable->m_nAllcSize) {
 				throw std::out_of_range("The m_nIndex is out of range.");
 			}
-			size_t nCurIdx = m_pXqxTable->m_arrItems[m_nIndex].nIndex;
+			uint32_t nCurIdx = m_pXqxTable->m_arrItems[m_nIndex].m_nIndex;
 			if(nCurIdx >= m_pXqxTable->m_nAllcSize) {
 				throw std::out_of_range("The nCurIdx is out of range.");
 			}
-			if(m_pXqxTable->m_arrItems[nCurIdx].nIndex >= m_pXqxTable->m_nCurSize) {
-				return SXqxItem(XQXTABLE1_INDEX_NIL);
+			if(m_pXqxTable->m_arrItems[nCurIdx].m_nIndex >= m_pXqxTable->m_nCurSize) {
+				return pair_t(XQXTABLE_INDEX_NIL);
 			}
-			return SXqxItem(nCurIdx, m_pXqxTable->m_arrItems[nCurIdx].object);
+			return pair_t(nCurIdx, m_pXqxTable->m_arrItems[nCurIdx]);
+		}
+
+	protected:
+		inline void IncreaseIndex() {
+			if(m_nIndex >= m_pXqxTable->m_nCurSize
+				&& (uint32_t)-1 != m_nIndex) {
+				return;
+			}
+			++m_nIndex;
+		}
+
+		inline void DecreaseIndex() {
+			if(m_nIndex >= m_pXqxTable->m_nCurSize) {
+				return;
+			}
+			--m_nIndex;
 		}
 
 	private:
 		const CXqxTable1<T>* m_pXqxTable;
-		size_t m_nIndex;
-		bool m_bEnd;
+		uint32_t m_nIndex;
+	};
+
+	class CIterator : public CIteratorBase {
+	public:
+		typedef CIteratorBase super;
+
+		CIterator(const CXqxTable1<T>* pXqxTable, uint32_t nIndex)
+			: CIteratorBase(pXqxTable, nIndex) {
+		}
+
+		CIterator& operator++() {
+			super::IncreaseIndex();
+			return *this;
+		}
+
+		CIterator operator++(int) {
+			CIterator tmp(*this);
+			super::IncreaseIndex();
+			return tmp;
+		}
+
+		CIterator& operator--() {
+			super::DecreaseIndex();
+			return *this;
+		}
+
+		CIterator operator--(int) {
+			CIterator tmp(*this);
+			super::DecreaseIndex();
+			return tmp;
+		}
+	};
+
+	class CReverseIterator : public CIteratorBase {
+	public:
+		typedef CIteratorBase super;
+
+		CReverseIterator(const CXqxTable1<T>* pXqxTable, uint32_t nIndex)
+			: CIteratorBase(pXqxTable, nIndex) {
+		}
+
+		CReverseIterator& operator++() {
+			super::DecreaseIndex();
+			return *this;
+		}
+
+		CReverseIterator operator++(int) {
+			CReverseIterator tmp(*this);
+			super::DecreaseIndex();
+			return tmp;
+		}
+
+		CReverseIterator& operator--() {
+			super::IncreaseIndex();
+			return *this;
+		}
+
+		CReverseIterator operator--(int) {
+			CReverseIterator tmp(*this);
+			super::IncreaseIndex();
+			return tmp;
+		}
 	};
 
 public:
-	typedef CXqxTableIterator iterator;
-	typedef struct SXqxItem value_t;
+	typedef CIterator iterator;
+	typedef CReverseIterator reverse_iterator;
 
-public:
-	CXqxTable1(size_t nAllcSize = 0)
+	CXqxTable1(uint32_t nAllcSize = 0)
 		: m_arrItems(NULL)
 		, m_nAllcSize(0)
 		, m_nCurSize(0)
@@ -150,6 +211,10 @@ public:
 		m_nAllcSize = 0;
 		m_nCurSize = 0;
 
+		if(NULL == orig.m_arrItems) {
+			return;
+		}
+
 		if(0 == orig.m_nAllcSize) {
 			AllcoTable(XQXTABLE1_ALLOCATE_SIZE);
 		} else {
@@ -160,22 +225,24 @@ public:
 			if(orig.m_nCurSize > m_nAllcSize) {
 				assert(false);
 			} else {
-				for(size_t i = 0; i < orig.m_nCurSize; ++i) {
-					size_t nCurIdx = orig.m_arrItems[i].nIndex;
+				for(uint32_t i = 0; i < orig.m_nCurSize; ++i) {
+					uint32_t nCurIdx = orig.m_arrItems[i].m_nIndex;
 					if(nCurIdx >= m_nAllcSize) {
 						assert(false);
 						continue;
 					}
 
-					new(&m_arrItems[nCurIdx].object)T(
-						orig.m_arrItems[nCurIdx].object);
+					new(&m_arrItems[nCurIdx].m_object)T(
+						orig.m_arrItems[nCurIdx].m_object);
 
 					if(nCurIdx != i) {
-						m_arrItems[i].nIndex = nCurIdx;
-						m_arrItems[nCurIdx].nIndex = i;
+						m_arrItems[i].m_nIndex = nCurIdx;
+						m_arrItems[nCurIdx].m_nIndex = i;
 					} else {
-						m_arrItems[i].nIndex = i;
-					}	
+						m_arrItems[i].m_nIndex = i;
+					}
+
+					m_arrItems[nCurIdx].m_nCount = orig.m_arrItems[nCurIdx].m_nCount;
 				}
 				m_nCurSize = orig.m_nCurSize;
 			}
@@ -187,123 +254,225 @@ public:
 		DestoryTable();
 	}
 
-	size_t Add(const T& object)
+	uint64_t Add(T object)
 	{
+		if(m_nCurSize >= XQXTABLE_MAX_SIZE) {
+			assert(false);
+			return XQXTABLE_INDEX_NIL;
+		}
 		AllcoTable(m_nCurSize + 1);
 		if(NULL == m_arrItems) {
 			assert(false);
-			return XQXTABLE1_INDEX_NIL;
+			return XQXTABLE_INDEX_NIL;
 		}
-		size_t nSubIdx = m_nCurSize;
+		uint32_t nSubIdx = m_nCurSize;
 		if(nSubIdx >= m_nAllcSize) {
-			return XQXTABLE1_INDEX_NIL;
+			return XQXTABLE_INDEX_NIL;
 		}
-		size_t nCurIdx = nSubIdx;
+		uint32_t nCurIdx = nSubIdx;
 		if(m_nCurSize > 0) {
-			size_t nPreIdx = m_arrItems[nCurIdx].nIndex;
+			uint32_t nPreIdx = m_arrItems[nCurIdx].m_nIndex;
 			if(nCurIdx > nPreIdx) {
-				assert(nCurIdx == m_arrItems[nPreIdx].nIndex);
+				assert(nCurIdx == m_arrItems[nPreIdx].m_nIndex);
 				nCurIdx = nPreIdx;
-				m_arrItems[nSubIdx].nIndex = nSubIdx;
+				m_arrItems[nSubIdx].m_nIndex = nSubIdx;
 			}
 		}
-		struct SXqxItem& xqxItem = m_arrItems[nCurIdx];
-		xqxItem.nIndex = nCurIdx;
-		new(&xqxItem.object)T(object);
-		
+		CXqxItem& xqxItem = m_arrItems[nCurIdx];
+		xqxItem.m_nIndex = nCurIdx;
+		++xqxItem.m_nCount;
+		new(&xqxItem.m_object)T(object);
+
 		++m_nCurSize;
-		return nCurIdx;
+		return xqxItem.GetKey();
 	}
 
-	bool Remove(size_t nIndex)
+	uint64_t Add()
 	{
+		if(m_nCurSize >= XQXTABLE_MAX_SIZE) {
+			assert(false);
+			return XQXTABLE_INDEX_NIL;
+		}
+		AllcoTable(m_nCurSize + 1);
+		if(NULL == m_arrItems) {
+			assert(false);
+			return XQXTABLE_INDEX_NIL;
+		}
+		uint32_t nSubIdx = m_nCurSize;
+		if(nSubIdx >= m_nAllcSize) {
+			return XQXTABLE_INDEX_NIL;
+		}
+		uint32_t nCurIdx = nSubIdx;
+		if(m_nCurSize > 0) {
+			uint32_t nPreIdx = m_arrItems[nCurIdx].m_nIndex;
+			if(nCurIdx > nPreIdx) {
+				assert(nCurIdx == m_arrItems[nPreIdx].m_nIndex);
+				nCurIdx = nPreIdx;
+				m_arrItems[nSubIdx].m_nIndex = nSubIdx;
+			}
+		}
+		CXqxItem& xqxItem = m_arrItems[nCurIdx];
+		xqxItem.m_nIndex = nCurIdx;
+		++xqxItem.m_nCount;
+		new(&xqxItem.m_object)T();
+
+		++m_nCurSize;
+		return xqxItem.GetKey();
+	}
+
+	bool Remove(uint64_t nKey)
+	{
+		if(NULL == m_arrItems) {
+			assert(false);
+			return false;
+		}
+
+		if(m_nCurSize < 1) {
+			return false;
+		}
+
+		uint32_t nIndex = GetIndex(nKey);
 		if(nIndex >= m_nAllcSize) {
 			assert(false);
 			return false;
 		}
-		if(NULL == m_arrItems) {
-			assert(false);
+
+		uint32_t nCount = GetCount(nKey);
+		if(m_arrItems[nIndex].m_nCount != nCount) {
 			return false;
 		}
 
-		size_t nCurIdx = nIndex;
-		size_t nSubIdx = m_arrItems[nCurIdx].nIndex;
-		size_t nLastIdx = m_nCurSize - 1;
+		uint32_t nCurIdx = nIndex;
+		uint32_t nSubIdx = m_arrItems[nCurIdx].m_nIndex;
+		uint32_t nLastIdx = m_nCurSize - 1;
 		if(nSubIdx > nLastIdx) {
 			return false;
 		}
 
 		if(nCurIdx > nLastIdx) {
-			m_arrItems[nCurIdx].nIndex = nCurIdx;
-			m_arrItems[nSubIdx].nIndex = nSubIdx;
-			nCurIdx = nSubIdx;	
+			m_arrItems[nCurIdx].m_nIndex = nCurIdx;
+			m_arrItems[nSubIdx].m_nIndex = nSubIdx;
+			nCurIdx = nSubIdx;
 		}
 
-		size_t nSubIdx2 = m_arrItems[nLastIdx].nIndex;
+		uint32_t nSubIdx2 = m_arrItems[nLastIdx].m_nIndex;
 		if(nSubIdx2 != nLastIdx) {
-			m_arrItems[nLastIdx].nIndex = nLastIdx;
-			m_arrItems[nSubIdx2].nIndex = nCurIdx;
-			m_arrItems[nCurIdx].nIndex = nSubIdx2;
+			m_arrItems[nLastIdx].m_nIndex = nLastIdx;
+			m_arrItems[nSubIdx2].m_nIndex = nCurIdx;
+			m_arrItems[nCurIdx].m_nIndex = nSubIdx2;
 		} else if(nCurIdx != nLastIdx) {
-			m_arrItems[nCurIdx].nIndex = nLastIdx;
-			m_arrItems[nLastIdx].nIndex = nCurIdx;
+			m_arrItems[nCurIdx].m_nIndex = nLastIdx;
+			m_arrItems[nLastIdx].m_nIndex = nCurIdx;
 		}
-		m_arrItems[nIndex].object.~T();
+		m_arrItems[nIndex].m_object.~T();
 		--m_nCurSize;
 		return true;
 	}
 
-	void Clear() 
+	void Clear()
 	{
 		if(NULL == m_arrItems) {
 			assert(false);
 			return;
 		}
-		size_t nSize = m_nCurSize;
+		uint32_t nSize = m_nCurSize;
 		m_nCurSize = 0;
-		for(size_t i = 0; i < nSize; ++i) {
-			size_t nCurIdx = m_arrItems[i].nIndex;
+		for(uint32_t i = 0; i < nSize; ++i) {
+			uint32_t nCurIdx = m_arrItems[i].m_nIndex;
 			if(nCurIdx >= m_nAllcSize) {
 				assert(false);
 				continue;
 			}
 			if(nCurIdx != i) {
-				m_arrItems[i].nIndex = i;
-				m_arrItems[nCurIdx].nIndex = nCurIdx;
+				m_arrItems[i].m_nIndex = i;
+				m_arrItems[nCurIdx].m_nIndex = nCurIdx;
 			}
-			m_arrItems[nCurIdx].object.~T();
+			m_arrItems[nCurIdx].m_object.~T();
 		}
 	}
 
-	bool Change(size_t nIndex, const T& object) 
+	bool Change(uint64_t nKey, T object) 
 	{
 		if(NULL == m_arrItems) {
 			assert(false);
 			return false;
 		}
+
+		if(m_nCurSize < 1) {
+			return false;
+		}
+
+		uint32_t nIndex = GetIndex(nKey);
 		if(nIndex >= m_nAllcSize) {
 			return false;
 		}
-		if(m_arrItems[nIndex].nIndex >= m_nCurSize) {
+
+		uint32_t nCount = GetCount(nKey);
+		if(m_arrItems[nIndex].m_nCount != nCount) {
 			return false;
 		}
-		m_arrItems[nIndex].object = object;
+
+		if(m_arrItems[nIndex].m_nIndex >= m_nCurSize) {
+			return false;
+		}
+
+		m_arrItems[nIndex].m_object = object;
 		return true;
 	}
 
-	value_t Find(size_t nIndex) const 
+	bool Has(uint64_t nKey) const
+	{
+		if(NULL == m_arrItems) {
+			return false;
+		}
+
+		if(m_nCurSize < 1) {
+			return false;
+		}
+
+		uint32_t nIndex = GetIndex(nKey);
+		if(nIndex >= m_nAllcSize) {
+			return false;
+		}
+
+		uint32_t nCount = GetCount(nKey);
+		if(m_arrItems[nIndex].m_nCount != nCount) {
+			return false;
+		}
+
+		if(m_arrItems[nIndex].m_nIndex >= m_nCurSize) {
+			return false;
+		}
+
+		return true;
+	}
+
+	T Find(uint64_t nKey) const
 	{
 		if(NULL == m_arrItems) {
 			assert(false);
-			return value_t(XQXTABLE1_INDEX_NIL);
+			return T();
 		}
+
+		if(m_nCurSize < 1) {
+			return T();
+		}
+
+		uint32_t nIndex = GetIndex(nKey);
 		if(nIndex >= m_nAllcSize) {
-			return value_t(XQXTABLE1_INDEX_NIL);
+			return T();
 		}
-		if(m_arrItems[nIndex].nIndex >= m_nCurSize) {
-			return value_t(XQXTABLE1_INDEX_NIL);
+
+		uint32_t nCount = GetCount(nKey);
+		if(m_arrItems[nIndex].m_nCount != nCount) {
+			return T();
+		} 
+
+		if(m_arrItems[nIndex].m_nIndex >= m_nCurSize) {
+			return T();
 		}
-		return value_t(nIndex, m_arrItems[nIndex].object);
+
+		return m_arrItems[nIndex].m_object;
 	}
 
 	void Print()
@@ -314,13 +483,13 @@ public:
 		}
 		printf("/////////////////////////////////////////////////////////////////\n");
 		printf("m_nCurSize = %d m_nAllcSize= %d\n", m_nCurSize, m_nAllcSize);
-		for(size_t i = 0; i < m_nAllcSize; ++i) {
-			printf("m_arrItems[%u].index = %u\n",i, m_arrItems[i].nIndex);
+		for(uint32_t i = 0; i < m_nAllcSize; ++i) {
+			printf("m_arrItems[%u].m_nIndex = %u\n",i, m_arrItems[i].m_nIndex);
 		}
 		printf("m_nCurSize = %d m_nAllcSize= %d\n", m_nCurSize, m_nAllcSize);
 	}
 
-	size_t Size() const {
+	uint32_t Size() const {
 		return m_nCurSize;
 	}
 
@@ -328,12 +497,20 @@ public:
 		return m_nCurSize == 0;
 	}
 
-	iterator Begin() {
+	iterator Begin() const {
 		return iterator(this, 0);
 	}
 
-	iterator End() {
+	iterator End() const {
 		return iterator(this, m_nCurSize);
+	}
+
+	reverse_iterator RBegin() const {
+		return reverse_iterator(this, m_nCurSize - 1);
+	}
+
+	reverse_iterator REnd() const {
+		return reverse_iterator(this, -1);
 	}
 
 	CXqxTable1& operator = (const CXqxTable1& right) {
@@ -342,6 +519,10 @@ public:
 		}
 
 		DestoryTable();
+
+		if(NULL == right.m_arrItems) {
+			return *this;
+		}
 
 		if(0 == right.m_nAllcSize) {
 			AllcoTable(XQXTABLE1_ALLOCATE_SIZE);
@@ -353,22 +534,24 @@ public:
 			if(right.m_nCurSize > m_nAllcSize) {
 				assert(false);
 			} else {
-				for(size_t i = 0; i < right.m_nCurSize; ++i) {
-					size_t nCurIdx = right.m_arrItems[i].nIndex;
+				for(uint32_t i = 0; i < right.m_nCurSize; ++i) {
+					uint32_t nCurIdx = right.m_arrItems[i].m_nIndex;
 					if(nCurIdx >= m_nAllcSize) {
 						assert(false);
 						continue;
 					}
 
-					new(&m_arrItems[nCurIdx].object)T(
-						right.m_arrItems[nCurIdx].object);
+					new(&m_arrItems[nCurIdx].m_object)T(
+						right.m_arrItems[nCurIdx].m_object);
 
 					if(nCurIdx != i) {
-						m_arrItems[i].nIndex = nCurIdx;
-						m_arrItems[nCurIdx].nIndex = i;
+						m_arrItems[i].m_nIndex = nCurIdx;
+						m_arrItems[nCurIdx].m_nIndex = i;
 					} else {
-						m_arrItems[i].nIndex = i;
-					}	
+						m_arrItems[i].m_nIndex = i;
+					}
+
+					m_arrItems[nCurIdx].m_nCount = right.m_arrItems[nCurIdx].m_nCount;
 				}
 				m_nCurSize = right.m_nCurSize;
 			}
@@ -377,31 +560,32 @@ public:
 	}
 
 private:
-	void AllcoTable(size_t nNeedSize) {
+	void AllcoTable(uint32_t nNeedSize) {
 		if(NULL == m_arrItems) {
-			size_t nByteSize = sizeof(struct SXqxItem) * nNeedSize;
-			m_arrItems = (struct SXqxItem*)malloc(nByteSize);
+			uint32_t nByteSize = sizeof(CXqxItem) * nNeedSize;
+			m_arrItems = (CXqxItem*)malloc(nByteSize);
 			m_nAllcSize = nNeedSize;
 			if(NULL != m_arrItems) {
-				for(size_t i = 0; i < m_nAllcSize; ++i) {
-					m_arrItems[i].nIndex = XQXTABLE1_INDEX_NIL;
+				for(uint32_t i = 0; i < m_nAllcSize; ++i) {
+					m_arrItems[i].m_nIndex = XQXTABLE_INDEX_NIL;
+					m_arrItems[i].m_nCount = 0;
 				}
 			} else {
 				assert(m_arrItems);
 			}
 		} else {
 			if(nNeedSize > m_nAllcSize) {
-				size_t nOldSize = m_nAllcSize;
-				size_t nNewSize = m_nAllcSize * 2;
+				uint32_t nOldSize = m_nAllcSize;
+				uint32_t nNewSize = m_nAllcSize * 2;
 				if(nNeedSize > nNewSize) {
 					nNewSize = nNeedSize;
 				}
-				size_t nByteSize = sizeof(struct SXqxItem) * nNewSize;
-				struct SXqxItem* pNew = (struct SXqxItem*)realloc(m_arrItems, nByteSize);
+				uint32_t nByteSize = sizeof(CXqxItem) * nNewSize;
+				CXqxItem* pNew = (CXqxItem*)realloc(m_arrItems, nByteSize);
 				if(NULL == pNew) {
 					if(nNeedSize < nNewSize) {
-						nByteSize = sizeof(struct SXqxItem) * nNeedSize;
-						pNew = (struct SXqxItem*)realloc(m_arrItems, nByteSize);
+						nByteSize = sizeof(CXqxItem) * nNeedSize;
+						pNew = (CXqxItem*)realloc(m_arrItems, nByteSize);
 						if(NULL != pNew) {
 							m_arrItems = pNew;
 							m_nAllcSize = nNeedSize;
@@ -413,8 +597,9 @@ private:
 					m_nAllcSize = nNewSize;
 				}
 				if(NULL != m_arrItems) {
-					for(size_t i = nOldSize; i < m_nAllcSize; ++i) {
-						m_arrItems[i].nIndex = XQXTABLE1_INDEX_NIL;
+					for(uint32_t i = nOldSize; i < m_nAllcSize; ++i) {
+						m_arrItems[i].m_nIndex = XQXTABLE_INDEX_NIL;
+						m_arrItems[i].m_nCount = 0;
 					}
 				} else {
 					assert(m_arrItems);
@@ -432,12 +617,20 @@ private:
 		m_nAllcSize = 0;
 	}
 
+	inline static uint32_t GetCount(uint64_t nKey) {
+		return nKey >> 32;
+	}
+
+	inline static uint32_t GetIndex(uint64_t nKey) {
+		return nKey & 0xFFFFFFFF;
+	}
+
 private:
-	struct SXqxItem* m_arrItems;
-	size_t m_nAllcSize;
-	size_t m_nCurSize;
+	CXqxItem* m_arrItems;
+	uint32_t m_nAllcSize;
+	uint32_t m_nCurSize;
 };
 
 }
 
-#endif // __XQXTABLE1_H__
+#endif // XQXTABLE1_H

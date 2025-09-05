@@ -21,12 +21,10 @@ class rpc_channel;
 #include "void_packet.pb.h"
 #include "interest_packet.pb.h"
 #include "data_packet.pb.h"
+#include "broadcast_packet.pb.h"
 #include "worker.pb.h"
 
 namespace node {
-void rpcz_protobuf_AssignDesc_worker_2eproto();
-void rpcz_protobuf_ShutdownFile_worker_2eproto();
-
 class WorkerService_Stub;
 
 class WorkerService : public rpcz::service {
@@ -48,13 +46,21 @@ class WorkerService : public rpcz::service {
                        ::rpcz::reply< ::node::InterestPacket> response);
   virtual void ListNotificationInterests(const ::node::VoidPacket& request,
                        ::rpcz::reply< ::node::InterestPacket> response);
+  virtual void KickLogged(const ::node::DataPacket& request,
+                       ::rpcz::reply< ::node::DataPacket> response);
   virtual void SendToClient(const ::node::DataPacket& request,
                        ::rpcz::reply< ::node::DataPacket> response);
+  virtual void BroadcastToClient(const ::node::BroadcastRequest& request,
+                       ::rpcz::reply< ::node::VoidPacket> response);
+  virtual void SendToPlayer(const ::node::ForwardRequest& request,
+                       ::rpcz::reply< ::node::DataPacket> response);
+  virtual void PostToPlayer(const ::node::ForwardRequest& request,
+                       ::rpcz::reply< ::node::VoidPacket> response);
   virtual void CloseClient(const ::node::DataPacket& request,
                        ::rpcz::reply< ::node::DataPacket> response);
+  virtual void CloseAllClients(const ::node::BroadcastRequest& request,
+                       ::rpcz::reply< ::node::VoidPacket> response);
   virtual void SendToWorker(const ::node::DataPacket& request,
-                       ::rpcz::reply< ::node::DataPacket> response);
-  virtual void KickLogged(const ::node::DataPacket& request,
                        ::rpcz::reply< ::node::DataPacket> response);
 
   // implements Service ----------------------------------------------
@@ -112,12 +118,40 @@ class WorkerService_Stub {
   void ListNotificationInterests(const ::node::VoidPacket& request,
                        ::node::InterestPacket* response,
                        long deadline_ms = -1);
+  void KickLogged(const ::node::DataPacket& request,
+                       ::node::DataPacket* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void KickLogged(const ::node::DataPacket& request,
+                       ::node::DataPacket* response,
+                       long deadline_ms = -1);
   void SendToClient(const ::node::DataPacket& request,
                        ::node::DataPacket* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
   void SendToClient(const ::node::DataPacket& request,
                        ::node::DataPacket* response,
+                       long deadline_ms = -1);
+  void BroadcastToClient(const ::node::BroadcastRequest& request,
+                       ::node::VoidPacket* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void BroadcastToClient(const ::node::BroadcastRequest& request,
+                       ::node::VoidPacket* response,
+                       long deadline_ms = -1);
+  void SendToPlayer(const ::node::ForwardRequest& request,
+                       ::node::DataPacket* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void SendToPlayer(const ::node::ForwardRequest& request,
+                       ::node::DataPacket* response,
+                       long deadline_ms = -1);
+  void PostToPlayer(const ::node::ForwardRequest& request,
+                       ::node::VoidPacket* response,
+                       ::rpcz::rpc_controller* rpc_controller,
+                       ::rpcz::closure* done);
+  void PostToPlayer(const ::node::ForwardRequest& request,
+                       ::node::VoidPacket* response,
                        long deadline_ms = -1);
   void CloseClient(const ::node::DataPacket& request,
                        ::node::DataPacket* response,
@@ -126,18 +160,18 @@ class WorkerService_Stub {
   void CloseClient(const ::node::DataPacket& request,
                        ::node::DataPacket* response,
                        long deadline_ms = -1);
-  void SendToWorker(const ::node::DataPacket& request,
-                       ::node::DataPacket* response,
+  void CloseAllClients(const ::node::BroadcastRequest& request,
+                       ::node::VoidPacket* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
-  void SendToWorker(const ::node::DataPacket& request,
-                       ::node::DataPacket* response,
+  void CloseAllClients(const ::node::BroadcastRequest& request,
+                       ::node::VoidPacket* response,
                        long deadline_ms = -1);
-  void KickLogged(const ::node::DataPacket& request,
+  void SendToWorker(const ::node::DataPacket& request,
                        ::node::DataPacket* response,
                        ::rpcz::rpc_controller* rpc_controller,
                        ::rpcz::closure* done);
-  void KickLogged(const ::node::DataPacket& request,
+  void SendToWorker(const ::node::DataPacket& request,
                        ::node::DataPacket* response,
                        long deadline_ms = -1);
  private:

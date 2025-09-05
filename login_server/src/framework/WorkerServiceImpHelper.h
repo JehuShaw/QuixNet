@@ -5,8 +5,8 @@
  * Created on 2014_4_4 AM 11:25
  */
 
-#ifndef _WORKERSERVICEIMPHELPER_H
-#define _WORKERSERVICEIMPHELPER_H
+#ifndef WORKERSERVICEIMPHELPER_H
+#define WORKERSERVICEIMPHELPER_H
 
 #include "NodeDefines.h"
 
@@ -28,5 +28,5 @@
 // }
 
 
-#endif /* _WORKERSERVICEIMPHELPER_H */
+#endif /* WORKERSERVICEIMPHELPER_H */
 

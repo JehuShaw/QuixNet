@@ -33,10 +33,10 @@ public:
 	uint64_t GetUInt64() {
 		if(NULL != mValue) {
 			uint64_t value;
-			#ifndef WIN32	// Make GCC happy.
-			sscanf(mValue, I64FMTD, (long long unsigned int*)&value);
+			#if !defined(_WIN32) && !defined(_WIN64)	// Make GCC happy.
+			    sscanf(mValue, I64FMTD, (long long unsigned int*)&value);
 			#else
-			sscanf(mValue, I64FMTD, &value);
+			    sscanf(mValue, I64FMTD, &value);
 			#endif
 			return value;
 		} else {
@@ -51,4 +51,4 @@ private:
 
 }
 
-#endif
+#endif  /* FIELD_H */

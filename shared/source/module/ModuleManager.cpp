@@ -11,163 +11,26 @@ using namespace util;
 using namespace thd;
 
 namespace mdl {
-//--------------------------------------
-//  CResponse
-//--------------------------------------
-
-void CResponse::SetResult(int result)
-{
-	this->m_result = result;
-}
-
-int CResponse::GetResult() const
-{
-	return this->m_result;
-}
-
-void CResponse::SetBody(const CWeakPointer<IBody> body)
-{
-	this->m_body = body;
-}
-
-CWeakPointer<IBody> CResponse::GetBody() const
-{
-	return this->m_body;
-}
-
-//--------------------------------------
-//  CNotification
-//--------------------------------------
-CNotification::CNotification(int name, const CWeakPointer<IBody>& body, int notificationType)
-{
-    this->name = name;
-    this->SetBody(body);
-    this->SetType(notificationType);
-}
-
-CNotification::CNotification(int name, const CWeakPointer<IBody>& body)
-{
-    this->name = name;
-    this->SetBody(body);
-}
-
-CNotification::CNotification(int name, int notificationType)
-{
-    this->name = name;
-    this->SetType(notificationType);
-}
-
-CNotification::CNotification(int name)
-{
-    this->name = name;
-}
-
-int CNotification::GetName() const
-{
-    return this->name;
-}
-
-void CNotification::SetBody(const CWeakPointer<IBody>& body)
-{
-    this->body = body;
-}
-
-const CWeakPointer<IBody>& CNotification::GetBody() const
-{
-    return this->body;
-}
-
-void CNotification::SetType(int notificationType)
-{
-    this->type = notificationType;
-}
-
-int CNotification::GetType() const
-{
-    return this->type;
-}
-
-void CNotification::ResetBody()
-{
-    if(this->body.IsInvalid())
-        return;
-
-    this->body->ResetBody();
-}
 
 //--------------------------------------
 //  CNotifier
 //--------------------------------------
-int CNotifier::SendNotification(int notificationName, CWeakPointer<IBody> request,
-	CWeakPointer<IBody> reply, int notificationType, bool reverse)
-{
-    return this->GetFacade()->SendNotification(notificationName, request, reply,
-		notificationType, reverse);
-}
-
-int CNotifier::SendNotification(int notificationName, CWeakPointer<IBody> request,
-	CWeakPointer<IBody> reply)
-{
-	return this->GetFacade()->SendNotification(notificationName, request, reply);
-}
-
-int CNotifier::SendNotification(int notificationName, CWeakPointer<IBody> request)
-{
-	return this->GetFacade()->SendNotification(notificationName, request);
-}
-
-int CNotifier::SendNotification(int notificationName, int notificationType)
-{
-    return this->GetFacade()->SendNotification(notificationName, notificationType);
-}
-
-int CNotifier::SendNotification(int notificationName)
-{
-    return this->GetFacade()->SendNotification(notificationName);
-}
-
 util::CAutoPointer<IFacade> CNotifier::GetFacade()
 {
 	return CFacade::Pointer();
 }
 
 //--------------------------------------
-//  CModule
-//--------------------------------------
-CModule::CModule()
-{
-}
-
-CModule::CModule(const char* moduleName)
-{
-	this->moduleName = moduleName;
-}
-
-CModule::CModule(const std::string& moduleName)
-{
-	this->moduleName = moduleName;
-}
-
-//--------------------------------------
 //  CSubject
 //--------------------------------------
 
-CSubject::CSubject( )
-{
-}
-
-void CSubject::RegisterObserver(int notificationName, const CAutoPointer<IObserverRestricted>& observer)
+void CSubject::RegisterObserver(int notificationName, const CAutoPointer<IObserverRestricted>& observer, int type)
 {
 	CScopedWriteLock wtlock(m_observerMapLock);
-	OBSERVER_MAP_T::iterator itOB = this->observerMap.find(notificationName);
-    if(this->observerMap.end() == itOB)
-    {
-        OBSERVER_VECTOR_T observerVector;
-        observerVector.push_back(observer);
-        this->observerMap[notificationName] = observerVector;
-    }
-    else
-    {
+	OBSERVER_MAP_T::iterator itOB(m_observerMap.lower_bound(notificationName));
+    if(m_observerMap.end() == itOB || itOB->first != notificationName) {
+		m_observerMap.insert(itOB, OBSERVER_MAP_T::value_type(notificationName, OBSERVER_VECTOR_T({observer})));
+    } else {
         itOB->second.push_back(observer);
     }
 }
@@ -175,52 +38,58 @@ void CSubject::RegisterObserver(int notificationName, const CAutoPointer<IObserv
 void CSubject::NotifyObservers(CWeakPointer<INotification>& request,
 	CWeakPointer<IResponse>& response, bool reverse)
 {
-	if(true) {
-		CScopedReadLock rdlock(m_observerMapLock);
-		OBSERVER_MAP_T::const_iterator itPR(this->observerMap.find(request->GetName()));
-		if(this->observerMap.end() != itPR) {
-			const OBSERVER_VECTOR_T& observers = itPR->second;
-			if(reverse){
-				OBSERVER_VECTOR_T::const_reverse_iterator it(observers.rbegin());
-				for(; it != observers.rend(); ++it) {
-					const_cast<util::CAutoPointer<IObserverRestricted>&>(*it)->
-					NotifyObserver(request, response);
-					request->ResetBody();
-				}
-			}else{
-				OBSERVER_VECTOR_T::const_iterator it(observers.begin());
-				for(; it != observers.end(); ++it) {
-					const_cast<util::CAutoPointer<IObserverRestricted>&>(*it)->
-					NotifyObserver(request, response);
-					request->ResetBody();
-				}
+	CScopedReadLock rdlock(m_observerMapLock);
+	OBSERVER_MAP_T::iterator itPR(m_observerMap.find(request->GetName()));
+	if(m_observerMap.end() == itPR) {
+		return;
+	}
+	OBSERVER_VECTOR_T& observers = itPR->second;
+	if(reverse){
+		OBSERVER_VECTOR_T::reverse_iterator it(observers.rbegin());
+		for(; it != observers.rend(); ++it) {
+			(*it)->NotifyObserver(request, response);
+			// Reset position to start position
+			if (!request.IsInvalid()) {
+				request->ResetBody();
+			}
+			if (!response.IsInvalid()) {
+				response->ResetBody();
+			}
+		}
+	} else {
+		OBSERVER_VECTOR_T::iterator it(observers.begin());
+		for(; it != observers.end(); ++it) {
+			(*it)->NotifyObserver(request, response);
+			// Reset position to start position
+			if (!request.IsInvalid()) {
+				request->ResetBody();
+			}
+			if (!response.IsInvalid()) {
+				response->ResetBody();
 			}
 		}
 	}
-
 }
 
-void CSubject::RemoveObserver(int notificationName, intptr_t contextAddress)
+void CSubject::RemoveObserver(int notificationName, intptr_t contextAddress, int type)
 {
 	CScopedWriteLock wtlock(m_observerMapLock);
-	OBSERVER_MAP_T::iterator itOB = this->observerMap.find(notificationName);
-	if(this->observerMap.end() != itOB)
-    {
-        OBSERVER_VECTOR_T& observers = itOB->second;
-        OBSERVER_VECTOR_T::iterator it(observers.begin());
-        while(observers.end() != it)
-        {
-            if((*it)->CompareNotifyContext(contextAddress) == true)
-            {
-                it = observers.erase(it);
-            } else {
-				++it;
-			}
-        }
+	OBSERVER_MAP_T::iterator itOB(m_observerMap.find(notificationName));
+	if(m_observerMap.end() == itOB) {
+		return;
+	}
+    OBSERVER_VECTOR_T& observers = itOB->second;
+    OBSERVER_VECTOR_T::iterator it(observers.begin());
+    while(observers.end() != it) {
+        if((*it)->CompareNotifyContext(contextAddress) == true) {
+            it = observers.erase(it);
+        } else {
+			++it;
+		}
+    }
 
-        if(observers.empty()){
-           this->observerMap.erase(itOB);
-        }
+    if(observers.empty()) {
+        m_observerMap.erase(itOB);
     }
 }
 
@@ -234,13 +103,13 @@ void CSubject::RegisterModule(CAutoPointer<IModule>& module)
     if(protocols.empty()) {
 		CAutoPointer<IObserverRestricted> pObserver(module->FullProtocolInterests());
 		if(!pObserver.IsInvalid()) {
-			this->RegisterProtocol(pObserver);
+			this->RegisterProtocol(pObserver, 0);
 		}
 	} else {
         IModule::InterestList::const_iterator itP(protocols.begin());
         for(; itP != protocols.end(); ++itP) {
             const CAutoPointer<IObserverRestricted>& observer = (*itP)->GetObserver();
-            this->RegisterProtocol((*itP)->GetNotificationName(), observer);
+            this->RegisterProtocol((*itP)->GetNotificationName(), observer, 0);
         }
     }
 
@@ -251,18 +120,18 @@ void CSubject::RegisterModule(CAutoPointer<IModule>& module)
 			&IModule::HandleNotification, &*module));
         std::vector<int>::const_iterator itI(interests.begin());
         for(; itI != interests.end(); ++itI) {
-            this->RegisterObserver(*itI, observer);
+            this->RegisterObserver(*itI, observer, 0);
         }
     }
 
-    const_cast<CAutoPointer<IModule>&>(module)->OnRegister();
+    module->OnRegister();
 }
 
 CAutoPointer<IModule> CSubject::RetrieveModule(const std::string& moduleName) const
 {
 	CScopedReadLock rdlock(m_moduleMapLock);
-	MODULE_MAP_T::const_iterator it(this->moduleMap.find(moduleName));
-	if(this->moduleMap.end() != it) {
+	MODULE_MAP_T::const_iterator it(m_moduleMap.find(moduleName));
+	if(m_moduleMap.end() != it) {
 		return it->second;
 	}
 	return CAutoPointer<IModule>();
@@ -279,27 +148,25 @@ CAutoPointer<IModule> CSubject::RemoveModule(const std::string& moduleName)
 	if(protocols.empty()) {
 		CAutoPointer<IObserverRestricted> pObserver(module->FullProtocolInterests());
 		if(!pObserver.IsInvalid()) {
-			this->RemoveProtocol((intptr_t) &*module);
+			this->RemoveProtocol((intptr_t) &*module, 0);
 		}
 	} else {
 		IModule::InterestList::const_iterator itP(protocols.begin());
-		for(; itP != protocols.end(); ++itP)
-		{
-			this->RemoveProtocol((*itP)->GetNotificationName(), (intptr_t) &*module);
+		for(; itP != protocols.end(); ++itP) {
+			this->RemoveProtocol((*itP)->GetNotificationName(), (intptr_t) &*module, 0);
 		}
 	}
 
     //////////////////////////////////////////////////////////////////////////
     std::vector<int> interests(module->ListNotificationInterests());
 	std::vector<int>::const_iterator itI(interests.begin());
-	for (; itI != interests.end(); ++itI)
-	{
-		this->RemoveObserver(*itI, (intptr_t) &*module);
+	for (; itI != interests.end(); ++itI) {
+		this->RemoveObserver(*itI, (intptr_t) &*module, 0);
 	}
     //////////////////////////////////////////////////////////////////////////
     EraseModule(moduleName);
 
-    const_cast<CAutoPointer<IModule>&>(module)->OnRemove();
+    module->OnRemove();
 
     return module;
 }
@@ -307,100 +174,107 @@ CAutoPointer<IModule> CSubject::RemoveModule(const std::string& moduleName)
 bool CSubject::HasModule(const std::string& moduleName) const
 {
 	CScopedReadLock rdlock(m_moduleMapLock);
-    return this->moduleMap.find(moduleName) != this->moduleMap.end();
+    return m_moduleMap.find(moduleName) != m_moduleMap.end();
 }
 
-void CSubject::RegisterProtocol(int notificationName, const CAutoPointer<IObserverRestricted>& observer)
+void CSubject::RegisterProtocol(int notificationName, const CAutoPointer<IObserverRestricted>& observer, int type)
 {
-	CScopedWriteLock wtlock(m_protocolMapLock);
-	PROTOCOL_MAP_T::iterator itPR = this->protocolMap.find(notificationName);
-    if(this->protocolMap.end() == itPR)
-    {
-        OBSERVER_VECTOR_T observerVector;
-        observerVector.push_back(observer);
-        this->protocolMap[notificationName] = observerVector;
-    }
-    else
-    {
+	CScopedWriteLock wtlock(m_protoMapLock);
+	OBSERVER_MAP_T::iterator itPR(m_protoMap.lower_bound(notificationName));
+    if(m_protoMap.end() == itPR || itPR->first != notificationName) {
+		m_protoMap.insert(itPR, OBSERVER_MAP_T::value_type(notificationName, OBSERVER_VECTOR_T({observer})));
+    } else {
         itPR->second.push_back(observer);
     }
 }
 
-void CSubject::RegisterProtocol(const CAutoPointer<IObserverRestricted>& observer)
+void CSubject::RegisterProtocol(const CAutoPointer<IObserverRestricted>& observer, int type)
 {
-	CScopedWriteLock wtlock(m_protocolsLock);
-	protocolObserver.push_back(observer);
+	CScopedWriteLock wtlock(m_protoLock);
+	m_protoObserver.push_back(observer);
 }
 
 void CSubject::NotifyProtocol(CWeakPointer<INotification>& request, CWeakPointer<IResponse>& response, bool reverse)
 {
-    if(true) {
-        CScopedReadLock rdlock(m_protocolMapLock);
-        PROTOCOL_MAP_T::const_iterator itPR(this->protocolMap.find(request->GetName()));
-        if(this->protocolMap.end() != itPR) {
-            const OBSERVER_VECTOR_T& observers = itPR->second;
-            if(reverse) {
-                OBSERVER_VECTOR_T::const_reverse_iterator it(observers.rbegin());
-                for(; it != observers.rend(); ++it) {
-                    const_cast<util::CAutoPointer<IObserverRestricted>&>(*it)->
-                    NotifyObserver(request, response);
-                    request->ResetBody();
-                }
-            } else {
-                OBSERVER_VECTOR_T::const_iterator it(observers.begin());
-                for(; it != observers.end(); ++it) {
-                    const_cast<util::CAutoPointer<IObserverRestricted>&>(*it)->
-                    NotifyObserver(request, response);
-                    request->ResetBody();
-                }
+    do {
+        CScopedReadLock rdlock(m_protoMapLock);
+        OBSERVER_MAP_T::iterator itPR(m_protoMap.find(request->GetName()));
+        if(m_protoMap.end() == itPR) {
+			break;
+		}
+        OBSERVER_VECTOR_T& observers = itPR->second;
+        if(reverse) {
+            OBSERVER_VECTOR_T::reverse_iterator it(observers.rbegin());
+            for(; it != observers.rend(); ++it) {
+                (*it)->NotifyObserver(request, response);
+				// Reset position to start position
+				if (!request.IsInvalid()) {
+					request->ResetBody();
+				}
+				if (!response.IsInvalid()) {
+					response->ResetBody();
+				}
+            }
+        } else {
+            OBSERVER_VECTOR_T::iterator it(observers.begin());
+            for(; it != observers.end(); ++it) {
+                (*it)->NotifyObserver(request, response);
+				// Reset position to start position
+				if (!request.IsInvalid()) {
+					request->ResetBody();
+				}
+				if (!response.IsInvalid()) {
+					response->ResetBody();
+				}
             }
         }
-    }
+    } while(false);
 	// attach all
     if(response.IsInvalid() || response->GetResult() == FALSE) {
-        CScopedReadLock rdlock(m_protocolsLock);
-        OBSERVER_VECTOR_T::const_iterator itOB(protocolObserver.begin());
-        for(; protocolObserver.end() != itOB; ++itOB){
-            const_cast<util::CAutoPointer<IObserverRestricted>&>(*itOB)->
-            NotifyObserver(request, response);
-            request->ResetBody();
-        }
-    }
-}
-
-void CSubject::RemoveProtocol(int notificationName, intptr_t contextAddress)
-{
-	CScopedWriteLock wtlock(m_protocolMapLock);
-	PROTOCOL_MAP_T::iterator itPR = this->protocolMap.find(notificationName);
-    if(this->protocolMap.end() != itPR)
-    {
-        OBSERVER_VECTOR_T& observers = itPR->second;
-        OBSERVER_VECTOR_T::iterator it(observers.begin());
-        while(observers.end() != it)
-        {
-            if((*it)->CompareNotifyContext(contextAddress) == true)
-            {
-                it = observers.erase(it);
-            } else {
-				++it;
+        CScopedReadLock rdlock(m_protoLock);
+        OBSERVER_VECTOR_T::iterator itOB(m_protoObserver.begin());
+        for(; m_protoObserver.end() != itOB; ++itOB) {
+            (*itOB)->NotifyObserver(request, response);
+			// Reset position to start position
+			if (!request.IsInvalid()) {
+				request->ResetBody();
+			}
+			if (!response.IsInvalid()) {
+				response->ResetBody();
 			}
         }
-
-        if(observers.empty()){
-            this->protocolMap.erase(itPR);
-        }
     }
 }
 
-void CSubject::RemoveProtocol(intptr_t contextAddress)
+void CSubject::RemoveProtocol(int notificationName, intptr_t contextAddress, int type)
 {
-	CScopedWriteLock wtlock(m_protocolsLock);
-	OBSERVER_VECTOR_T::iterator it(protocolObserver.begin());
-	while(protocolObserver.end() != it)
-	{
-		if((*it)->CompareNotifyContext(contextAddress) == true)
-		{
-			it = protocolObserver.erase(it);
+	CScopedWriteLock wtlock(m_protoMapLock);
+	OBSERVER_MAP_T::iterator itPR(m_protoMap.find(notificationName));
+    if(m_protoMap.end() == itPR) {
+		return;
+	}
+    OBSERVER_VECTOR_T& observers = itPR->second;
+    OBSERVER_VECTOR_T::iterator it(observers.begin());
+    while(observers.end() != it) {
+        if((*it)->CompareNotifyContext(contextAddress) == true) {
+            it = observers.erase(it);
+        } else {
+			++it;
+		}
+    }
+
+    if(observers.empty()){
+        m_protoMap.erase(itPR);
+    }
+}
+
+void CSubject::RemoveProtocol(intptr_t contextAddress, int type)
+{
+	CScopedWriteLock wtlock(m_protoLock);
+	OBSERVER_VECTOR_T::iterator it(m_protoObserver.begin());
+	while(m_protoObserver.end() != it) {
+		if((*it)->CompareNotifyContext(contextAddress) == true) {
+			it = m_protoObserver.erase(it);
 		} else {
 			++it;
 		}
@@ -410,188 +284,335 @@ void CSubject::RemoveProtocol(intptr_t contextAddress)
 void CSubject::IterateModule(std::vector<CAutoPointer<IModule> >& outModules) const
 {
 	CScopedReadLock rdlock(m_moduleMapLock);
-	MODULE_MAP_T::const_iterator it(this->moduleMap.begin());
-	for(; this->moduleMap.end() != it; ++it) {
+	MODULE_MAP_T::const_iterator it(m_moduleMap.begin());
+	for(; m_moduleMap.end() != it; ++it) {
 		outModules.push_back(it->second);
 	}
 }
 
+
 //--------------------------------------
-//  CFacade
+//  CSubjectType
 //--------------------------------------
 
-CFacade::CFacade():subject(new CSubject())
+void CSubjectType::RegisterObserver(int notificationName, const CAutoPointer<IObserverRestricted>& observer, int type)
 {
+	CScopedWriteLock wtlock(m_observerMapLock);
+	TYPE_OBSERVER_MAP_T::iterator itTO(m_observerMap.lower_bound(type));
+	if(m_observerMap.end() == itTO || itTO->first != type) {
+		itTO = m_observerMap.insert(itTO, TYPE_OBSERVER_MAP_T::value_type(type, OBSERVER_MAP_T()));
+	}
+	OBSERVER_MAP_T& observerMap = itTO->second;
+	OBSERVER_MAP_T::iterator itO(observerMap.lower_bound(type));
+	if(observerMap.end() == itO || itO->first != notificationName) {
+		observerMap.insert(itO, OBSERVER_MAP_T::value_type(notificationName, OBSERVER_VECTOR_T({observer})));
+	} else {
+		itO->second.push_back(observer);
+	}
 }
 
-CFacade::~CFacade()
+void CSubjectType::NotifyObservers(CWeakPointer<INotification>& request,
+	CWeakPointer<IResponse>& response, bool reverse)
 {
-	subject.SetRawPointer(NULL);
-}
-
-void CFacade::RegisterModule(CAutoPointer<IModule> module)
-{
-    if(this->subject.IsInvalid())
-        return;
-    this->subject->RegisterModule(module);
-}
-
-CAutoPointer<IModule> CFacade::RetrieveModule(std::string moduleName) const
-{
-    if(this->subject.IsInvalid())
-        return CAutoPointer<IModule>();
-    return this->subject->RetrieveModule(moduleName);
-}
-
-CAutoPointer<IModule> CFacade::RemoveModule(std::string moduleName)
-{
-    if(this->subject.IsInvalid())
-        return CAutoPointer<IModule>();
-    return this->subject->RemoveModule(moduleName);
-}
-
-bool CFacade::HasModule(std::string moduleName) const
-{
-    if(this->subject.IsInvalid())
-        return false;
-    return this->subject->HasModule(moduleName);
-}
-
-int CFacade::SendNotification(int notificationName, CWeakPointer<IBody> request,
-	CWeakPointer<IBody> reply, int notificationType, bool reverse)
-{
-	CNotification notification(notificationName, request, notificationType);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response(reply);
-	CAutoPointer<CResponse> pResponse(&response, false);
-    this->NotifyObservers(pRequest, pResponse, reverse);
-	return response.GetResult();
-}
-
-int CFacade::SendNotification(int notificationName, CWeakPointer<IBody> request,
-	CWeakPointer<IBody> reply)
-{
-	CNotification notification(notificationName, request);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response(reply);
-	CAutoPointer<CResponse> pResponse(&response, false);
-	this->NotifyObservers(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-int CFacade::SendNotification(int notificationName, CWeakPointer<IBody> request)
-{
-	CNotification notification(notificationName, request);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response;
-	CAutoPointer<CResponse> pResponse(&response, false);
-    this->NotifyObservers(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-int CFacade::SendNotification(int notificationName, int notificationType)
-{
-	CNotification notification(notificationName, notificationType);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response;
-	CAutoPointer<CResponse> pResponse(&response, false);
-	this->NotifyObservers(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-int CFacade::SendNotification(int notificationName)
-{
-	CNotification notification(notificationName);
-    CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response;
-	CAutoPointer<CResponse> pResponse(&response, false);
-    this->NotifyObservers(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-void CFacade::NotifyObservers(CWeakPointer<INotification> request, CWeakPointer<IResponse> response, bool reverse)
-{
-    if(this->subject.IsInvalid())
-        return;
-    return this->subject->NotifyObservers(request, response, reverse);
-}
-
-int CFacade::SendProtocol(int cmd, CWeakPointer<IBody> request,
-	CWeakPointer<IBody> reply, int type, bool reverse, bool result) {
-
-	CNotification notification(cmd, request, type);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	int nResult = result ? TRUE : FALSE;
-	CResponse response(reply, nResult);
-	CAutoPointer<CResponse> pResponse(&response, false);
-	NotifyProtocol(pRequest, pResponse, reverse);
-	return response.GetResult();
-}
-
-int CFacade::SendProtocol(int cmd, CWeakPointer<IBody> request,
-	CWeakPointer<IBody> reply) {
-
-	CNotification notification(cmd, request);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response(reply);
-	CAutoPointer<CResponse> pResponse(&response, false);
-	NotifyProtocol(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-int CFacade::SendProtocol(int cmd, CWeakPointer<IBody> request) {
-
-	CNotification notification(cmd, request);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response;
-	CAutoPointer<CResponse> pResponse(&response, false);
-	NotifyProtocol(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-int CFacade::SendProtocol(int cmd, int type) {
-
-	CNotification notification(cmd, type);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response;
-	CAutoPointer<CResponse> pResponse(&response, false);
-	NotifyProtocol(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-int CFacade::SendProtocol(int cmd) {
-
-	CNotification notification(cmd);
-	CAutoPointer<CNotification> pRequest(&notification, false);
-
-	CResponse response;
-	CAutoPointer<CResponse> pResponse(&response, false);
-	NotifyProtocol(pRequest, pResponse, false);
-	return response.GetResult();
-}
-
-void CFacade::NotifyProtocol(CWeakPointer<INotification> request, CWeakPointer<IResponse> response, bool reverse)
-{
-    if(this->subject.IsInvalid())
-        return;
-    this->subject->NotifyProtocol(request, response, reverse);
-}
-
-void CFacade::IterateModule(std::vector<CAutoPointer<IModule> >& outModules) const
-{
-	if(this->subject.IsInvalid())
+	CScopedReadLock rdlock(m_observerMapLock);
+	TYPE_OBSERVER_MAP_T::iterator itTO(m_observerMap.find(request->GetType()));
+	if(m_observerMap.end() == itTO) {
 		return;
-	return this->subject->IterateModule(outModules);
+	}
+	OBSERVER_MAP_T& observerMap = itTO->second;
+	OBSERVER_MAP_T::iterator itPR(observerMap.find(request->GetName()));
+	if(observerMap.end() == itPR) {
+		return;
+	}
+	OBSERVER_VECTOR_T& observers = itPR->second;
+	if(reverse){
+		OBSERVER_VECTOR_T::reverse_iterator it(observers.rbegin());
+		for(; it != observers.rend(); ++it) {
+			(*it)->NotifyObserver(request, response);
+			// Reset position to start position
+			if (!request.IsInvalid()) {
+				request->ResetBody();
+			}
+			if (!response.IsInvalid()) {
+				response->ResetBody();
+			}
+		}
+	} else {
+		OBSERVER_VECTOR_T::iterator it(observers.begin());
+		for(; it != observers.end(); ++it) {
+			(*it)->NotifyObserver(request, response);
+			// Reset position to start position
+			if (!request.IsInvalid()) {
+				request->ResetBody();
+			}
+			if (!response.IsInvalid()) {
+				response->ResetBody();
+			}
+		}
+	}
 }
+
+void CSubjectType::RemoveObserver(int notificationName, intptr_t contextAddress, int type)
+{
+	CScopedWriteLock wtlock(m_observerMapLock);
+	TYPE_OBSERVER_MAP_T::iterator itTO(m_observerMap.find(type));
+	if(m_observerMap.end() == itTO) {
+		return;
+	}
+	OBSERVER_MAP_T& observerMap = itTO->second;
+	OBSERVER_MAP_T::iterator itO(observerMap.find(notificationName));
+	if (observerMap.end() == itO) {
+		return;
+	}
+	OBSERVER_VECTOR_T& observers = itO->second;
+	OBSERVER_VECTOR_T::iterator it(observers.begin());
+	while(observers.end() != it) {
+		if((*it)->CompareNotifyContext(contextAddress) == true) {
+			it = observers.erase(it);
+		} else {
+			++it;
+		}
+	}
+	if (observers.empty()) {
+		observerMap.erase(itO);
+		if (observerMap.empty()) {
+			m_observerMap.erase(itTO);
+		}
+	}
+}
+
+void CSubjectType::RegisterModule(CAutoPointer<IModule>& module)
+{
+	if(!AddModule(module->GetModuleName(), module)) {
+		return;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	IModule::InterestList protocols(module->ListProtocolInterests());
+	if(protocols.empty()) {
+		CAutoPointer<IObserverRestricted> pObserver(module->FullProtocolInterests());
+		if(!pObserver.IsInvalid()) {
+			this->RegisterProtocol(pObserver, module->GetType());
+		}
+	} else {
+		IModule::InterestList::const_iterator itP(protocols.begin());
+		for(; itP != protocols.end(); ++itP) {
+			const CAutoPointer<IObserverRestricted>& observer = (*itP)->GetObserver();
+			this->RegisterProtocol((*itP)->GetNotificationName(), observer, module->GetType());
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	std::vector<int> interests(module->ListNotificationInterests());
+	if(!interests.empty()) {
+		CAutoPointer<IObserverRestricted> observer(new CObserver<IModule>(
+			&IModule::HandleNotification, &*module));
+		std::vector<int>::const_iterator itI(interests.begin());
+		for(; itI != interests.end(); ++itI) {
+			this->RegisterObserver(*itI, observer, module->GetType());
+		}
+	}
+
+	const_cast<CAutoPointer<IModule>&>(module)->OnRegister();
+}
+
+CAutoPointer<IModule> CSubjectType::RetrieveModule(const std::string& moduleName) const
+{
+	CScopedReadLock rdlock(m_moduleMapLock);
+	MODULE_MAP_T::const_iterator it(m_moduleMap.find(moduleName));
+	if(m_moduleMap.end() != it) {
+		return it->second;
+	}
+	return CAutoPointer<IModule>();
+}
+
+CAutoPointer<IModule> CSubjectType::RemoveModule(const std::string& moduleName)
+{
+	CAutoPointer<IModule> module(FindModule(moduleName));
+	if(module.IsInvalid()) {
+		return module;
+	}
+	//////////////////////////////////////////////////////////////////////////
+	IModule::InterestList protocols(module->ListProtocolInterests());
+	if(protocols.empty()) {
+		CAutoPointer<IObserverRestricted> pObserver(module->FullProtocolInterests());
+		if(!pObserver.IsInvalid()) {
+			this->RemoveProtocol((intptr_t) &*module, module->GetType());
+		}
+	} else {
+		IModule::InterestList::const_iterator itP(protocols.begin());
+		for(; itP != protocols.end(); ++itP) {
+			this->RemoveProtocol((*itP)->GetNotificationName(), (intptr_t) &*module, module->GetType());
+		}
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	std::vector<int> interests(module->ListNotificationInterests());
+	std::vector<int>::const_iterator itI(interests.begin());
+	for (; itI != interests.end(); ++itI) {
+		this->RemoveObserver(*itI, (intptr_t) &*module, module->GetType());
+	}
+	//////////////////////////////////////////////////////////////////////////
+	EraseModule(moduleName);
+
+	const_cast<CAutoPointer<IModule>&>(module)->OnRemove();
+
+	return module;
+}
+
+bool CSubjectType::HasModule(const std::string& moduleName) const
+{
+	CScopedReadLock rdlock(m_moduleMapLock);
+	return m_moduleMap.find(moduleName) != m_moduleMap.end();
+}
+
+void CSubjectType::RegisterProtocol(int notificationName, const CAutoPointer<IObserverRestricted>& observer, int type)
+{
+	CScopedWriteLock wtlock(m_protoMapLock);
+	TYPE_OBSERVER_MAP_T::iterator itTO(m_protoMap.lower_bound(type));
+	if(m_protoMap.end() == itTO || itTO->first != type) {
+		itTO = m_protoMap.insert(itTO, TYPE_OBSERVER_MAP_T::value_type(type, OBSERVER_MAP_T()));
+	}
+	OBSERVER_MAP_T& protoMap = itTO->second;
+	OBSERVER_MAP_T::iterator itPR(protoMap.lower_bound(notificationName));
+	if(protoMap.end() == itPR || itPR->first != notificationName) {
+		protoMap.insert(itPR, OBSERVER_MAP_T::value_type(notificationName, OBSERVER_VECTOR_T({observer})));
+	} else {
+		itPR->second.push_back(observer);
+	}
+}
+
+void CSubjectType::RegisterProtocol(const CAutoPointer<IObserverRestricted>& observer, int type)
+{
+	CScopedWriteLock wtlock(m_protoLock);
+	OBSERVER_MAP_T::iterator itPR(m_protoObserver.lower_bound(type));
+	if(m_protoObserver.end() == itPR || itPR->first != type) {
+		m_protoObserver.insert(itPR, OBSERVER_MAP_T::value_type(type, OBSERVER_VECTOR_T({observer})));
+	} else {
+		itPR->second.push_back(observer);
+	}
+}
+
+void CSubjectType::NotifyProtocol(CWeakPointer<INotification>& request, CWeakPointer<IResponse>& response, bool reverse)
+{
+	do {
+		CScopedReadLock rdlock(m_protoMapLock);
+		TYPE_OBSERVER_MAP_T::iterator itTO(m_protoMap.find(request->GetType()));
+		if(m_protoMap.end() == itTO) {
+			break;
+		}
+		OBSERVER_MAP_T& protoMap = itTO->second;
+		OBSERVER_MAP_T::iterator itPR(protoMap.find(request->GetName()));
+		if(protoMap.end() == itPR) {
+			break;
+		}
+		OBSERVER_VECTOR_T& observers = itPR->second;
+		if(reverse) {
+			OBSERVER_VECTOR_T::reverse_iterator it(observers.rbegin());
+			for(; it != observers.rend(); ++it) {
+				(*it)->NotifyObserver(request, response);
+				// Reset position to start position
+				if (!request.IsInvalid()) {
+					request->ResetBody();
+				}
+				if (!response.IsInvalid()) {
+					response->ResetBody();
+				}
+			}
+		} else {
+			OBSERVER_VECTOR_T::iterator it(observers.begin());
+			for(; it != observers.end(); ++it) {
+				(*it)->NotifyObserver(request, response);
+				// Reset position to start position
+				if (!request.IsInvalid()) {
+					request->ResetBody();
+				}
+				if (!response.IsInvalid()) {
+					response->ResetBody();
+				}
+			}
+		}
+	} while(false);
+	// attach all
+	if(response.IsInvalid() || response->GetResult() == FALSE) {
+		CScopedReadLock rdlock(m_protoLock);
+		OBSERVER_MAP_T::iterator itO(m_protoObserver.find(request->GetType()));
+		if (m_protoObserver.end() != itO) {
+			OBSERVER_VECTOR_T& observers = itO->second;
+			OBSERVER_VECTOR_T::iterator it(observers.begin());
+			for(; observers.end() != it; ++it) {
+				(*it)->NotifyObserver(request, response);
+				// Reset position to start position
+				if (!request.IsInvalid()) {
+					request->ResetBody();
+				}
+				if (!response.IsInvalid()) {
+					response->ResetBody();
+				}
+			}
+		}
+	}
+}
+
+void CSubjectType::RemoveProtocol(int notificationName, intptr_t contextAddress, int type)
+{
+	CScopedWriteLock wtlock(m_protoMapLock);
+	TYPE_OBSERVER_MAP_T::iterator itTO(m_protoMap.find(type));
+	if (m_protoMap.end() == itTO) {
+		return;
+	}
+	OBSERVER_MAP_T& protoMap = itTO->second;
+	OBSERVER_MAP_T::iterator itPR(protoMap.find(notificationName));
+	if (protoMap.end() == itPR) {
+		return;
+	}
+	OBSERVER_VECTOR_T& observers = itPR->second;
+	OBSERVER_VECTOR_T::iterator it(observers.begin());
+	while(observers.end() != it) {
+		if((*it)->CompareNotifyContext(contextAddress) == true) {
+			it = observers.erase(it);
+		} else {
+			++it;
+		}
+	}
+
+	if (observers.empty()){
+		protoMap.erase(itPR);
+		if (protoMap.empty()) {
+			m_protoMap.erase(itTO);
+		}
+	}
+}
+
+void CSubjectType::RemoveProtocol(intptr_t contextAddress, int type)
+{
+	CScopedWriteLock wtlock(m_protoLock);
+	OBSERVER_MAP_T::iterator itPR(m_protoObserver.find(type));
+	if(m_protoObserver.end() == itPR) {
+		return;
+	}
+	OBSERVER_VECTOR_T& observers = itPR->second;
+	OBSERVER_VECTOR_T::iterator it(observers.begin());
+	while(observers.end() != it) {
+		if((*it)->CompareNotifyContext(contextAddress) == true) {
+			it = observers.erase(it);
+		} else {
+			++it;
+		}
+	}
+	if(observers.empty()){
+		m_protoObserver.erase(itPR);
+	}
+}
+
+void CSubjectType::IterateModule(std::vector<CAutoPointer<IModule> >& outModules) const
+{
+	CScopedReadLock rdlock(m_moduleMapLock);
+	MODULE_MAP_T::const_iterator it(m_moduleMap.begin());
+	for(; m_moduleMap.end() != it; ++it) {
+		outModules.push_back(it->second);
+	}
+}
+
 
 } // end namespace mdl
 

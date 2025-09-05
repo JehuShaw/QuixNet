@@ -43,4 +43,4 @@ extern "C" {
 
 }
 
-#endif/*PROCESS_STAT_H*/
+#endif /* PROCESS_STAT_H */

@@ -9,48 +9,16 @@
 #include "Log.h"
 #include "WorkerOperateHelper.h"
 #include "ControlArgument.h"
+#include "ControlEventManager.h"
 
 using namespace mdl;
 using namespace util;
 using namespace evt;
 
 
-CControlCentreModule::CControlCentreModule() 
-	: CModule(CONTROLCENTRE_MODULE_NAME), m_arrEvent(C_CMD_CTM_SIZE - NODE_CONTROLCMD_OFFSET)
+CControlCentreModule::CControlCentreModule(const char* name)
+	: CModule(name)
 {
-}
-
-bool CControlCentreModule::AddEventListener(eControlCMD cmd, const util::CAutoPointer<evt::MethodRIP1Base> method) {
-	int nId = cmd - NODE_CONTROLCMD_OFFSET;
-	if(nId < 0) {
-		OutputError("nId < 0  nId = %d offset = %d", nId, NODE_CONTROLCMD_OFFSET);
-		assert(false);
-		return false;
-	}
-
-	return m_arrEvent.AddEventListener(nId, method);
-}
-
-bool CControlCentreModule::HasEventListener(eControlCMD cmd) {
-	int nId = cmd - NODE_CONTROLCMD_OFFSET;
-	if(nId < 0) {
-		OutputError("nId < 0  nId = %d offset = %d", nId, NODE_CONTROLCMD_OFFSET);
-		assert(false);
-		return false;
-	}
-
-	return m_arrEvent.HasEventListener(nId);
-}
-
-void CControlCentreModule::RemoveEventListener(eControlCMD cmd) {
-	int nId = cmd - NODE_CONTROLCMD_OFFSET;
-	if(nId < 0) {
-		OutputError("nId < 0  nId = %d offset = %d", nId, NODE_CONTROLCMD_OFFSET);
-		assert(false);
-		return;
-	}
-
-	m_arrEvent.RemoveEventListener(nId);
 }
 
 void CControlCentreModule::OnRegister(){
@@ -63,12 +31,12 @@ void CControlCentreModule::OnRemove(){
 
 std::vector<int> CControlCentreModule::ListNotificationInterests()
 {
-	std::vector<int> interests;
-    interests.push_back(N_CMD_MASTER_TRANSPORT);
-	interests.push_back(N_CMD_MASTER_SHUTDOWN);
-	interests.push_back(N_CMD_SERVER_PLAY);
-	interests.push_back(N_CMD_SERVER_STOP);
-	return interests;
+	return std::vector<int>({
+		N_CMD_MASTER_TRANSPORT,
+		N_CMD_MASTER_SHUTDOWN,
+		N_CMD_SERVER_PLAY,
+		N_CMD_SERVER_STOP
+	});
 }
 
 IModule::InterestList CControlCentreModule::ListProtocolInterests()
@@ -118,23 +86,30 @@ void CControlCentreModule::CaseMasterTransport(
 	::node::DataPacket masterRequest;
 	if(!ParseWorkerData(masterRequest, pRequest)) {
 		OutputError("!ParseWorkerData");
-		pResponse->set_result(FALSE);
+		pResponse->set_result(SERVER_FAILURE);
 		return;
 	}
 	
-	int nId = masterRequest.cmd() - NODE_CONTROLCMD_OFFSET;
-	if(nId < 0) {
-		OutputError("nId < 0  nId = %d offset = %d", nId, NODE_CONTROLCMD_OFFSET);
-		pResponse->set_result(FALSE);
-		return;
+	if (N_CMD_MASTER_TRANSPORT == masterRequest.cmd()) {
+		int nId = masterRequest.sub_cmd() - NODE_CONTROLCMD_OFFSET;
+		if (nId < 0) {
+			OutputError("nId < 0  nId = %d offset = %d", nId, NODE_CONTROLCMD_OFFSET);
+			pResponse->set_result(SERVER_FAILURE);
+			return;
+		}
+
+		CWeakPointer<CWrapPlayer> pPlayer(GetWorkerPlayer(request));
+		CControlArgument controlArgument(masterRequest, pPlayer, pResponse);
+		CAutoPointer<CControlArgument> pCtrlArgument(&controlArgument, false);
+		CWeakPointer<CControlArgument> pWeakCtrlArg(pCtrlArgument);
+		CControlEventManager::PTR_T pCtrlEvtMgr(CControlEventManager::Pointer());
+
+		pResponse->set_result(pCtrlEvtMgr->DispatchEvent(nId, pWeakCtrlArg));
+	} else {
+		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
+		util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(masterRequest.route()));
+		SendWorkerNotification(masterRequest, *pResponse, pPlayer, pRequest->sub_cmd());
 	}
-
-	CAutoPointer<CControlArgument> pCtrlArgument(new CControlArgument(masterRequest));
-	CWeakPointer<CControlArgument> pWeakCtrlArg(pCtrlArgument);
-
-	int nResult = m_arrEvent.DispatchEvent(nId, pWeakCtrlArg);
-
-	pResponse->set_result(nResult);
 }
 
 void CControlCentreModule::CaseShutdown(
@@ -149,7 +124,7 @@ void CControlCentreModule::CaseShutdown(
 
 	atomic_xchg8(&g_bExit, true);
 
-	pResponse->set_result(TRUE);
+	pResponse->set_result(SERVER_SUCCESS);
 }
 
 void CControlCentreModule::CaseStart(
@@ -162,9 +137,15 @@ void CControlCentreModule::CaseStart(
 		return;
 	}
 
-	atomic_xchg(&g_serverStatus, SERVER_STATUS_START);
+	if (atomic_xchg(&g_serverStatus, SERVER_STATUS_START) == SERVER_STATUS_START) {
+		// Already start !
+		pResponse->set_result(SERVER_SUCCESS);
+		return;
+	}
 
-	pResponse->set_result(TRUE);
+	// TODO
+
+	pResponse->set_result(SERVER_SUCCESS);
 }
 
 void CControlCentreModule::CaseStop(
@@ -179,6 +160,6 @@ void CControlCentreModule::CaseStop(
 
 	atomic_xchg(&g_serverStatus, SERVER_STATUS_STOP);
 
-	pResponse->set_result(TRUE);
+	pResponse->set_result(SERVER_SUCCESS);
 }
 

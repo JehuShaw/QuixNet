@@ -17,17 +17,23 @@ namespace evt
 	class ArgumentBase {
 	public:
 		virtual ~ArgumentBase() {}
+
+		/**
+		 * reset body data;
+		 */
+		virtual void Reset() {};
 	};
 
     class MethodRIP1Base {
     public:
         virtual int Invoke(const util::CWeakPointer<ArgumentBase>& arg) = 0;
+		virtual bool Equal(const MethodRIP1Base& base) const = 0;
 		virtual ~MethodRIP1Base() {}
     };
 
     // For member function callback
     template<typename T>
-    class MemberMethodRIP1 : public MethodRIP1Base {
+    class MemberMethodRIP1 : public MethodRIP1Base, public util::PoolBase<MemberMethodRIP1<T> > {
      public:
         typedef int (T::* MethodType)(const util::CWeakPointer<ArgumentBase>& arg);
 
@@ -43,12 +49,20 @@ namespace evt
 
 
         MemberMethodRIP1& operator= (const MemberMethodRIP1& orig){
-            this->m_pObject = orig.m_pObject;
-            this->m_pMethod = orig.m_pMethod;
+            m_pObject = orig.m_pObject;
+            m_pMethod = orig.m_pMethod;
 			assert(!m_pObject.IsInvalid());
 			assert(NULL != m_pMethod);
             return *this;
         }
+
+		bool Equal(const MethodRIP1Base& pBase) const {
+			const MemberMethodRIP1* pRight = dynamic_cast<const MemberMethodRIP1*>(&pBase);
+			if(NULL == pRight) {
+				return false;
+			}
+			return m_pObject == pRight->m_pObject && m_pMethod == pRight->m_pMethod;
+		}
 
         int Invoke(const util::CWeakPointer<ArgumentBase>& arg){
 			util::CAutoPointer<T> pObject(m_pObject.GetStrong());
@@ -65,7 +79,7 @@ namespace evt
         MethodType m_pMethod;
     };
 
-    class GlobalMethodRIP1 : public MethodRIP1Base {
+    class GlobalMethodRIP1 : public MethodRIP1Base, public util::PoolBase<GlobalMethodRIP1> {
     public:
         typedef int (* MethodType)(const util::CWeakPointer<ArgumentBase>& arg);
 
@@ -76,10 +90,18 @@ namespace evt
         }
 
         GlobalMethodRIP1& operator= (const GlobalMethodRIP1& orig){
-            this->m_pMethod = orig.m_pMethod;
+            m_pMethod = orig.m_pMethod;
 			assert(NULL != m_pMethod);
             return *this;
         }
+
+		bool Equal(const MethodRIP1Base& base) const {
+			const GlobalMethodRIP1* pRight = dynamic_cast<const GlobalMethodRIP1*>(&base);
+			if(NULL == pRight) {
+				return false;
+			}
+			return m_pMethod == pRight->m_pMethod;
+		}
 
         int Invoke(const util::CWeakPointer<ArgumentBase>& arg){
             return (*m_pMethod)(arg);
@@ -93,12 +115,13 @@ namespace evt
 	class MethodRSBase {
 	public:
 		virtual std::string Invoke() = 0;
+		virtual bool Equal(const MethodRSBase& base) const = 0;
 		virtual ~MethodRSBase() {}
 	};
 
 	// For member function callback
 	template<typename T>
-	class MemberMethodRS : public MethodRSBase {
+	class MemberMethodRS : public MethodRSBase, public util::PoolBase<MemberMethodRS<T> > {
 	public:
 		typedef std::string (T::* MethodType)();
 
@@ -114,14 +137,22 @@ namespace evt
 
 
 		MemberMethodRS& operator= (const MemberMethodRS& orig){
-			this->m_pObject = orig.m_pObject;
-			this->m_pMethod = orig.m_pMethod;
+			m_pObject = orig.m_pObject;
+			m_pMethod = orig.m_pMethod;
 			assert(!m_pObject.IsInvalid());
 			assert(NULL != m_pMethod);
 			return *this;
 		}
 
-		std::string Invoke(){
+		bool Equal(const MethodRSBase& base) const {
+			const MemberMethodRS* pRight = dynamic_cast<const MemberMethodRS*>(&base);
+			if(NULL == pRight) {
+				return false;
+			}
+			return m_pObject == pRight->m_pObject && m_pMethod == pRight->m_pMethod;
+		}
+
+		std::string Invoke() {
 			util::CAutoPointer<T> pObject(m_pObject.GetStrong());
 			if(pObject.IsInvalid()) {
 				assert(false);
@@ -136,7 +167,7 @@ namespace evt
 		MethodType m_pMethod;
 	};
 
-	class GlobalMethodRS : public MethodRSBase {
+	class GlobalMethodRS : public MethodRSBase, public util::PoolBase<GlobalMethodRS> {
 	public:
 		typedef std::string (* MethodType)();
 
@@ -147,9 +178,17 @@ namespace evt
 		}
 
 		GlobalMethodRS& operator= (const GlobalMethodRS& orig){
-			this->m_pMethod = orig.m_pMethod;
+			m_pMethod = orig.m_pMethod;
 			assert(NULL != m_pMethod);
 			return *this;
+		}
+
+		bool Equal(const MethodRSBase& base) const {
+			const GlobalMethodRS* pRight = dynamic_cast<const GlobalMethodRS*>(&base);
+			if(NULL == pRight) {
+				return false;
+			}
+			return m_pMethod == pRight->m_pMethod;
 		}
 
 		std::string Invoke(){

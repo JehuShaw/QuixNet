@@ -5,50 +5,49 @@
  * Created on 2014_6_25, 21:20
  */
 
-#ifndef _MAILMANAGER_H
-#define _MAILMANAGER_H
+#ifndef MAILMANAGER_H
+#define MAILMANAGER_H
 
-#include <string>
 #include "Common.h"
-#include "msg_send_mail.pb.h"
-#include "WeakPointer.h"
 #include "Singleton.h"
+#include "PlayerOperateHelper.h"
+#include "msg_send_mail.pb.h"
 
-class CPlayerBase;
 
-class CMailManager
+class CMailManager : public util::Singleton<CMailManager>
 {
 public:
 	CMailManager() {}
 
-	bool SendOneselfMail(
-		util::CWeakPointer<CPlayerBase> pPlayer, 
-		::game::SendMailPacket& sendMailPacket,
-		bool bEscapeString = false);
-
-	bool SendPlayersMail(
-		util::CWeakPointer<CPlayerBase> pPlayer,
+	INLINE static eServerError SendPlayerMail(
+		uint64_t senderId,
 		uint64_t receiverId,
-		::game::SendMailPacket& sendMailPacket,
-		bool bEscapeString = false);
+		::game::SendMailPacket& sendMailPacket)
+	{
+		if (ID_NULL == receiverId) {
+			return MAIL_RECEIVERID_NULL;
+		}
 
-	bool SendPlayersMail(
-		util::CWeakPointer<CPlayerBase> pPlayer,
-		std::vector<uint64_t>& receivers,
-		::game::SendMailPacket& sendMailPacket,
-		bool bEscapeString = false);
+		if (senderId == receiverId) {
+			return MAIL_CANNT_SEND_SELF;
+		}
+		return SendSynPlayer(senderId, receiverId, N_CMD_SEND_MAIL, sendMailPacket, NULL);
+	}
 
-	bool SendPlayersMail(
-		uint64_t userId,
+	INLINE static eServerError PostPlayerMail(
+		uint64_t senderId,
 		uint64_t receiverId,
-		::game::SendMailPacket& sendMailPacket,
-		bool bEscapeString = false);
+		::game::SendMailPacket& sendMailPacket)
+	{
+		if (ID_NULL == receiverId) {
+			return MAIL_RECEIVERID_NULL;
+		}
 
-    bool SendPlayersMail(
-        uint64_t userId,
-        std::vector<uint64_t>& receivers,
-        ::game::SendMailPacket& sendMailPacket,
-        bool bEscapeString = false);
+		if (senderId == receiverId) {
+			return MAIL_CANNT_SEND_SELF;
+		}
+		return PostPlayer(senderId, receiverId, N_CMD_SEND_MAIL, sendMailPacket);
+	}
 };
 
 #endif  // _MAILMANAGER_H

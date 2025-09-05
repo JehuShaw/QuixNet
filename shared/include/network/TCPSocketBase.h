@@ -14,6 +14,13 @@
 
 namespace ntwk
 {
+	class LostData {
+	public:
+		LostData() : socketId(), nWhy(0) {}
+		SocketID socketId;
+		int nWhy;
+	};
+
     class SHARED_DLL_DECL TCPSocketBase {
     public:
         virtual ~TCPSocketBase(){}
@@ -24,23 +31,19 @@ namespace ntwk
         //Connect to the specified host on the specified port
         virtual bool Connect(SocketID& socketId, const char* address, unsigned short threadNum = 0) = 0;
         // Sends a byte stream
-        virtual bool Send(unsigned char * data
-						,unsigned int length
-						,int socketIdx
-						,unsigned char* prefixData = (unsigned char*)0
-						,unsigned int prefixLength = 0) = 0;
-
-		inline bool Send(unsigned char * data
-			,unsigned int length
-			,const SocketID& socketId
-			,unsigned char* prefixData = (unsigned char*)0
-			,unsigned int prefixLength = 0)
-		{
-			return Send(data, length, socketId.index, prefixData, prefixLength);
-		}
+        virtual bool Send(unsigned char * data,
+						unsigned int length,
+						const SocketID& socketId,
+						unsigned char* prefixData = (unsigned char*)0,
+						unsigned int prefixLength = 0) = 0;
 
         //Disconnects aplayer/address
-        virtual void CloseConnection(const SocketID& socketId) = 0;
+        virtual void CloseConnection(const SocketID& socketId, int nWhy) = 0;
+		//Is exist ?
+		virtual bool Exist(const SocketID& socketId) const = 0;
+		// Number of socket connections
+		virtual uint32_t Size() const = 0;
+
     protected:
 
 		inline static void ReverseBytes(char *input, char *output, int length){
@@ -117,10 +120,10 @@ namespace ntwk
                 }
         }
 
-		inline static uint32_t Hash(uint32_t uKey) {
-			// 32 bit Fibonacci 2654435769
-			return uKey * 2654435769;
-		}
+		//inline static uint32_t Hash(uint32_t uKey) {
+		//	// 32 bit Fibonacci 2654435769
+		//	return uKey * 2654435769;
+		//}
 	};
 
 }

@@ -11,8 +11,8 @@
  * without express or implied warranty.
  */
  
-#ifndef _PRINTSTACKTRACE_H
-#define _PRINTSTACKTRACE_H
+#ifndef PRINTSTACKTRACE_H
+#define PRINTSTACKTRACE_H
 /**
  * Prints formatted call stack to the user defined buffer,
  * always terminating the buffer with 0.
@@ -23,4 +23,4 @@ extern SHARED_DLL_DECL void printStackTrace( char* buffer, int bufferSize );
 extern SHARED_DLL_DECL void printStackTrace( );
 extern SHARED_DLL_DECL void arcAssertFailed( const char* fname, int line, const char* expr );
 
-#endif // _PRINTSTACKTRACE_H
+#endif // PRINTSTACKTRACE_H

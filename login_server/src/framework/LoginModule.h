@@ -12,6 +12,8 @@
 
 class CBodyBitStream;
 
+namespace google { namespace protobuf { class Message;} }
+
 class CLoginModule : public mdl::CModule {
 public:
     CLoginModule(const char* name);
@@ -25,17 +27,37 @@ public:
 
 	virtual InterestList ListProtocolInterests();
 
-	virtual void HandleNotification(const util::CWeakPointer<mdl::INotification>& request,
+	virtual void HandleNotification(
+		const util::CWeakPointer<mdl::INotification>& request,
 		util::CWeakPointer<mdl::IResponse>& reply);
 
 private:
-	void HandleLogin(const util::CWeakPointer<mdl::INotification>& request,
+	void HandleLogin(
+		const util::CWeakPointer<mdl::INotification>& request,
 		util::CWeakPointer<mdl::IResponse>& reply);
 
-	void HandleLogout(const util::CWeakPointer<mdl::INotification>& request,
+	void LoginCheckWeb(util::CWeakPointer<CBodyBitStream> request);
+
+	void HandleCreate(
+		const util::CWeakPointer<mdl::INotification>& request,
 		util::CWeakPointer<mdl::IResponse>& reply);
 
-	void LoginCheckWeb(util::CWeakPointer<CBodyBitStream> request, unsigned int socketIdx);
+	void HandleEnter(
+		const util::CWeakPointer<mdl::INotification>& request,
+		util::CWeakPointer<mdl::IResponse>& reply);
+
+	void HandleRelogin(
+		const util::CWeakPointer<mdl::INotification>& request,
+		util::CWeakPointer<mdl::IResponse>& reply);
+
+	eServerError GetCharacterInfo(
+		const std::string& strServantConnect,
+		const std::string& strAgentName,
+		uint64_t userId,
+		uint64_t account,
+		uint32_t serverRegion,
+		::google::protobuf::Message& outMessage,
+		bool bKick = false);
 };
 
 #endif	/* LOGINMODULE_H */

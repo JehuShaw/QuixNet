@@ -1,6 +1,6 @@
 
-#ifndef __TRANSFERSTREAM_H__
-#define __TRANSFERSTREAM_H__
+#ifndef TRANSFERSTREAM_H
+#define TRANSFERSTREAM_H
 
 #include "Common.h"
 #include "StreamDataType.h"
@@ -12,6 +12,7 @@
 #endif
 
 #include "SeparatedStream.h"
+#include "TinyJson.h"
 
 namespace util
 {
@@ -650,6 +651,16 @@ namespace util
 			}
 		}
 
+		inline void Serialize(const tiny::Json& input, bool bChange) {
+			if (bChange) {
+				*this << (uint8_t)STREAM_DATA_TINY_JSON;
+				*this << input;
+			}
+			else {
+				*this << (uint8_t)STREAM_DATA_TINY_JSON_NULL;
+			}
+		}
+
 		template<class T>
 		void Parse(T& ouput) {
 			uint8_t nType = STREAM_DATA_NIL;
@@ -662,7 +673,7 @@ namespace util
 		//////////////////////////////////////////////////////////////////////////
 		void ReadToTypeString(std::vector<CTypeString>& outStrings) {
 			uint8_t nThisType = STREAM_DATA_NIL;
-			while(TS_BITS_TO_BYTES(this->GetNumberOfUnreadBits()) > 0)
+			while(this->GetNumberOfUnreadBits() > 7)
 			{
 				outStrings.resize(outStrings.size() + 1);
 				CTypeString& typeString = outStrings.back();
@@ -685,6 +696,22 @@ namespace util
 
 			if(nThisType > STREAM_DATA_NIL && nThisType < STREAM_DATA_SIZE) {
 				(this->*s_typeOperators[nThisType].m_pReadToString)(outString.m_str);
+			} else {
+				assert(false);
+			}
+		}
+
+		void WriteFromTypeString(const std::string& input, uint8_t u8Type) {
+
+			if(input.empty()) {
+				*this << ToIgnoreType(u8Type);
+				return;
+			} else {
+				*this << u8Type;
+			}
+
+			if(u8Type > STREAM_DATA_NIL && u8Type < STREAM_DATA_SIZE) {
+				(this->*s_typeOperators[u8Type].m_pWriteFromString)(input.data(), static_cast<int>(input.length()));
 			} else {
 				assert(false);
 			}
@@ -927,6 +954,11 @@ namespace util
 		template<class T, size_t nSize>
 		CTransferStream& operator<<(const T (&input)[nSize]);
 #endif
+		/**
+		 * Write json string
+		 * @param input an tiny::Json object
+		 */
+		CTransferStream& operator<<(const tiny::Json& input);
 
 //////////////////////////////////////////////////////////////////////////
 		void ReadByType(char& ouput, uint8_t nType);
@@ -984,7 +1016,7 @@ namespace util
 		void ReadByType(double& output, uint8_t nType);
 
 #ifndef NO_TEMPLATE
-		        /**
+		/**
          * Read standard lib string
          * @param output The c++ standard lib string
          */
@@ -1034,15 +1066,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<bool>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1054,6 +1083,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1076,15 +1113,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<uint8_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1096,6 +1130,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1115,15 +1157,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<int8_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1135,6 +1174,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1154,15 +1201,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<uint16_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1174,6 +1218,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1193,15 +1245,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<int16_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1213,6 +1262,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1232,15 +1289,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<uint32_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1252,6 +1306,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1271,15 +1333,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<int32_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1291,6 +1350,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1311,15 +1378,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<uint64_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1331,6 +1395,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1350,15 +1422,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<int64_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1370,6 +1439,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1390,15 +1467,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<float>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1410,6 +1484,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1429,15 +1511,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<double>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1449,6 +1528,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1468,15 +1555,12 @@ namespace util
 		 */
 		void ReadByType(std::vector<std::string>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1488,6 +1572,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1508,15 +1600,12 @@ namespace util
 		 */
 		void ReadByType(std::set<bool>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1528,6 +1617,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1548,15 +1645,12 @@ namespace util
 		 */
 		void ReadByType(std::set<uint8_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1568,6 +1662,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1588,15 +1690,12 @@ namespace util
 		 */
 		void ReadByType(std::set<int8_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1608,6 +1707,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1628,15 +1735,12 @@ namespace util
 		 */
 		void ReadByType(std::set<uint16_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1648,6 +1752,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1668,15 +1780,12 @@ namespace util
 		 */
 		void ReadByType(std::set<int16_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1688,6 +1797,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1708,15 +1825,12 @@ namespace util
 		 */
 		void ReadByType(std::set<uint32_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1728,6 +1842,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1748,15 +1870,12 @@ namespace util
 		 */
 		void ReadByType(std::set<int32_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1768,6 +1887,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1789,15 +1916,12 @@ namespace util
 		 */
 		void ReadByType(std::set<uint64_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1809,6 +1933,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1829,15 +1961,12 @@ namespace util
 		 */
 		void ReadByType(std::set<int64_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1849,6 +1978,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1870,15 +2007,12 @@ namespace util
 		 */
 		void ReadByType(std::set<float>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1890,6 +2024,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1910,15 +2052,11 @@ namespace util
 		 */
 		void ReadByType(std::set<double>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1930,6 +2068,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1950,15 +2096,12 @@ namespace util
 		 */
 		void ReadByType(std::set<std::string>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -1970,6 +2113,13 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -1991,15 +2141,12 @@ namespace util
 		 */
 		void ReadByType(std::list<bool>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2011,6 +2158,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2030,15 +2185,12 @@ namespace util
 		 */
 		void ReadByType(std::list<uint8_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2050,6 +2202,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2069,15 +2229,12 @@ namespace util
 		 */
 		void ReadByType(std::list<int8_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2089,6 +2246,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2108,15 +2273,12 @@ namespace util
 		 */
 		void ReadByType(std::list<uint16_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2128,6 +2290,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2147,15 +2317,12 @@ namespace util
 		 */
 		void ReadByType(std::list<int16_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2167,6 +2334,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2186,15 +2361,12 @@ namespace util
 		 */
 		void ReadByType(std::list<uint32_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2206,6 +2378,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2225,15 +2405,12 @@ namespace util
 		 */
 		void ReadByType(std::list<int32_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2245,6 +2422,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2265,15 +2450,12 @@ namespace util
 		 */
 		void ReadByType(std::list<uint64_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2285,6 +2467,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2304,15 +2494,12 @@ namespace util
 		 */
 		void ReadByType(std::list<int64_t>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2324,6 +2511,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2344,15 +2539,12 @@ namespace util
 		 */
 		void ReadByType(std::list<float>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2364,6 +2556,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2383,15 +2583,12 @@ namespace util
 		 */
 		void ReadByType(std::list<double>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2403,6 +2600,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2422,15 +2627,12 @@ namespace util
 		 */
 		void ReadByType(std::list<std::string>& output, uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
-			if(!output.empty()) {
-				output.clear();
-			}
-
 			if(IsStringType(nType)) {
+
+				if (!output.empty()) {
+					output.clear();
+				}
+
 				uint16_t len = 0;
 				*this >> len;
 				if(len > 0) {
@@ -2442,6 +2644,14 @@ namespace util
 					separated >> output;
 				}
 			} else {
+
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
+
+				if (!output.empty()) {
+					output.clear();
+				}
 
 				int32_t length = 0;
 				*this >> length;
@@ -2464,10 +2674,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(bool (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2480,6 +2686,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2509,10 +2718,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(uint8_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2525,6 +2730,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2554,10 +2762,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(int8_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2570,6 +2774,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2599,10 +2806,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(uint16_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2615,6 +2818,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2644,10 +2850,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(int16_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2660,6 +2862,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2689,10 +2894,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(uint32_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2705,6 +2906,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2734,10 +2938,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(int32_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2750,6 +2950,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2780,10 +2983,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(uint64_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2796,6 +2995,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2825,10 +3027,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(int64_t (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2841,6 +3039,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2871,10 +3072,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(float (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2887,6 +3084,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2916,10 +3116,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(double (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2932,6 +3128,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -2961,10 +3160,6 @@ namespace util
 		template<size_t nSize>
 		void ReadByType(std::string (&output)[nSize], uint8_t nType) {
 
-			assert(IsContainerType(nType));
-
-			uint8_t nInnerType = GetInnerType(nType);
-
 			if(IsStringType(nType)) {
 				uint16_t len = 0;
 				*this >> len;
@@ -2977,6 +3172,9 @@ namespace util
 					separated >> output;
 				}
 			} else {
+				assert(IsContainerType(nType));
+
+				uint8_t nInnerType = GetInnerType(nType);
 
 				int32_t length = 0;
 				*this >> length;
@@ -3001,6 +3199,15 @@ namespace util
 			}
 		}
 #endif
+		/**
+		 * Read json
+		 * @param output The tiny::json object
+		 */
+		inline void ReadByType(tiny::Json& output, uint8_t u8Type) {
+			if(IsStringType(u8Type)) {
+				*this >> output;
+			}
+		}
 
 //////////////////////////////////////////////////////////////////////////
 		/**
@@ -3116,6 +3323,12 @@ namespace util
 		template<class T, size_t nSize>
 		CTransferStream& operator>>(T (&output)[nSize]);
 #endif
+		/**
+		 * Read json string
+		 * @param output The tiny::json object
+		 */
+		CTransferStream& operator>>(tiny::Json& output);
+
 		/**
 		 * Sets the read pointer back to the beginning of your data.
 		 */
@@ -3332,10 +3545,7 @@ namespace util
 			void (util::CTransferStream::*m_pReadToString)(std::string& output);
 			void (util::CTransferStream::*m_pWriteFromString)(const char* input, int length);
 		};
-		static bool s_bInitTypeOperator;
 		static struct TypeOperatorSet s_typeOperators[STREAM_DATA_SIZE];
-
-		void InitTypeOperator();
 	};
 
 
@@ -3505,4 +3715,4 @@ namespace util
 #endif
 }
 
-#endif /* __TRANSFERSTREAM_H__ */
+#endif /* TRANSFERSTREAM_H */

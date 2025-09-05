@@ -5,13 +5,13 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _SERVANTSERVER_H_
-#define	_SERVANTSERVER_H_
+#ifndef SERVANTSERVER_H
+#define	SERVANTSERVER_H
 
 #include <vector>
 #include <string>
 #include "NodeDefines.h"
-#include "CThreads.h"
+#include "ThreadBase.h"
 #include "rpcz.hpp"
 #include "AutoPointer.h"
 #include "WorkerServiceImp.h"
@@ -20,7 +20,7 @@
 #include "IServerRegister.h"
 
 class CServantServer
-	: public thd::CThread
+	: public thd::ThreadBase
 	, public util::Singleton<CServantServer>
 {
 public:
@@ -32,7 +32,9 @@ public:
 
     void Dispose();
 
-    virtual bool Run();
+    virtual bool OnRun();
+
+	virtual void OnShutdown() {}
 
 private:
 	void DisposeKeepRegTimer();
@@ -40,8 +42,8 @@ private:
 	void ConnectControlMaster(
 		const std::string& strMaster, 
 		const std::string& strServerName,
-		const std::string& strBind, 
-		uint16_t u16ServerId);
+		const std::string& endPoint,
+		uint32_t uServerId);
 
 	void DisconnectControlMaster();
 
@@ -63,5 +65,5 @@ private:
 	util::CAutoPointer<IServerRegister> m_pServerRegister;
 };
 
-#endif	/* _SERVANTSERVER_H_ */
+#endif	/* SERVANTSERVER_H */
 

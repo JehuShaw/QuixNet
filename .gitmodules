@@ -1,0 +1,15 @@
+[submodule "submodule/linux/boost"]
+	path = submodule/linux/boost
+	url = http://github.com/boostorg/boost.git
+[submodule "submodule/linux/protobuf"]
+	path = submodule/linux/protobuf
+	url = http://github.com/protocolbuffers/protobuf.git
+[submodule "submodule/linux/zeromq"]
+	path = submodule/linux/zeromq
+	url = https://github.com/zeromq/zeromq4-x.git
+[submodule "submodule/linux/cppzmq"]
+	path = submodule/linux/cppzmq
+	url = https://github.com/zeromq/cppzmq.git
+[submodule "submodule/linux/curl"]
+	path = submodule/linux/curl
+	url = https://github.com/curl/curl.git

@@ -21,95 +21,13 @@ void rpcz_protobuf_AssignDesc_controlcentre_2eproto() {
 
 namespace {
 
-GOOGLE_PROTOBUF_DECLARE_ONCE(protobuf_AssignDescriptors_once_);
+::google::protobuf::internal::once_flag protobuf_AssignDescriptors_once_;
 inline void protobuf_AssignDescriptorsOnce() {
-  ::google::protobuf::GoogleOnceInit(&protobuf_AssignDescriptors_once_,
+  ::google::protobuf::internal::call_once(protobuf_AssignDescriptors_once_,
                  &rpcz_protobuf_AssignDesc_controlcentre_2eproto);
 }
 
-void protobuf_RegisterTypes(const ::std::string&) {
-  protobuf_AssignDescriptorsOnce();
-}
-
 }  // namespace
-
-void rpcz_protobuf_ShutdownFile_controlcentre_2eproto() {
-}
-
-void rpcz_protobuf_AddDesc_controlcentre_2eproto() {
-  static bool already_here = false;
-  if (already_here) return;
-  already_here = true;
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\023controlcentre.proto\022\004node\"\023\n\021ControlCe"
-    "ntreVoid\"\307\001\n\017RegisterRequest\022\022\n\nserverty"
-    "pe\030\001 \002(\005\022\020\n\010endpoint\030\002 \002(\t\022\022\n\nservername"
-    "\030\003 \002(\014\022\020\n\010serverid\030\004 \002(\r\022\024\n\014serverregion"
-    "\030\005 \002(\r\022\023\n\013projectname\030\006 \001(\014\022\025\n\racceptadd"
-    "ress\030\007 \001(\t\022\023\n\013processpath\030\010 \001(\014\022\021\n\tserva"
-    "ntid\030\t \001(\r\"I\n\rRemoveRequest\022\022\n\nservernam"
-    "e\030\001 \002(\014\022\020\n\010serverid\030\002 \002(\r\022\022\n\nservertype\030"
-    "\003 \001(\005\"!\n\017OperateResponse\022\016\n\006result\030\001 \002(\005"
-    "\"\240\001\n\023KeepRegisterRequest\022\020\n\010serverid\030\001 \002"
-    "(\r\022\022\n\nservername\030\002 \001(\014\022\020\n\010endpoint\030\003 \001(\t"
-    "\022\022\n\nservertype\030\004 \001(\005\022\022\n\nserverload\030\005 \001(\r"
-    "\022\024\n\014serverstatus\030\006 \001(\005\022\023\n\013serverstate\030\007 "
-    "\001(\014\"*\n\024KeepRegisterResponse\022\022\n\nreregiste"
-    "r\030\001 \002(\010\"H\n\020UserLoginRequest\022\022\n\nservernam"
-    "e\030\001 \002(\014\022\020\n\010serverid\030\002 \002(\r\022\016\n\006userid\030\003 \002("
-    "\004\"7\n\021UserLogoutRequest\022\022\n\nservername\030\001 \002"
-    "(\014\022\016\n\006userid\030\002 \002(\004\"(\n\022LowLoadNodeRequest"
-    "\022\022\n\nservername\030\001 \002(\014\"B\n\023LowLoadNodeRespo"
-    "nse\022\025\n\racceptaddress\030\001 \002(\t\022\024\n\014serverregi"
-    "on\030\002 \002(\r\"@\n\024RegionLowLoadRequest\022\022\n\nserv"
-    "ername\030\001 \002(\014\022\024\n\014serverregion\030\002 \002(\r\".\n\025Re"
-    "gionLowLoadResponse\022\025\n\racceptaddress\030\001 \002"
-    "(\t\"%\n\017NodeListRequest\022\022\n\nservername\030\001 \002("
-    "\014\"M\n\nNodeDetail\022\024\n\014serverregion\030\001 \002(\r\022\025\n"
-    "\racceptaddress\030\002 \002(\t\022\022\n\nserverload\030\003 \002(\005"
-    "\"3\n\020NodeListResponse\022\037\n\005nodes\030\001 \003(\0132\020.no"
-    "de.NodeDetail\"\"\n\017CreateIdRequest\022\017\n\007acco"
-    "unt\030\001 \002(\004\"\\\n\020CreateIdResponse\022\016\n\006result\030"
-    "\001 \002(\005\022\016\n\006userid\030\002 \001(\004\022\024\n\014serverregion\030\003 "
-    "\001(\r\022\022\n\ncreatetime\030\004 \001(\t\"!\n\016CheckIdReques"
-    "t\022\017\n\007account\030\001 \002(\004\"h\n\017CheckIdResponse\022\016\n"
-    "\006result\030\001 \002(\005\022\016\n\006userid\030\002 \001(\004\022\022\n\ncreatet"
-    "ime\030\003 \001(\t\022\024\n\014serverregion\030\004 \001(\r\022\013\n\003cas\030\005"
-    " \001(\004\"I\n\023UpdateRegionRequest\022\017\n\007account\030\001"
-    " \002(\004\022\024\n\014serverregion\030\002 \002(\r\022\013\n\003cas\030\003 \002(\004\""
-    "&\n\024UpdateRegionResponse\022\016\n\006result\030\001 \002(\005\""
-    "U\n\021CacheStoreRequest\022\020\n\010serverid\030\001 \002(\r\022\021"
-    "\n\troutetype\030\002 \002(\005\022\r\n\005route\030\003 \002(\004\022\014\n\004keys"
-    "\030\004 \003(\t\"-\n\016CacheKeyResult\022\013\n\003key\030\001 \002(\t\022\016\n"
-    "\006result\030\002 \002(\005\"N\n\022CacheStoreResponse\022\016\n\006r"
-    "esult\030\001 \002(\005\022(\n\nkeyresults\030\002 \003(\0132\024.node.C"
-    "acheKeyResult2\266\006\n\024ControlCentreService\022>"
-    "\n\016RegisterModule\022\025.node.RegisterRequest\032"
-    "\025.node.OperateResponse\022:\n\014RemoveModule\022\023"
-    ".node.RemoveRequest\032\025.node.OperateRespon"
-    "se\022E\n\014KeepRegister\022\031.node.KeepRegisterRe"
-    "quest\032\032.node.KeepRegisterResponse\022<\n\tUse"
-    "rLogin\022\026.node.UserLoginRequest\032\027.node.Co"
-    "ntrolCentreVoid\022>\n\nUserLogout\022\027.node.Use"
-    "rLogoutRequest\032\027.node.ControlCentreVoid\022"
-    "E\n\016GetLowLoadNode\022\030.node.LowLoadNodeRequ"
-    "est\032\031.node.LowLoadNodeResponse\022K\n\020GetReg"
-    "ionLowLoad\022\032.node.RegionLowLoadRequest\032\033"
-    ".node.RegionLowLoadResponse\022<\n\013GetNodeLi"
-    "st\022\025.node.NodeListRequest\032\026.node.NodeLis"
-    "tResponse\022=\n\014CreateUserId\022\025.node.CreateI"
-    "dRequest\032\026.node.CreateIdResponse\022:\n\013Chec"
-    "kUserId\022\024.node.CheckIdRequest\032\025.node.Che"
-    "ckIdResponse\022I\n\020UpdateUserRegion\022\031.node."
-    "UpdateRegionRequest\032\032.node.UpdateRegionR"
-    "esponse\022E\n\020CacheServerStore\022\027.node.Cache"
-    "StoreRequest\032\030.node.CacheStoreResponse", 2518);
-  ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
-    "controlcentre.proto", &protobuf_RegisterTypes);
-  ::google::protobuf::internal::OnShutdown(&rpcz_protobuf_ShutdownFile_controlcentre_2eproto);
-}
 
 // ===================================================================
 
@@ -126,13 +44,13 @@ const ::google::protobuf::ServiceDescriptor* ControlCentreService::GetDescriptor
 }
 
 void ControlCentreService::RegisterModule(const ::node::RegisterRequest&,
-                         ::rpcz::reply< ::node::OperateResponse> reply) {
+                         ::rpcz::reply< ::node::RegisterResponse> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
               "Method RegisterModule() not implemented.");
 }
 
 void ControlCentreService::RemoveModule(const ::node::RemoveRequest&,
-                         ::rpcz::reply< ::node::OperateResponse> reply) {
+                         ::rpcz::reply< ::node::RemoveResponse> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
               "Method RemoveModule() not implemented.");
 }
@@ -173,28 +91,58 @@ void ControlCentreService::GetNodeList(const ::node::NodeListRequest&,
               "Method GetNodeList() not implemented.");
 }
 
-void ControlCentreService::CreateUserId(const ::node::CreateIdRequest&,
-                         ::rpcz::reply< ::node::CreateIdResponse> reply) {
+void ControlCentreService::GetUsers(const ::node::GetUserRequest&,
+                         ::rpcz::reply< ::node::GetUserResponse> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
-              "Method CreateUserId() not implemented.");
+              "Method GetUsers() not implemented.");
 }
 
-void ControlCentreService::CheckUserId(const ::node::CheckIdRequest&,
-                         ::rpcz::reply< ::node::CheckIdResponse> reply) {
+void ControlCentreService::CreateUser(const ::node::CreateUserRequest&,
+                         ::rpcz::reply< ::node::CreateUserResponse> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
-              "Method CheckUserId() not implemented.");
+              "Method CreateUser() not implemented.");
 }
 
-void ControlCentreService::UpdateUserRegion(const ::node::UpdateRegionRequest&,
-                         ::rpcz::reply< ::node::UpdateRegionResponse> reply) {
+void ControlCentreService::CheckUser(const ::node::CheckUserRequest&,
+                         ::rpcz::reply< ::node::CheckUserResponse> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
-              "Method UpdateUserRegion() not implemented.");
+              "Method CheckUser() not implemented.");
 }
 
-void ControlCentreService::CacheServerStore(const ::node::CacheStoreRequest&,
-                         ::rpcz::reply< ::node::CacheStoreResponse> reply) {
+void ControlCentreService::UpdateUser(const ::node::UpdateUserRequest&,
+                         ::rpcz::reply< ::node::UpdateUserResponse> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
-              "Method CacheServerStore() not implemented.");
+              "Method UpdateUser() not implemented.");
+}
+
+void ControlCentreService::DeleteUser(const ::node::DeleteUserRequest&,
+                         ::rpcz::reply< ::node::DeleteUserResponse> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method DeleteUser() not implemented.");
+}
+
+void ControlCentreService::GetEndPointFromServant(const ::node::EndPointRequest&,
+                         ::rpcz::reply< ::node::EndPointResponse> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method GetEndPointFromServant() not implemented.");
+}
+
+void ControlCentreService::SeizeServer(const ::node::SeizeRequest&,
+                         ::rpcz::reply< ::node::SeizeResponse> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method SeizeServer() not implemented.");
+}
+
+void ControlCentreService::FreeServer(const ::node::FreeRequest&,
+                         ::rpcz::reply< ::node::FreeResponse> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method FreeServer() not implemented.");
+}
+
+void ControlCentreService::GenerateGuid(const ::node::ControlCentreVoid&,
+                         ::rpcz::reply< ::node::GuidResponse> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method GenerateGuid() not implemented.");
 }
 
 void ControlCentreService::call_method(const ::google::protobuf::MethodDescriptor* method,
@@ -205,12 +153,12 @@ void ControlCentreService::call_method(const ::google::protobuf::MethodDescripto
     case 0:
       RegisterModule(
           *::google::protobuf::down_cast<const ::node::RegisterRequest*>(&request),
-          ::rpcz::reply< ::node::OperateResponse>(channel));
+          ::rpcz::reply< ::node::RegisterResponse>(channel));
       break;
     case 1:
       RemoveModule(
           *::google::protobuf::down_cast<const ::node::RemoveRequest*>(&request),
-          ::rpcz::reply< ::node::OperateResponse>(channel));
+          ::rpcz::reply< ::node::RemoveResponse>(channel));
       break;
     case 2:
       KeepRegister(
@@ -243,24 +191,49 @@ void ControlCentreService::call_method(const ::google::protobuf::MethodDescripto
           ::rpcz::reply< ::node::NodeListResponse>(channel));
       break;
     case 8:
-      CreateUserId(
-          *::google::protobuf::down_cast<const ::node::CreateIdRequest*>(&request),
-          ::rpcz::reply< ::node::CreateIdResponse>(channel));
+      GetUsers(
+          *::google::protobuf::down_cast<const ::node::GetUserRequest*>(&request),
+          ::rpcz::reply< ::node::GetUserResponse>(channel));
       break;
     case 9:
-      CheckUserId(
-          *::google::protobuf::down_cast<const ::node::CheckIdRequest*>(&request),
-          ::rpcz::reply< ::node::CheckIdResponse>(channel));
+      CreateUser(
+          *::google::protobuf::down_cast<const ::node::CreateUserRequest*>(&request),
+          ::rpcz::reply< ::node::CreateUserResponse>(channel));
       break;
     case 10:
-      UpdateUserRegion(
-          *::google::protobuf::down_cast<const ::node::UpdateRegionRequest*>(&request),
-          ::rpcz::reply< ::node::UpdateRegionResponse>(channel));
+      CheckUser(
+          *::google::protobuf::down_cast<const ::node::CheckUserRequest*>(&request),
+          ::rpcz::reply< ::node::CheckUserResponse>(channel));
       break;
     case 11:
-      CacheServerStore(
-          *::google::protobuf::down_cast<const ::node::CacheStoreRequest*>(&request),
-          ::rpcz::reply< ::node::CacheStoreResponse>(channel));
+      UpdateUser(
+          *::google::protobuf::down_cast<const ::node::UpdateUserRequest*>(&request),
+          ::rpcz::reply< ::node::UpdateUserResponse>(channel));
+      break;
+    case 12:
+      DeleteUser(
+          *::google::protobuf::down_cast<const ::node::DeleteUserRequest*>(&request),
+          ::rpcz::reply< ::node::DeleteUserResponse>(channel));
+      break;
+    case 13:
+      GetEndPointFromServant(
+          *::google::protobuf::down_cast<const ::node::EndPointRequest*>(&request),
+          ::rpcz::reply< ::node::EndPointResponse>(channel));
+      break;
+    case 14:
+      SeizeServer(
+          *::google::protobuf::down_cast<const ::node::SeizeRequest*>(&request),
+          ::rpcz::reply< ::node::SeizeResponse>(channel));
+      break;
+    case 15:
+      FreeServer(
+          *::google::protobuf::down_cast<const ::node::FreeRequest*>(&request),
+          ::rpcz::reply< ::node::FreeResponse>(channel));
+      break;
+    case 16:
+      GenerateGuid(
+          *::google::protobuf::down_cast<const ::node::ControlCentreVoid*>(&request),
+          ::rpcz::reply< ::node::GuidResponse>(channel));
       break;
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -289,13 +262,23 @@ const ::google::protobuf::Message& ControlCentreService::GetRequestPrototype(
     case 7:
       return ::node::NodeListRequest::default_instance();
     case 8:
-      return ::node::CreateIdRequest::default_instance();
+      return ::node::GetUserRequest::default_instance();
     case 9:
-      return ::node::CheckIdRequest::default_instance();
+      return ::node::CreateUserRequest::default_instance();
     case 10:
-      return ::node::UpdateRegionRequest::default_instance();
+      return ::node::CheckUserRequest::default_instance();
     case 11:
-      return ::node::CacheStoreRequest::default_instance();
+      return ::node::UpdateUserRequest::default_instance();
+    case 12:
+      return ::node::DeleteUserRequest::default_instance();
+    case 13:
+      return ::node::EndPointRequest::default_instance();
+    case 14:
+      return ::node::SeizeRequest::default_instance();
+    case 15:
+      return ::node::FreeRequest::default_instance();
+    case 16:
+      return ::node::ControlCentreVoid::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
@@ -307,9 +290,9 @@ const ::google::protobuf::Message& ControlCentreService::GetResponsePrototype(
   GOOGLE_DCHECK_EQ(method->service(), descriptor());
   switch(method->index()) {
     case 0:
-      return ::node::OperateResponse::default_instance();
+      return ::node::RegisterResponse::default_instance();
     case 1:
-      return ::node::OperateResponse::default_instance();
+      return ::node::RemoveResponse::default_instance();
     case 2:
       return ::node::KeepRegisterResponse::default_instance();
     case 3:
@@ -323,13 +306,23 @@ const ::google::protobuf::Message& ControlCentreService::GetResponsePrototype(
     case 7:
       return ::node::NodeListResponse::default_instance();
     case 8:
-      return ::node::CreateIdResponse::default_instance();
+      return ::node::GetUserResponse::default_instance();
     case 9:
-      return ::node::CheckIdResponse::default_instance();
+      return ::node::CreateUserResponse::default_instance();
     case 10:
-      return ::node::UpdateRegionResponse::default_instance();
+      return ::node::CheckUserResponse::default_instance();
     case 11:
-      return ::node::CacheStoreResponse::default_instance();
+      return ::node::UpdateUserResponse::default_instance();
+    case 12:
+      return ::node::DeleteUserResponse::default_instance();
+    case 13:
+      return ::node::EndPointResponse::default_instance();
+    case 14:
+      return ::node::SeizeResponse::default_instance();
+    case 15:
+      return ::node::FreeResponse::default_instance();
+    case 16:
+      return ::node::GuidResponse::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
       return *reinterpret_cast< ::google::protobuf::Message*>(NULL);
@@ -350,7 +343,7 @@ ControlCentreService_Stub::~ControlCentreService_Stub() {
 }
 
 void ControlCentreService_Stub::RegisterModule(const ::node::RegisterRequest& request,
-                              ::node::OperateResponse* response,
+                              ::node::RegisterResponse* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
@@ -358,7 +351,7 @@ void ControlCentreService_Stub::RegisterModule(const ::node::RegisterRequest& re
                         request, response, rpc_controller, done);
 }
 void ControlCentreService_Stub::RegisterModule(const ::node::RegisterRequest& request,
-                              ::node::OperateResponse* response,
+                              ::node::RegisterResponse* response,
                               long deadline_ms) {
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
@@ -371,7 +364,7 @@ void ControlCentreService_Stub::RegisterModule(const ::node::RegisterRequest& re
   }
 }
 void ControlCentreService_Stub::RemoveModule(const ::node::RemoveRequest& request,
-                              ::node::OperateResponse* response,
+                              ::node::RemoveResponse* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
@@ -379,7 +372,7 @@ void ControlCentreService_Stub::RemoveModule(const ::node::RemoveRequest& reques
                         request, response, rpc_controller, done);
 }
 void ControlCentreService_Stub::RemoveModule(const ::node::RemoveRequest& request,
-                              ::node::OperateResponse* response,
+                              ::node::RemoveResponse* response,
                               long deadline_ms) {
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
@@ -517,16 +510,16 @@ void ControlCentreService_Stub::GetNodeList(const ::node::NodeListRequest& reque
     throw ::rpcz::rpc_error(rpc_controller);
   }
 }
-void ControlCentreService_Stub::CreateUserId(const ::node::CreateIdRequest& request,
-                              ::node::CreateIdResponse* response,
+void ControlCentreService_Stub::GetUsers(const ::node::GetUserRequest& request,
+                              ::node::GetUserResponse* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
                         ControlCentreService::descriptor()->method(8),
                         request, response, rpc_controller, done);
 }
-void ControlCentreService_Stub::CreateUserId(const ::node::CreateIdRequest& request,
-                              ::node::CreateIdResponse* response,
+void ControlCentreService_Stub::GetUsers(const ::node::GetUserRequest& request,
+                              ::node::GetUserResponse* response,
                               long deadline_ms) {
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
@@ -538,16 +531,16 @@ void ControlCentreService_Stub::CreateUserId(const ::node::CreateIdRequest& requ
     throw ::rpcz::rpc_error(rpc_controller);
   }
 }
-void ControlCentreService_Stub::CheckUserId(const ::node::CheckIdRequest& request,
-                              ::node::CheckIdResponse* response,
+void ControlCentreService_Stub::CreateUser(const ::node::CreateUserRequest& request,
+                              ::node::CreateUserResponse* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
                         ControlCentreService::descriptor()->method(9),
                         request, response, rpc_controller, done);
 }
-void ControlCentreService_Stub::CheckUserId(const ::node::CheckIdRequest& request,
-                              ::node::CheckIdResponse* response,
+void ControlCentreService_Stub::CreateUser(const ::node::CreateUserRequest& request,
+                              ::node::CreateUserResponse* response,
                               long deadline_ms) {
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
@@ -559,16 +552,16 @@ void ControlCentreService_Stub::CheckUserId(const ::node::CheckIdRequest& reques
     throw ::rpcz::rpc_error(rpc_controller);
   }
 }
-void ControlCentreService_Stub::UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-                              ::node::UpdateRegionResponse* response,
+void ControlCentreService_Stub::CheckUser(const ::node::CheckUserRequest& request,
+                              ::node::CheckUserResponse* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
                         ControlCentreService::descriptor()->method(10),
                         request, response, rpc_controller, done);
 }
-void ControlCentreService_Stub::UpdateUserRegion(const ::node::UpdateRegionRequest& request,
-                              ::node::UpdateRegionResponse* response,
+void ControlCentreService_Stub::CheckUser(const ::node::CheckUserRequest& request,
+                              ::node::CheckUserResponse* response,
                               long deadline_ms) {
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
@@ -580,21 +573,126 @@ void ControlCentreService_Stub::UpdateUserRegion(const ::node::UpdateRegionReque
     throw ::rpcz::rpc_error(rpc_controller);
   }
 }
-void ControlCentreService_Stub::CacheServerStore(const ::node::CacheStoreRequest& request,
-                              ::node::CacheStoreResponse* response,
+void ControlCentreService_Stub::UpdateUser(const ::node::UpdateUserRequest& request,
+                              ::node::UpdateUserResponse* response,
                               ::rpcz::rpc_controller* rpc_controller,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
                         ControlCentreService::descriptor()->method(11),
                         request, response, rpc_controller, done);
 }
-void ControlCentreService_Stub::CacheServerStore(const ::node::CacheStoreRequest& request,
-                              ::node::CacheStoreResponse* response,
+void ControlCentreService_Stub::UpdateUser(const ::node::UpdateUserRequest& request,
+                              ::node::UpdateUserResponse* response,
                               long deadline_ms) {
   ::rpcz::rpc_controller rpc_controller;
   rpc_controller.set_deadline_ms(deadline_ms);
   channel_->call_method(service_name_,
                         ControlCentreService::descriptor()->method(11),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void ControlCentreService_Stub::DeleteUser(const ::node::DeleteUserRequest& request,
+                              ::node::DeleteUserResponse* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(12),
+                        request, response, rpc_controller, done);
+}
+void ControlCentreService_Stub::DeleteUser(const ::node::DeleteUserRequest& request,
+                              ::node::DeleteUserResponse* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(12),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void ControlCentreService_Stub::GetEndPointFromServant(const ::node::EndPointRequest& request,
+                              ::node::EndPointResponse* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(13),
+                        request, response, rpc_controller, done);
+}
+void ControlCentreService_Stub::GetEndPointFromServant(const ::node::EndPointRequest& request,
+                              ::node::EndPointResponse* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(13),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void ControlCentreService_Stub::SeizeServer(const ::node::SeizeRequest& request,
+                              ::node::SeizeResponse* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(14),
+                        request, response, rpc_controller, done);
+}
+void ControlCentreService_Stub::SeizeServer(const ::node::SeizeRequest& request,
+                              ::node::SeizeResponse* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(14),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void ControlCentreService_Stub::FreeServer(const ::node::FreeRequest& request,
+                              ::node::FreeResponse* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(15),
+                        request, response, rpc_controller, done);
+}
+void ControlCentreService_Stub::FreeServer(const ::node::FreeRequest& request,
+                              ::node::FreeResponse* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(15),
+                        request, response, &rpc_controller, NULL);
+  rpc_controller.wait();
+  if (!rpc_controller.ok()) {
+    throw ::rpcz::rpc_error(rpc_controller);
+  }
+}
+void ControlCentreService_Stub::GenerateGuid(const ::node::ControlCentreVoid& request,
+                              ::node::GuidResponse* response,
+                              ::rpcz::rpc_controller* rpc_controller,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(16),
+                        request, response, rpc_controller, done);
+}
+void ControlCentreService_Stub::GenerateGuid(const ::node::ControlCentreVoid& request,
+                              ::node::GuidResponse* response,
+                              long deadline_ms) {
+  ::rpcz::rpc_controller rpc_controller;
+  rpc_controller.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        ControlCentreService::descriptor()->method(16),
                         request, response, &rpc_controller, NULL);
   rpc_controller.wait();
   if (!rpc_controller.ok()) {

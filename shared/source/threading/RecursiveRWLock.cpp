@@ -1,9 +1,8 @@
 #include "RecursiveRWLock.h"
+#include "ThreadIndexManager.h"
 
 namespace thd {
 
-SHARED_DLL_DECL CRecursiveRWLock::thread_table_t CRecursiveRWLock::s_thdContext;
-SHARED_DLL_DECL CRecursiveRWLock::instc_table_t CRecursiveRWLock::s_instcIdxs;
 /*
  */
 
@@ -13,8 +12,6 @@ CRecursiveRWLock::CRecursiveRWLock() throw()
 	, m_threadId(0)
 	, m_recursionCount(0)
 {
-	m_thisIdx = s_instcIdxs.Add();
-	assert(XQXTABLEINDEXS_INDEX_NIL != m_thisIdx);
 }
 
 /*
@@ -26,22 +23,6 @@ CRecursiveRWLock::~CRecursiveRWLock() throw()
 	m_writerWriting = 0;
 	m_readersReading = 0;
 	m_lockFree.NotifyAll();
-	m_mutex.Unlock();
-	// remove thread context
-	thread_table_t::iterator it(s_thdContext.Begin());
-	for(; s_thdContext.End() != it; ++it) {
-		thread_table_t::value_t itValue(it.GetValue());
-		if(XQXTABLE2S_INDEX_NIL != itValue.nIndex && itValue.pObject) {
-			store_table_t::value_t thdReaders(itValue.pObject->Find(m_thisIdx));
-			if(XQXTABLE1STORE_INDEX_NIL != thdReaders.nIndex) {
-				itValue.pObject->Remove(m_thisIdx);
-			}
-		}
-	}
-	s_instcIdxs.Remove(m_thisIdx);
-	// Wait all done.
-	m_mutex.Lock();
-	m_thisIdx = XQXTABLEINDEXS_INDEX_NIL;
 	m_recursionCount = 0;
 	m_threadId = 0;
 	m_mutex.Unlock();
@@ -118,30 +99,6 @@ bool CRecursiveRWLock::TimedLockWrite(uint32_t msec) throw()
 	return true;
 }
 
-void CRecursiveRWLock::UnlockWrite() throw()
-{
-	m_mutex.Lock();
-	// unlock write lock
-	if(m_writerWriting > 0)
-	{
-		const uint32_t threadId = GetSysCurrentThreadId();
-		if(threadId == m_threadId) {
-			if(m_recursionCount > 1) {
-				--m_recursionCount;
-				m_mutex.Unlock();
-				return;
-			} else {
-				m_recursionCount = 0;
-				m_threadId = 0;
-			}
-		}
-
-		m_writerWriting = 0;
-		m_lockFree.NotifyAll();
-	}
-	m_mutex.Unlock();
-}
-
 /*
  */
 
@@ -216,28 +173,39 @@ bool CRecursiveRWLock::TimedLockRead(uint32_t msec) throw()
 /*
  */
 
-void CRecursiveRWLock::UnlockRead() throw()
+void CRecursiveRWLock::Unlock() throw()
 {
 	m_mutex.Lock();
-
-	if(m_writerWriting > 0) {
+	if (m_writerWriting > 0) {
+		// unlock write lock
 		const uint32_t threadId = GetSysCurrentThreadId();
-		if(threadId == m_threadId) {
+		if (threadId == m_threadId) {
+			if (m_recursionCount > 1) {
+				--m_recursionCount;
+				m_mutex.Unlock();
+				return;
+			}
+			else {
+				m_recursionCount = 0;
+				m_threadId = 0;
+			}
+		}
+
+		m_writerWriting = 0;
+		m_lockFree.NotifyAll();
+	} else {
+
+		if (DecThreadReader()) {
 			m_mutex.Unlock();
 			return;
 		}
-	}
 
-	if(DecThreadReader()) {
-		m_mutex.Unlock();
-		return;
-	}
-
-	// unlock read lock
-	if(m_readersReading > 0)
-	{
-		if(--m_readersReading == 0) {
-			m_lockFree.Notify();
+		// unlock read lock
+		if (m_readersReading > 0)
+		{
+			if (--m_readersReading == 0) {
+				m_lockFree.Notify();
+			}
 		}
 	}
 	m_mutex.Unlock();
@@ -343,7 +311,9 @@ bool CRecursiveRWLock::DegradeLockWrite() throw()
 	if(m_writerWriting > 0)
 	{
 		assert(m_readersReading == 0);
-		++m_readersReading;
+		if(!IncThreadReader()) {
+			++m_readersReading;
+		}
 		m_writerWriting = 0;
 		m_lockFree.NotifyAll();
 
@@ -354,45 +324,18 @@ bool CRecursiveRWLock::DegradeLockWrite() throw()
 	return false;
 }
 
-size_t& CRecursiveRWLock::GetThreadIndex()
-{
-#if COMPILER == COMPILER_MICROSOFT
-	__declspec(thread) static size_t s_thdIndex = XQXTABLE2S_INDEX_NIL;
-#elif COMPILER == COMPILER_GNU
-	__thread static size_t s_thdIndex = XQXTABLE2S_INDEX_NIL;
-#elif COMPILER == COMPILER_BORLAND
-	static size_t __thread s_thdIndex = XQXTABLE2S_INDEX_NIL;
-#else
-#error "not support";
-#endif
-	return s_thdIndex;
-}
-
 bool CRecursiveRWLock::IncThreadReader()
 {
 	bool bSkipLock = false;
-	size_t& thdIndex = GetThreadIndex();
-	if(XQXTABLE2S_INDEX_NIL == thdIndex) {
-		store_table_t tmp;
-		int32_t thdReaders = 1;
-		tmp.Add(m_thisIdx, thdReaders);
-		thdIndex = s_thdContext.Add(tmp);
-	} else {
-		store_table_t* pStore(s_thdContext.Find(thdIndex).pObject);
-		if(pStore) {
-			store_table_t::value_t thdReaders(pStore->Find(m_thisIdx));
-			if(XQXTABLE1STORE_INDEX_NIL == thdReaders.nIndex) {
-				thdReaders.object = 1;
-				assert(pStore->Add(m_thisIdx, thdReaders.object));
-			} else {
-				pStore->Change(m_thisIdx, ++thdReaders.object);
-				if(thdReaders.object > 1) {
-					bSkipLock = true;
-				}
-			}
-		} else {
-			assert(pStore);
+	uint64_t thdIndex = CThreadIndexManager::Pointer()->Get();
+	if(m_thdContext.Has(thdIndex)) {
+		int32_t readerCount = m_thdContext.Find(thdIndex) + 1;
+		m_thdContext.Change(thdIndex, readerCount);
+		if(readerCount > 1) {
+			bSkipLock = true;
 		}
+	} else {
+		m_thdContext.Add(thdIndex, 1);
 	}
 	return bSkipLock;
 }
@@ -400,19 +343,15 @@ bool CRecursiveRWLock::IncThreadReader()
 bool CRecursiveRWLock::DecThreadReader()
 {
 	bool bSkipUnlock = false;
-	size_t& thdIndex = GetThreadIndex();
-	if(XQXTABLE2S_INDEX_NIL != thdIndex) {
-		store_table_t* pStore(s_thdContext.Find(thdIndex).pObject);
-		if(pStore) {
-			store_table_t::value_t thdReaders(pStore->Find(m_thisIdx));
-			if(XQXTABLE1STORE_INDEX_NIL != thdReaders.nIndex && thdReaders.object > 0) {
-				pStore->Change(m_thisIdx, --thdReaders.object);
-				if(thdReaders.object > 0) {
-					bSkipUnlock = true;
-				}
+	uint64_t thdIndex = CThreadIndexManager::Pointer()->Get();
+	if(m_thdContext.Has(thdIndex)) {
+		int32_t readerCount = m_thdContext.Find(thdIndex);
+		if(readerCount > 0) {
+			--readerCount;
+			m_thdContext.Change(thdIndex, readerCount);
+			if(readerCount > 0) {
+				bSkipUnlock = true;
 			}
-		} else {
-			assert(pStore);
 		}
 	}
 	return bSkipUnlock;
@@ -421,17 +360,12 @@ bool CRecursiveRWLock::DecThreadReader()
 bool CRecursiveRWLock::ClearThreadReader()
 {
 	bool bClear = false;
-	size_t& thdIndex = GetThreadIndex();
-	if(XQXTABLE2S_INDEX_NIL != thdIndex) {
-		store_table_t* pStore(s_thdContext.Find(thdIndex).pObject);
-		if(pStore) {
-			store_table_t::value_t thdReaders(pStore->Find(m_thisIdx));
-			if(XQXTABLE1STORE_INDEX_NIL != thdReaders.nIndex && thdReaders.object > 0) {
-				pStore->Change(m_thisIdx, 0);
-				bClear = true;
-			}
-		} else {
-			assert(pStore);
+	uint64_t thdIndex = CThreadIndexManager::Pointer()->Get();
+	if(m_thdContext.Has(thdIndex)) {
+		int32_t readerCount = m_thdContext.Find(thdIndex);
+		if(readerCount > 0) {
+			m_thdContext.Change(thdIndex, 0);
+			bClear = true;
 		}
 	}
 	return bClear;
@@ -440,16 +374,11 @@ bool CRecursiveRWLock::ClearThreadReader()
 bool CRecursiveRWLock::HasThreadReader()
 {
 	bool hasLock = false;
-	size_t& thdIndex = GetThreadIndex();
-	if(XQXTABLE2S_INDEX_NIL != thdIndex) {
-		store_table_t* pStore(s_thdContext.Find(thdIndex).pObject);
-		if(pStore) {
-			store_table_t::value_t thdReaders(pStore->Find(m_thisIdx));
-			if(XQXTABLE1STORE_INDEX_NIL != thdReaders.nIndex && thdReaders.object > 0) {
-				hasLock = true;
-			}
-		} else {
-			assert(pStore);
+	uint64_t thdIndex = CThreadIndexManager::Pointer()->Get();
+	if(m_thdContext.Has(thdIndex)) {
+		int32_t readerCount = m_thdContext.Find(thdIndex);
+		if(readerCount > 0) {
+			hasLock = true;
 		}
 	}
 	return hasLock;

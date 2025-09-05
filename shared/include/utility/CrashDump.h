@@ -1,30 +1,13 @@
-/********************************************************************
-            Copyright (c) 2010 - SZCodeBase
-                   All rights reserved
-         
-    创建日期：  2010年07月09日 21时27分
-    文件名称：  CrashDump
-	说    明：  异常处理     
-				使用时在需要dump的函数段开头begin().dump整个程序,则在main开头begin()即可.  
-				例:
-				int _tmain(int argc, _TCHAR* argv[])
-				{	
-				// Set up minidump filename.
-				CrashDump::Begin();
-				int i = 0;
-				Stest *p = NULL;
-				p->a = 0;
-				return 0;
-				}
-    
-    当前版本：  1.00
-    作    者：  SiZhi Huang
-    概    述：  创建    
+/*
+ * File:   CrashDump.h
+ * Author: Jehu Shaw
+ *
+ * Created on 2010_7_9 21:27
+ */
+#ifndef CRASHDUMP_H
+#define	CRASHDUMP_H
 
-*********************************************************************/
-#pragma once
-
-#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 )
+#if defined( __WIN32__) || defined( WIN32 ) || defined ( _WIN32 ) || defined( _WIN64 )
 
 #include "Common.h"
 #include <Windows.h>
@@ -36,9 +19,8 @@ namespace Frame
 	{
 	public:
 		static CrashDump *Begin(LPTOP_LEVEL_EXCEPTION_FILTER CBFilter = NULL, MINIDUMP_TYPE minidumptype = MiniDumpNormal);
-		void End();
+		static void End();
 
-		// s_previousFilter 字段封装 get操作
 		LPTOP_LEVEL_EXCEPTION_FILTER GetPreviousFilter() const;
 
 	private:
@@ -68,7 +50,6 @@ namespace Frame
 		static void WalkStack(LPEXCEPTION_POINTERS ExceptionInfo) ;
 
 	private:
-		// 终止处理
 		static void terminator();
 
 	private:
@@ -91,9 +72,9 @@ namespace Frame
 		static CrashDump *s_pSelf;
 
 		static MINIDUMP_TYPE s_minidumptype;
-
-		static char *s_pDumpBuff;
 	};
 }
 
 #endif
+
+#endif // CRASHDUMP_H

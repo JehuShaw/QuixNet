@@ -18,208 +18,31 @@
 #include "msg_game_login.pb.h"
 #include "Player.h"
 #include "FillPacketHelper.h"
-#include "ConfigTemplate.h"
 
-#include "CacheRecordManager.h"
-#include "msg_game_player_rename.pb.h"
+#include "CacheUserManager.h"
 #include "LoggingOperateHelper.h"
+#include "EnvLockHelper.h"
+#include "msg_node_create_character.pb.h"
+#include "msg_node_get_character.pb.h"
+#include "msg_game_time.pb.h"
+#include "PlayerPosData.h"
+#include "PlayerBasic.h"
+#include "CharacterConfig.h"
+#include "GlobalConfig.h"
+#include "MapConfig.h"
+#include "Utf8.h"
+#include "msg_game_map.pb.h"
+#include "PlayerMap.h"
+
 
 using namespace mdl;
 using namespace evt;
 using namespace util;
 
-
-#include "WrapRWLock.h"
-#include "ScopedWrapRWLock.h"
-#include "SpinLock.h"
-#include "WrapLock.h"
-#include "ScopedWrapLock.h"
-#include "SpinRecursiveRWLock.h"
-
-#include "TimerManager.h"
-
-#include "Player.h"
-
-#include "GuidFactory.h"
-
-#include "RecursiveRWLock.h"
-
-#include "TimerManagerHelper.h"
-
-class CTestBase {
-public:
-	virtual int GetIntValue()const = 0;
-	virtual const std::string& GetStrValue() const = 0;
-
-	virtual void SetIntValue(int nValue) = 0;
-	virtual void SetStrValue(const std::string& strValue) = 0;
-};
-class CTest : public CTestBase {
-public:
-	virtual int GetIntValue()const {
-		return m_nValue;
-	}
-	virtual const std::string& GetStrValue() const {
-		return m_strValue;
-	}
-
-	virtual void SetIntValue(int nValue) {
-		m_nValue = nValue;
-	}
-	virtual void SetStrValue(const std::string& strValue) {
-		m_strValue = strValue;
-	}
-private:
-	int m_nValue;
-	std::string m_strValue;
-};
-
-class CTest2 {
-
-};
-
-thd::CWrapRWLock<thd::CSpinRWLock, CTest, CTestBase>* g_test;
-
-thd::CWrapLock<thd::CSpinLock, CTest, CTestBase>* g_test2;
-
-thd::CSpinRecursiveRWLock g_srRWLock;
-
-#if PLATFORM == PLATFORM_WIN32
-__declspec (naked) unsigned __int64 GetCpuCycle( void )
+CPlayerModule::CPlayerModule(const char* name)
+	: CModule(name)
 {
-	_asm
-	{
-		__asm _emit 0x0F
-		__asm _emit 0x31
-		ret
-	}
-}
-#else
-static __inline__ unsigned long long GetCpuCycle(void)
-{
- unsigned long long int x;
- __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
- return x;
-}
-#endif
-
-thd::CSpinRecursiveRWLock* g_pRwLock;
-
-void callBackP1(int& ss) {
-
-};
-
-CPlayerModule::CPlayerModule(const char* name, uint16_t serverRegion)
-	: CModule(name), m_u16ServerRegion(serverRegion) {
-		m_pThis.SetRawPointer(this, false);
-
-		g_pRwLock = new thd::CSpinRecursiveRWLock;
-		//g_rwLock.LockRead();
-		thd::CSpinLock spinLock;
-		spinLock.TimedLock(100);
-
-		//g_rwLock.UpgradeLockRead();
-		//g_rwLock.DegradeLockWrite();
-		//g_rwLock.UnlockRead();
-
-		//g_rwLock.LockWrite();
-
-		//g_rwLock.UpgradeLockRead();
-
-		//g_rwLock.UnlockWrite();
-		//
-		//g_rwLock.LockRead();
-
-		//g_rwLock.LockRead();
-
-		uint64_t nStartTime = GetCpuCycle();
-		g_srRWLock.LockRead();
-		uint64_t nEndTime = GetCpuCycle();
-
-		int64_t nDifTime = nEndTime - nStartTime;
-
-
-		g_srRWLock.LockRead();
-
-		SetTimeout(301,CBMethod<CPlayerModule>(m_pThis, &CPlayerModule::TestCallback));
-
-		SetTimeout(300,CBMethod<CPlayerModule>(m_pThis, &CPlayerModule::TestCallback2));
-
-		SetTimeout(400, CBMethod<CPlayerModule>(m_pThis, &CPlayerModule::TestCallback3));
-
-		SetTimeout(500, CBMethod<CPlayerModule>(m_pThis, &CPlayerModule::TestCallback4));
-
-		CPlayer* pPlayer1 = new CPlayer(1);
-		CPlayer* pPlayer2 = new CPlayer(2);
-		CPlayer* pPlayer3 = new CPlayer(3);
-		CPlayer* pPlayer4 = new CPlayer(4);
-		CPlayer* pPlayer5 = new CPlayer(5);
-		CPlayer* pPlayer6 = new CPlayer(6);
-		CPlayer* pPlayer7 = new CPlayer(7);
-		CPlayer* pPlayer8 = new CPlayer(8);
-		CPlayer* pPlayer9 = new CPlayer(9);
-
-		delete pPlayer1;
-		delete pPlayer9;
-		delete pPlayer8;
-		delete pPlayer7;
-		delete pPlayer6;
-		delete pPlayer5;
-		delete pPlayer4;
-		delete pPlayer3;
-		delete pPlayer2;
-
-
-		g_test = new thd::CWrapRWLock<thd::CSpinRWLock, CTest, CTestBase>;
-		////////////////////////////////////////////////////////////////////
-		// 获得写锁
-		thd::CScopedWrapRWLock<CTestBase> swLock(*g_test, 1000);
-
-		////////////////////////////////////////////////////////////////////////
-		// 获得读锁
-		const thd::CScopedWrapRWLock<CTestBase> srLock(*g_test, 1000);
-
-		///////////////////////////////////////////////////////////////////////
-		// 测试
-
-		// 写锁下可以读数据
-		swLock->GetStrValue();
-		// 写锁下写数据
-		swLock->SetIntValue(100);
-
-		//在获得锁的情况下，数据删除将抛出异常
-		//delete g_test;
-
-		// 在写锁下获得数据
-		util::CScopedPointer<CTestBase> pTest(swLock.GetData());
-		pTest->SetStrValue(std::string("Hello world"));
-
-		// 在写锁下读数据
-		util::CScopedPointer<const CTestBase> pTest2(swLock.GetData());
-		pTest2->GetStrValue();
-
-		// 降级为读锁
-		const thd::CScopedWrapRWLock<CTestBase>& cswwLock = swLock.DegradeLockWrite();
-		// 降级后写指针失效 ，因此 swwLock->SetIntValue(3); 会抛出异常。
-		//swwLock->SetIntValue(3);
-
-		cswwLock->GetIntValue();
-		//
-		swLock.UpgradeLockRead()->SetIntValue(4);
-
-
-
-
-		g_test2 = new thd::CWrapLock<thd::CSpinLock, CTest, CTestBase>;
-		{
-			thd::CScopedWrapLock<CTestBase> mutexLock(*g_test2);
-
-			mutexLock->GetIntValue();
-
-			util::CScopedPointer<CTestBase> pTest2(mutexLock.GetData());
-			pTest2->SetIntValue(5);
-			pTest2->SetStrValue(std::string("hello"));
-		}
+	m_pThis(this);
 }
 
 CPlayerModule::~CPlayerModule() {
@@ -227,8 +50,6 @@ CPlayerModule::~CPlayerModule() {
 
 void CPlayerModule::OnRegister(){
     OutputBasic("OnRegister");
-
-
 }
 
 void CPlayerModule::OnRemove(){
@@ -237,31 +58,275 @@ void CPlayerModule::OnRemove(){
 
 std::vector<int> CPlayerModule::ListNotificationInterests()
 {
-	std::vector<int> interests;
-
-	return interests;
+	return std::vector<int>({ 
+		N_CMD_CHECK_CREATE_CHARACTER,
+		N_CMD_CREATE_CHARACTER,
+		N_CMD_GET_CHARACTER
+	});
 }
 
 IModule::InterestList CPlayerModule::ListProtocolInterests()
 {
-	InterestList interests;
-	interests.push_back(BindMethod<CPlayerModule>(
-		P_CMD_C_LOGIN, &CPlayerModule::HandleLogin));
+	return InterestList({
+		BindMethod<CPlayerModule>(
+		P_CMD_C_LOGIN, &CPlayerModule::HandleLogin),
 
-    interests.push_back(BindMethod<CPlayerModule>(
-        P_CMD_S_LOGOUT, &CPlayerModule::HandleLogout));
+		BindMethod<CPlayerModule>(
+		P_CMD_S_LOGOUT, &CPlayerModule::HandleLogout),
 
-    interests.push_back(BindMethod<CPlayerModule>(
-        P_CMD_C_PLAYER_RENAME, &CPlayerModule::HandleRename));
-
-	return interests;
+		BindMethod<CPlayerModule>(
+		P_CMD_C_TIME, &CPlayerModule::HandleTime)
+	});
 }
 
 void CPlayerModule::HandleNotification(const CWeakPointer<INotification>& request,
 	CWeakPointer<IResponse>& reply)
 {
-
+	int32_t nCmd = request->GetName();
+	switch (nCmd) {
+	case N_CMD_CHECK_CREATE_CHARACTER:
+		CaseCheckCreateCharacter(request, reply);
+		break;
+	case N_CMD_CREATE_CHARACTER:
+		CaseCreateCharacter(request, reply);
+		break;
+	case N_CMD_GET_CHARACTER:
+		CaseGetCharacter(request, reply);
+		break;
+	default:
+		break;
+	}
 }
+
+void CPlayerModule::CaseCheckCreateCharacter(const CWeakPointer<INotification>& request,
+	CWeakPointer<IResponse>& reply)
+{
+	CWeakPointer<::node::DataPacket> pRequest(GetWorkerRequestPacket(request));
+	if (pRequest.IsInvalid()) {
+		return;
+	}
+
+	// response
+	CWeakPointer<::node::DataPacket> pResponse(GetWorkerResponsePacket(reply));
+	if (pResponse.IsInvalid()) {
+		return;
+	}
+
+	uint64_t userId = pRequest->route();
+
+	::node::CheckCreateCharRequest checkRequest;
+	if (!ParseWorkerData(checkRequest, pRequest)) {
+		OutputError("!ParseWorkerData userId = " I64FMTD, userId);
+		pResponse->set_result(PARSE_PACKAGE_FAIL);
+		return;
+	}
+
+	if (CCharacterConfig::Pointer()->GetRow(checkRequest.cfgid()) == NULL) {
+		OutputError("!CCharacterConfig::Pointer()->GetRow cfgid = %u", checkRequest.cfgid());
+		pResponse->set_result(CONFIG_NOT_FOUND);
+		return;
+	}
+
+	const std::string& strName = checkRequest.name();
+	if (!strName.empty()) {
+		wchar_t swzBuf[eBUF_SIZE_512] = { 0 };
+		UTF8ToUNICODE((util::custr)strName.data(), strName.length(), swzBuf, eBUF_SIZE_512-1);
+
+        //int nLength = CWordFilter::UnicodeCalcLen(swzBuf, eBUF_SIZE_512);
+	
+		CGlobalConfig::PTR_T pGlobalConfig = CGlobalConfig::Pointer();
+		//if (pGlobalConfig->GetCharacterNameMaxSize() < nLength) {
+		//	OutputError("GetCharacterNameMaxSize() < nLength cfgid = %u cfgMaxSize = %u nLength = %u",
+		//		checkRequest.cfgid(), pGlobalConfig->GetCharacterNameMaxSize(), nLength);
+		//	pResponse->set_result(CHARACTER_NAME_LIMIT);
+		//	return;
+		//}
+
+        //// Filter invalid character
+        //if (!CWordFilter::UnicodeCheckNameValid(swzBuf, eBUF_SIZE_512)) {
+        //    pResponse->set_result(CHARACTER_NAME_INVALID);
+        //    return;
+        //}
+
+		util::CTransferStream strKeys;
+		strKeys.Serialize(CHECK_EXIST_ESCAPE_TABLE_NAME, true);
+		strKeys.Serialize(strName, true);
+		util::CTransferStream outNewKeys;
+		MCResult mcResult = McCheckExistEscapeStringBalUserId(userId, strKeys, outNewKeys);
+		if(MCERR_NOTFOUND == mcResult) {
+			pResponse->set_result(SERVER_SUCCESS);
+			std::string strTableKey;
+			outNewKeys.Parse(strTableKey);
+			std::string strNewName;
+			outNewKeys.Parse(strNewName);
+			::node::CheckCreateCharResponse checkResponse;
+			checkResponse.set_name(strNewName);
+			uint32_t nMapId = pGlobalConfig->GetInitMapID();
+			checkResponse.set_mapid(nMapId);
+			SerializeWorkerData(pResponse, checkResponse);
+		} else if(MCERR_OK == mcResult) {
+			pResponse->set_result(PLAYER_NAME_ALREADY_EXIST);
+		}
+		return;
+	}
+	pResponse->set_result(SERVER_FAILURE);
+}
+
+void CPlayerModule::CaseCreateCharacter(const CWeakPointer<INotification>& request,
+	CWeakPointer<IResponse>& reply)
+{
+	CWeakPointer<::node::DataPacket> pRequest(GetWorkerRequestPacket(request));
+	if (pRequest.IsInvalid()) {
+		return;
+	}
+
+	// response
+	CWeakPointer<::node::DataPacket> pResponse(GetWorkerResponsePacket(reply));
+	if (pResponse.IsInvalid()) {
+		return;
+	}
+
+	uint64_t userId = pRequest->route();
+
+	::node::CreateCharacterRequest createRequest;
+	if (!ParseWorkerData(createRequest, pRequest)) {
+		OutputError("!ParseWorkerData userId = " I64FMTD, userId);
+		pResponse->set_result(PARSE_PACKAGE_FAIL);
+		return;
+	}
+
+	if (CCharacterConfig::Pointer()->GetRow(createRequest.cfgid()) == NULL) {
+		OutputError("!CCharacterConfig::Pointer()->GetRow cfgid = %u", createRequest.cfgid());
+		pResponse->set_result(CONFIG_NOT_FOUND);
+		return;
+	}
+
+	// 调用创建角色接口
+	int nResult = CPlayer::OnCreate(userId, createRequest);
+	if (SERVER_SUCCESS != nResult) {
+		OutputError("CPlayer::OnCreate nResult = %d userId = " I64FMTD, nResult, userId);
+	}
+
+	pResponse->set_result(nResult);
+}
+
+void CPlayerModule::CaseGetCharacter(const CWeakPointer<INotification>& request,
+	CWeakPointer<IResponse>& reply)
+{
+	CWeakPointer<::node::DataPacket> pRequest(GetWorkerRequestPacket(request));
+	if (pRequest.IsInvalid()) {
+		return;
+	}
+
+	// response
+	CWeakPointer<::node::DataPacket> pResponse(GetWorkerResponsePacket(reply));
+	if (pResponse.IsInvalid()) {
+		return;
+	}
+
+	uint64_t userId = pRequest->route();
+
+	::node::GetCharacterResponse getResponse;
+	int nResult = CPlayer::OnCharacterInfo(getResponse, userId);
+
+	// send to client
+	pResponse->set_result(nResult);
+	SerializeWorkerData(pResponse, getResponse);
+}
+
+
+class CLoginMessage : public thd::CWriteData<CPlayer> {
+public:
+	CLoginMessage(CWeakPointer<::node::DataPacket>& pRequest, CWeakPointer<::node::DataPacket>& pResponse)
+		: m_pRequest(pRequest), m_pResponse(pResponse) {}
+private:
+	CWeakPointer<::node::DataPacket> m_pRequest;
+	// response
+	CWeakPointer<::node::DataPacket> m_pResponse;
+private:
+	virtual void Process(util::CWeakPointer<CPlayer> pPlayer) final {
+		if (pPlayer.IsInvalid()) {
+			OutputError("pPlayer.IsInvalid() userId = " I64FMTD, m_pRequest->route());
+			return;
+		}
+
+		uint64_t userId = pPlayer->GetUserID();
+		int nSubCmd = m_pRequest->sub_cmd();
+		if (LOGIN_RECOVER != nSubCmd) {
+			::node::LoginRequest loginRequest;
+			if (!ParseWorkerData(loginRequest, m_pRequest)) {
+				OutputError("!ParseWorkerData userId = " I64FMTD, userId);
+				m_pResponse->set_result(PARSE_PACKAGE_FAIL);
+				return;
+			}
+
+			//   CConfigTemplate::PTR_T pConfigTemp(CConfigTemplate::Pointer());
+
+			   //if(pRequest->result() != LOGIN_SWITCH_MAP) {
+			   //	uint32_t nSerVersion = (uint32_t)pConfigTemp->GetValue(CONFIG_VERSION);
+			   //	if(loginRequest.version() != nSerVersion) {
+			   //		OutputError("CONFIG_VERSION_NOT_CONSISTENT userId = "
+			   //			I64FMTD " clientVersion = %d serverVersion = %d", userId
+			   //			, loginRequest.version(), nSerVersion);
+			   //		pResponse->set_result(CONFIG_VERSION_NOT_CONSISTENT);
+			   //		return;
+			   //	}
+			   //}
+
+			// Set map id;
+			pPlayer->SetMapID(loginRequest.mapid());
+
+			CAutoPointer<CPlayerBasic> pPlayerBasic(pPlayer->GetUnit(PLAYER_UNIT_BASIC));
+			CAutoPointer<CPlayerData> pPlayerData(pPlayerBasic->GetPlayerData());
+			util::CValueStream strKeys;
+			strKeys.Serialize(userId);
+			MCResult nResult = pPlayerData->LoadFromCache(userId, strKeys);
+			if (MCERR_OK != nResult) {
+				OutputError("MCERR_OK != pPlayerData->LoadFromCache nResult = %d"
+					" userId = " I64FMTD, nResult, userId);
+				// response
+				m_pResponse->set_result(SERVER_FAILURE);
+				return;
+			}
+			//OutputDebug("3 CPlayerModule::HandleLogin load player data end userId = " I64FMTD, userId);
+
+			if (LOGIN_SWITCH_MAP != nSubCmd) {
+				if (pPlayerData->GetAccount() != loginRequest.account()) {
+					OutputError("pPlayerData->GetAccount() = " I64FMTD " loginRequest.account() = " I64FMTD
+						" userId = " I64FMTD, pPlayerData->GetAccount(), loginRequest.account(), userId);
+					m_pResponse->set_result(SERVER_FAILURE);
+					return;
+				}
+			}
+			// 调用角色登录接口
+			pPlayer->OnLogin();
+		}
+
+		//OutputDebug("4 CPlayerModule::HandleLogin load player data end userId = " I64FMTD, userId);
+		if (LOGIN_SWITCH_MAP != nSubCmd) {
+			game::LoginResponse loginResponse;
+			// 获取需要下发客户端的数据
+			pPlayer->OnInitClient(loginResponse);
+
+			//OutputDebug("5 CPlayerModule::HandleLogin userId = " I64FMTD, userId);
+			SerializeWorkerData(m_pResponse, loginResponse);
+		}
+		else {
+			CAutoPointer<CPlayerMap> pPlayerMap(pPlayer->GetUnit(PLAYER_UNIT_MAP));
+
+			::game::SwitchMapResponse switchResponse;
+			pPlayerMap->OnSwitchMapLogin(switchResponse);
+
+			SerializeWorkerData(m_pResponse, switchResponse);
+		}
+
+		m_pResponse->set_result(SERVER_SUCCESS);
+		//////////////////////////////////////////////////////////////////////////
+
+		//TraceBehavior(userId, pPlayerData->GetAccount(), pPlayerData->GetName(),
+		//	LOG_BEHAVIOR_LOGIN, pPlayerData->GetLevel());
+	}
+};
 
 void CPlayerModule::HandleLogin(const CWeakPointer<INotification>& request,
 	CWeakPointer<IResponse>& reply)
@@ -279,94 +344,40 @@ void CPlayerModule::HandleLogin(const CWeakPointer<INotification>& request,
 
     uint64_t userId = pRequest->route();
 
-    ::node::LoginRequest loginRequest;
-    if(!ParseWorkerData(loginRequest, pRequest)) {
-        OutputError("!ParseWorkerData userId = "I64FMTD, userId);
-        pResponse->set_result(PARSE_PACKAGE_FAIL);
-        return;
-    }
-
-    CConfigTemplate::PTR_T pConfigTemp(CConfigTemplate::Pointer());
-    uint32_t nSerVersion = (uint32_t)pConfigTemp->GetValue(CONFIG_VERSION);
-    if(loginRequest.version() != nSerVersion) {
-        OutputError("CONFIG_VERSION_NOT_CONSISTENT userId = "
-            I64FMTD" clientVersion = %d serverVersion = %d", userId
-            , loginRequest.version(), nSerVersion);
-        pResponse->set_result(CONFIG_VERSION_NOT_CONSISTENT);
-        return;
-    }
-
-	CWeakPointer<CPlayer> pPlayer(GetWorkerPlayer(request));
-	if(pPlayer.IsInvalid()) {
+	//OutputDebug("1 CPlayerModule::HandleLogin userId = " I64FMTD, userId);
+	CWeakPointer<CWrapPlayer> pWrapPlayer(GetWorkerPlayer(request));
+	if (pWrapPlayer.IsInvalid()) {
 		pResponse->set_result(CANNT_FIND_PLAYER);
 		return;
 	}
 
-    CAutoPointer<CPlayerData> pPlayerData(pPlayer->GetPlayerData());
-	util::CValueStream strKeys;
-	strKeys.Serialize(userId);
-    MCResult nResult = pPlayerData->LoadFromCache(userId, strKeys);
-    if(MCERR_OK != nResult && MCERR_NOTFOUND != nResult) {
-        OutputError("MCERR_OK != pPlayerData->LoadFromCache nResult = %d"
-            " userId = "I64FMTD, nResult, pPlayer->GetUserId());
-        // response
-        pResponse->set_result(FALSE);
-        return;
-    }
+	util::CUniquePointer<CLoginMessage> msg(new CLoginMessage(pRequest, pResponse));
+	pWrapPlayer->Send(msg, false);
+}
 
-    if(MCERR_NOTFOUND == nResult) {
 
-        std::string strTime(CTimestampManager::Pointer()->GetLocalDateTimeStr());
-        pPlayerData->SetName(std::string("anonymous"));
-        pPlayerData->SetAccount(loginRequest.account());
-        pPlayerData->SetCreateTime(strTime);
-        pPlayerData->SetLevel(1);
-		int32_t nInitialGem = pConfigTemp->GetValue(CONFIG_INITIAL_GEM);
-		if(nInitialGem > 0) {
-			pPlayerData->SetGem(nInitialGem);
-		}
-		int32_t nInitialCoin = pConfigTemp->GetValue(CONFIG_INITIAL_COIN);
-		if(nInitialCoin > 0) {
-			pPlayerData->SetCoin(nInitialCoin);
-		}
-
-		nResult = pPlayerData->AddToCache(userId, strKeys);
-		if(MCERR_OK != nResult) {
-			OutputError("MCERR_OK != pPlayerData->AddToCache()"
-				" nResult = %d userId = "I64FMTD, nResult, userId);
-			pResponse->set_result(FALSE);
+class CLogoutMessage : public thd::CWriteData<CPlayer> {
+private:
+	virtual void Process(util::CWeakPointer<CPlayer> pPlayer) final {
+		if (pPlayer.IsInvalid()) {
+			OutputError("pPlayer.IsInvalid() ");
 			return;
 		}
-	} else {
-		// nResult == MCERR_OK
-        if(pPlayerData->GetAccount() != loginRequest.account()) {
-            OutputError("pPlayerData->GetAccount() = "I64FMTD" loginRequest.account() = "I64FMTD
-                " userId = "I64FMTD, pPlayerData->GetAccount(), loginRequest.account(), userId);
-            pResponse->set_result(FALSE);
-            return;
-        }
-    }
-    //////////////////////////////////////////////////////////////////////////
-    // 添加数据库操作托管
-    pPlayer->AddToRecordManager();
+		// 退出做一些处理
+		pPlayer->OnLogout();
 
-    //////////////////////////////////////////////////////////////////////////
-    pPlayerData->SetStatus(PLAYER_STATUS_ONLINE);
-
-    game::CharacterPacket characterPacket;
-
-    // character data
-    FillPlayerData(characterPacket, *pPlayerData);
-
-    // send to client
-    pResponse->set_result(TRUE);
-    SerializeWorkerData(pResponse, characterPacket);
-
-	//////////////////////////////////////////////////////////////////////////
-
-	TraceBehavior(userId, pPlayerData->GetAccount(), pPlayerData->GetName(),
-		LOG_BEHAVIOR_LOGIN, pPlayerData->GetLevel());
-}
+		uint64_t userId = pPlayer->GetUserID();
+		//////////////////////////////////////////////////////////////////////////
+		// 退出自动保存数据
+		CCacheUserManager::PTR_T pCacheRecordMgr(CCacheUserManager::Pointer());
+		pCacheRecordMgr->RemoveCacheRecord(userId);
+		/////////////////////////////////////////////////////////////////////////
+		CAutoPointer<CPlayerBasic> pPlayerBasic(pPlayer->GetUnit(PLAYER_UNIT_BASIC));
+		CAutoPointer<CPlayerData> pPlayerData(pPlayerBasic->GetPlayerData());
+		TraceBehavior(userId, pPlayerData->GetAccount(), pPlayerData->GetName(),
+			LOG_BEHAVIOR_LOGOUT, pPlayerData->GetLevel());
+	}
+};
 
 void CPlayerModule::HandleLogout(const CWeakPointer<mdl::INotification>& request,
     CWeakPointer<mdl::IResponse>& reply)
@@ -376,103 +387,26 @@ void CPlayerModule::HandleLogout(const CWeakPointer<mdl::INotification>& request
         return;
     }
 
-	uint64_t userId = pRequest->route();
-
-    CWeakPointer<CPlayer> pPlayer(GetWorkerPlayerSilence(request));
-    if(pPlayer.IsInvalid()) {
+    CWeakPointer<CWrapPlayer> pWrapPlayer(GetWorkerPlayerSilence(request));
+    if(pWrapPlayer.IsInvalid()) {
         return;
     }
 
-    CAutoPointer<CPlayerData> pPlayerData(pPlayer->GetPlayerData());
-
-    std::string strTime(CTimestampManager::Pointer()->GetLocalDateTimeStr());
-    pPlayerData->SetOfflineTime(strTime);
-    pPlayerData->SetStatus(PLAYER_STATUS_OFFLINE);
-    //////////////////////////////////////////////////////////////////////////
-    // 退出自动保存数据
-    CCacheRecordManager::PTR_T pCacheRecordMgr(CCacheRecordManager::Pointer());
-    pCacheRecordMgr->RemoveCacheRecord(userId);
-    /////////////////////////////////////////////////////////////////////////
-
-	TraceBehavior(userId, pPlayerData->GetAccount(), pPlayerData->GetName(),
-		LOG_BEHAVIOR_LOGOUT, pPlayerData->GetLevel());
+	util::CUniquePointer<CLogoutMessage> msg(new CLogoutMessage);
+	pWrapPlayer->Post(msg);
 }
 
-void CPlayerModule::HandleRename(const CWeakPointer<mdl::INotification>& request,
-    CWeakPointer<mdl::IResponse>& reply)
+void CPlayerModule::HandleTime(const CWeakPointer<mdl::INotification>& request,
+	CWeakPointer<mdl::IResponse>& reply)
 {
-    CWeakPointer<::node::DataPacket> pRequest(GetWorkerRequestPacket(request));
-    if(pRequest.IsInvalid()) {
-        return;
-    }
+	CWeakPointer<::node::DataPacket> pResponse(GetWorkerResponsePacket(reply));
+	if (pResponse.IsInvalid()) {
+		return;
+	}
 
-    CWeakPointer<::node::DataPacket> pResponse(GetWorkerResponsePacket(reply));
-    if(pResponse.IsInvalid()) {
-        return;
-    }
-
-    uint64_t userId = pRequest->route();
-    CWeakPointer<CPlayer> pPlayer(GetWorkerPlayer(request));
-    if(pPlayer.IsInvalid()) {
-        OutputError("pPlayer.IsInvalid() userId = "I64FMTD, userId);
-        pResponse->set_result(CANNT_FIND_PLAYER);
-        return;
-    }
-
-    ::game::PlayerRenamePacket playerRenamePacket;
-    if(!ParseWorkerData(playerRenamePacket, pRequest)) {
-        OutputError("!ParseWorkerData userId = "I64FMTD, pPlayer->GetUserId());
-        pResponse->set_result(PARSE_PACKAGE_FAIL);
-        return;
-    }
-
-    CAutoPointer<CPlayerData> pPlayerData(pPlayer->GetPlayerData());
-
-    if(playerRenamePacket.name() == pPlayerData->GetName()) {
-        pRequest->set_result(TRUE);
-        return;
-    }
-
-    std::string strName;
-    McDBEscapeString(pPlayer->GetUserId(), playerRenamePacket.name(), strName);
-    pPlayerData->SetName(strName);
-
-    pRequest->set_result(TRUE);
+	pResponse->set_result(SERVER_SUCCESS);
+	
+	::game::TimeResponse timeResponse;
+	timeResponse.set_time(CTimestampManager::Pointer()->GetTimestamp());
+	SerializeWorkerData(pResponse, timeResponse);
 }
-
-void CPlayerModule::TestCallback()
-{
-	if(g_pRwLock)
-	g_pRwLock->LockRead();
-	if(g_pRwLock)
-	g_pRwLock->UpgradeLockRead();
-
-	int ss =3;
-	ss += 2;
-}
-
-void CPlayerModule::TestCallback2()
-{
-	if(g_pRwLock)
-	g_pRwLock->LockWrite();
-	int ss =3;
-	ss += 2;
-}
-
-void CPlayerModule::TestCallback3()
-{
-	delete g_pRwLock;
-	g_pRwLock = NULL;
-	//g_rwLock.UnlockRead();
-	//int ss =3;
-	//ss += 2;
-}
-
-void CPlayerModule::TestCallback4()
-{
-	//g_rwLock.UnlockWrite();
-	int ss =3;
-	ss += 2;
-}
-
-

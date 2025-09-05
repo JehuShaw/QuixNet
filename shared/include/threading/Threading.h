@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _THREADING_H
-#define _THREADING_H
+#ifndef THREADING_H
+#define THREADING_H
 
 // We need assertions.
 #include "ShareErrors.h"
@@ -20,5 +20,5 @@
 // Thread Pool
 #include "ThreadPool.h"
 
-#endif
+#endif /* THREADING_H */
 

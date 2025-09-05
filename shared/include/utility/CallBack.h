@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _CALLBACK_H
-#define _CALLBACK_H
+#ifndef CALLBACK_H
+#define CALLBACK_H
 
 #include "WeakPointer.h"
 
@@ -44,7 +44,7 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallBackFuncP0& subRight =
 			dynamic_cast<const CallBackFuncP0&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 
 private:
@@ -67,7 +67,7 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallBackFuncP1& subRight =
 			dynamic_cast<const CallBackFuncP1&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 
 private:
@@ -89,7 +89,7 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallBackFuncP2& subRight =
 			dynamic_cast<const CallBackFuncP2&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 
 private:
@@ -112,7 +112,7 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallBackFuncP3& subRight =
 			dynamic_cast<const CallBackFuncP3&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 
 private:
@@ -136,7 +136,7 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallBackFuncP4& subRight =
 			dynamic_cast<const CallBackFuncP4&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 
 private:
@@ -173,8 +173,8 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallbackMFnP0& subRight =
 			dynamic_cast<const CallbackMFnP0&>(right);
-		return this->m_obj == subRight.m_obj
-			&& this->m_func == subRight.m_func;
+		return m_obj == subRight.m_obj
+			&& m_func == subRight.m_func;
 	}
 
 private:
@@ -210,8 +210,8 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallbackMFnP1& subRight =
 			dynamic_cast<const CallbackMFnP1&>(right);
-		return this->m_obj == subRight.m_obj
-			&& this->m_func == subRight.m_func;
+		return m_obj == subRight.m_obj
+			&& m_func == subRight.m_func;
 	}
 
 private:
@@ -249,8 +249,8 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallbackMFnP2& subRight =
 			dynamic_cast<const CallbackMFnP2&>(right);
-		return this->m_obj == subRight.m_obj
-			&& this->m_func == subRight.m_func;
+		return m_obj == subRight.m_obj
+			&& m_func == subRight.m_func;
 	}
 
 private:
@@ -290,8 +290,8 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallbackMFnP3& subRight =
 			dynamic_cast<const CallbackMFnP3&>(right);
-		return this->m_obj == subRight.m_obj
-			&& this->m_func == subRight.m_func;
+		return m_obj == subRight.m_obj
+			&& m_func == subRight.m_func;
 	}
 
 private:
@@ -333,8 +333,8 @@ public:
 	bool Equal(const CallbackBase& right)const {
 		const CallbackMFnP4& subRight =
 			dynamic_cast<const CallbackMFnP4&>(right);
-		return this->m_obj == subRight.m_obj
-			&& this->m_func == subRight.m_func;
+		return m_obj == subRight.m_obj
+			&& m_func == subRight.m_func;
 	}
 
 private:
@@ -444,4 +444,4 @@ FORCEINLINE CAutoPointer<CallbackBase> CBMethod(
 
 }
 
-#endif
+#endif /* CALLBACK_H */

@@ -1,6 +1,6 @@
 
-#ifndef _ARRAYLIST_H
-#define _ARRAYLIST_H
+#ifndef ARRAYLIST_H
+#define ARRAYLIST_H 
 
 #include <assert.h>
 #include <string.h>
@@ -12,80 +12,80 @@ namespace util
 	/// \brief Array based implementation of a list.
 	template <class ValueType>
 	class CArrayList
-	{
+	{	
 	public:
 		/// Default constructor
 		CArrayList();
 
 		/// Destructor
 		~CArrayList();
-
+		
 		/// Copy constructor
-		/// \param[in]  orig The list to duplicate
+		/// \param[in]  orig The list to duplicate 
 		CArrayList(const CArrayList& orig);
-
+		
 		/// Assign one list to another
 		CArrayList& operator= (const CArrayList& right);
-
-		/// Access an element by its index in the array
-		/// \param[in]  index The index into the array.
-		/// \return The element at index \a index.
+		
+		/// Access an element by its index in the array 
+		/// \param[in]  index The index into the array. 
+		/// \return The element at index \a index. 
 		ValueType& operator[] (const unsigned int index) const;
-
-		/// Insert an element at position \a position in the list
-		/// \param[in] input The new element.
-		/// \param[in] index The index of the new element.
+		
+		/// Insert an element at position \a position in the list 
+		/// \param[in] input The new element. 
+		/// \param[in] index The index of the new element. 		
 		void Insert(const ValueType input, const unsigned int index);
-
+		
 		/// Insert at the end of the list.
-		/// \param[in] input The new element.
+		/// \param[in] input The new element. 
 		void Insert(const ValueType input);
-
+		
 		/// Replace the value at \a index by \a input.  If the size of
 		/// the list is less than @em index, it increase the capacity of
 		/// the list and fill slot with @em filler.
-		/// \param[in] input The element to replace at index @em index.
-		/// \param[in] filler The element use to fill new allocated capacity.
-		/// \param[in] index The index of input in the list.
+		/// \param[in] input The element to replace at index @em index. 
+		/// \param[in] filler The element use to fill new allocated capacity. 
+		/// \param[in] index The index of input in the list. 		
 		void Replace(const ValueType input, const ValueType filler, const unsigned int index);
-
+		
 		/// Replace the last element of the list by \a input .
-		/// \param[in] input The element used to replace the last element.
+		/// \param[in] input The element used to replace the last element. 
 		void Replace(const ValueType input);
-
-		/// Delete the element at index \a index.
-		/// \param[in] index The index of the element to delete
+		
+		/// Delete the element at index \a index. 
+		/// \param[in] index The index of the element to delete 
 		void RemoveAtIndex(const unsigned int index);
-
-		/// Delete the element at the end of the list
+		
+		/// Delete the element at the end of the list 
 		void Del(const unsigned num = 1);
-
+		
 		/// Returns the index of the specified item or ARRAYLIST_MAX_INDEX if not found
-		/// \param[in] input The element to check for
-		/// \return The index of @em input in the list.
+		/// \param[in] input The element to check for 
+		/// \return The index of @em input in the list. 
 		/// \retval ARRAYLIST_MAX_INDEX The object is not in the list
 		/// \retval [Integer] The index of the element in the list
 		unsigned int GetIndexOf(const ValueType input);
-
+		
 		/// \return The number of elements in the list
 		unsigned int Size(void) const;
-
-		/// Clear the list
+		
+		/// Clear the list		
 		void Clear(bool dontDelete = false);
-
+		
 		/// Frees over allocated members, to use the minimum memory necessary
-		/// \attention
-		/// This is a slow operation
+		/// \attention 
+		/// This is a slow operation		
 		void Compress(void);
-
+		
 	private:
 		/// An array of user values
 		ValueType* m_listArray;
-
-		/// Number of elements in the list
+		
+		/// Number of elements in the list 		
 		unsigned int m_listSize;
-
-		/// Size of \a array
+		
+		/// Size of \a array 		
 		unsigned int m_allocSize;
 	};
 
@@ -240,7 +240,7 @@ namespace util
 		else
 		{
 			if(index >= m_allocSize)
-			{
+			{	
 				m_allocSize = index + 1;
 
 				ValueType * newArray = new ValueType[m_allocSize];
@@ -330,7 +330,7 @@ namespace util
 		{
 			delete [] m_listArray;
 			m_listArray = NULL;
-			m_allocSize = 0;
+			m_allocSize = 0;	
 		}
 		m_listSize = 0;
 	}
@@ -352,7 +352,7 @@ namespace util
 
 		m_listArray = newArray;
 	}
-
+	
 } // End namespace
 
-#endif // _ARRAYLIST_H
+#endif // ARRAYLIST_H

@@ -6,14 +6,14 @@
 
 // Configuration Header File
 
-#ifndef _SHARECONFIG_H
-#define _SHARECONFIG_H
+#ifndef SHARECONFIG_H
+#define SHARECONFIG_H
 
 
 /**
  * DATABASE LAYER SET UP
  */
-#if !defined(NO_DBLAYER_MYSQL)
+#ifndef NO_DBLAYER_MYSQL
 #define ENABLE_DATABASE_MYSQL 1
 #endif
 
@@ -22,5 +22,5 @@
  */
 //#define BIG_ENDIEAN_HOST
 
-#endif  /*_SHARECONFIG_H*/
+#endif  /* SHARECONFIG_H */
 

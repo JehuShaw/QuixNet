@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _PLAYERCALLBACK_H
-#define _PLAYERCALLBACK_H
+#ifndef PLAYERCALLBACK_H
+#define PLAYERCALLBACK_H
 
 #include <assert.h>
 #include "CallBack.h"
@@ -16,7 +16,7 @@
 // PP0 Player Param 0
 class GCallBackPP0 : public util::CallbackBase
 {
-	typedef void(*Method)(util::CWeakPointer<CPlayerBase>);
+	typedef void(*Method)(util::CWeakPointer<CWrapPlayer>);
 	Method m_cb;
     uint64_t m_userId;
 public:
@@ -25,7 +25,7 @@ public:
 
 	void operator()() {
         CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
             (m_cb)(pPlayer); 
         } else {
@@ -38,7 +38,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPP0& subRight = 
 			dynamic_cast<const GCallBackPP0&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -46,7 +46,7 @@ public:
 template<typename P1>
 class GCallBackPP1 : public util::CallbackBase
 {
-	typedef void(*Method)(util::CWeakPointer<CPlayerBase>,P1&);
+	typedef void(*Method)(util::CWeakPointer<CWrapPlayer>,P1&);
 	Method m_cb;
 	P1 m_p1;
     uint64_t m_userId;
@@ -56,7 +56,7 @@ public:
 
 	void operator()() { 
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
             (m_cb)(pPlayer, m_p1); 
         } else {
@@ -70,7 +70,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPP1& subRight = 
 			dynamic_cast<const GCallBackPP1&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -78,7 +78,7 @@ public:
 template<typename P1, typename P2>
 class GCallBackPP2 : public util::CallbackBase
 {
-	typedef void(*Method)(util::CWeakPointer<CPlayerBase>,P1&,P2&);
+	typedef void(*Method)(util::CWeakPointer<CWrapPlayer>,P1&,P2&);
 	Method m_cb;
     uint64_t m_userId;
 	P1 m_p1;
@@ -90,7 +90,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
             (m_cb)(pPlayer, m_p1, m_p2); 
         } else {
@@ -104,7 +104,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPP2& subRight = 
 			dynamic_cast<const GCallBackPP2&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -112,7 +112,7 @@ public:
 template<typename P1, typename P2, typename P3>
 class GCallBackPP3 : public util::CallbackBase
 {
-	typedef void(*Method)(util::CWeakPointer<CPlayerBase>,P1&,P2&,P3&);
+	typedef void(*Method)(util::CWeakPointer<CWrapPlayer>,P1&,P2&,P3&);
 	Method m_cb;
     uint64_t m_userId;
 	P1 m_p1;
@@ -125,7 +125,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
             (m_cb)(pPlayer, m_p1, m_p2, m_p3); 
         } else {
@@ -139,7 +139,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPP3& subRight = 
 			dynamic_cast<const GCallBackPP3&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -147,7 +147,7 @@ public:
 template<typename P1, typename P2, typename P3, typename P4>
 class GCallBackPP4 : public util::CallbackBase
 {
-	typedef void(*Method)(util::CWeakPointer<CPlayerBase>,P1&,P2&,P3&,P4&);
+	typedef void(*Method)(util::CWeakPointer<CWrapPlayer>,P1&,P2&,P3&,P4&);
 	Method m_cb;
     uint64_t m_userId;
 	P1 m_p1;
@@ -166,7 +166,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
             (m_cb)(pPlayer, m_p1, m_p2, m_p3, m_p4); 
         } else {
@@ -180,7 +180,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPP4& subRight = 
 			dynamic_cast<const GCallBackPP4&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -189,7 +189,7 @@ class MCallbackPP0 : public util::CallbackBase
 {
 public:
 
-	typedef void (T::*Method)(util::CWeakPointer<CPlayerBase>);
+	typedef void (T::*Method)(util::CWeakPointer<CWrapPlayer>);
 	MCallbackPP0(util::CWeakPointer<T> obj, Method func, uint64_t userId)
 		: m_obj(obj)
 		, m_func(func)
@@ -198,7 +198,7 @@ public:
 	}
 	void operator()() { 
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
 			util::CAutoPointer<T> pObject(m_obj.GetStrong());
 			T* ptr = pObject.operator->();
@@ -224,7 +224,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPP0& subRight = 
 			dynamic_cast<const MCallbackPP0&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -238,7 +238,7 @@ class MCallbackPP1 : public util::CallbackBase
 {
 public:
 
-	typedef void (T::*Method)(util::CWeakPointer<CPlayerBase>, P1&);
+	typedef void (T::*Method)(util::CWeakPointer<CWrapPlayer>, P1&);
 	MCallbackPP1(util::CWeakPointer<T> obj, Method func, uint64_t userId, const P1& p1)
 		: m_obj(obj)
 		, m_func(func)
@@ -249,7 +249,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
 			util::CAutoPointer<T> pObject(m_obj.GetStrong());
 			T* ptr = pObject.operator->();
@@ -275,7 +275,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPP1& subRight = 
 			dynamic_cast<const MCallbackPP1&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -290,7 +290,7 @@ class MCallbackPP2 : public util::CallbackBase
 {
 public:
 
-	typedef void (T::*Method)(util::CWeakPointer<CPlayerBase>, P1&, P2&);
+	typedef void (T::*Method)(util::CWeakPointer<CWrapPlayer>, P1&, P2&);
 	MCallbackPP2(util::CWeakPointer<T> obj, Method func, uint64_t userId, const P1& p1, const P2& p2)
 		: m_obj(obj)
 		, m_func(func)
@@ -302,7 +302,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
 			util::CAutoPointer<T> pObject(m_obj.GetStrong());
 			T* ptr = pObject.operator->();
@@ -328,7 +328,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPP2& subRight = 
 			dynamic_cast<const MCallbackPP2&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -344,7 +344,7 @@ class MCallbackPP3 : public util::CallbackBase
 {
 public:
 
-	typedef void (T::*Method)(util::CWeakPointer<CPlayerBase>, P1&, P2&, P3&);
+	typedef void (T::*Method)(util::CWeakPointer<CWrapPlayer>, P1&, P2&, P3&);
 	MCallbackPP3(util::CWeakPointer<T> obj, Method func, uint64_t userId
         , const P1& p1, const P2& p2, const P3& p3)
 		: m_obj(obj)
@@ -358,7 +358,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
 			util::CAutoPointer<T> pObject(m_obj.GetStrong());
 			T* ptr = pObject.operator->();
@@ -384,7 +384,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPP3& subRight = 
 			dynamic_cast<const MCallbackPP3&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -401,7 +401,7 @@ class MCallbackPP4 : public util::CallbackBase
 {
 public:
 
-	typedef void (T::*Method)(util::CWeakPointer<CPlayerBase>, P1&, P2&, P3&, P4&);
+	typedef void (T::*Method)(util::CWeakPointer<CWrapPlayer>, P1&, P2&, P3&, P4&);
 	MCallbackPP4(util::CWeakPointer<T> obj, Method func, uint64_t userId
         , const P1& p1, const P2& p2, const P3& p3, const P4& p4)
 		: m_obj(obj)
@@ -416,7 +416,7 @@ public:
 
 	void operator()() {
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
-        util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userId));
+        util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userId));
         if(pPlayer.IsInvalid()) {
 			util::CAutoPointer<T> pObject(m_obj.GetStrong());
 			T* ptr = pObject.operator->();
@@ -442,7 +442,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPP4& subRight = 
 			dynamic_cast<const MCallbackPP4&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -472,7 +472,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -487,7 +487,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPsP0& subRight = 
 			dynamic_cast<const GCallBackPsP0&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -508,7 +508,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -523,7 +523,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPsP1& subRight = 
 			dynamic_cast<const GCallBackPsP1&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -546,7 +546,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -561,7 +561,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPsP2& subRight = 
 			dynamic_cast<const GCallBackPsP2&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -585,7 +585,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -600,7 +600,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPsP3& subRight = 
 			dynamic_cast<const GCallBackPsP3&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -630,7 +630,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -645,7 +645,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const GCallBackPsP4& subRight = 
 			dynamic_cast<const GCallBackPsP4&>(right);
-		return this->m_cb == subRight.m_cb;
+		return m_cb == subRight.m_cb;
 	}
 };
 
@@ -666,7 +666,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -686,7 +686,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPsP0& subRight = 
 			dynamic_cast<const MCallbackPsP0&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -714,7 +714,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -734,7 +734,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPsP1& subRight = 
 			dynamic_cast<const MCallbackPsP1&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -764,7 +764,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -784,7 +784,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPsP2& subRight = 
 			dynamic_cast<const MCallbackPsP2&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -817,7 +817,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -837,7 +837,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPsP3& subRight = 
 			dynamic_cast<const MCallbackPsP3&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -872,7 +872,7 @@ public:
 		CChannelManager::PTR_T pChlMgr(CChannelManager::Pointer());
 		int nSize = (int)m_userIds.size();
 		for(int i = 0; i < nSize; ++i) {
-			util::CAutoPointer<CPlayerBase> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
+			util::CAutoPointer<CWrapPlayer> pPlayer(pChlMgr->GetPlayer(m_userIds[i]));
 			if(!pPlayer.IsInvalid()) {
 				players.push_back(pPlayer);
 			}
@@ -892,7 +892,7 @@ public:
 	bool Equal(const util::CallbackBase& right)const {
 		const MCallbackPsP4& subRight = 
 			dynamic_cast<const MCallbackPsP4&>(right);
-		return this->m_func == subRight.m_func;
+		return m_func == subRight.m_func;
 	}
 private:
 
@@ -905,4 +905,4 @@ private:
 	P4 m_p4;
 };
 
-#endif /* _PLAYERCALLBACK_H */
+#endif /* PLAYERCALLBACK_H */

@@ -14,11 +14,11 @@
 using namespace mdl;
 using namespace util;
 
-CMasterModule::CMasterModule(const char* name, uint16_t serverId,
+CMasterModule::CMasterModule(const char* name, uint32_t serverId,
 	const std::string& endPoint, const std::string& acceptAddress,
 	const std::string& processPath, const std::string& projectName) 
 
-	: CModule(name)
+	: INodeControl(name)
 {
 	CreatChannel(serverId, endPoint, (uint16_t)REGISTER_TYPE_MASTER,
 		acceptAddress, processPath, projectName, ID_NULL);
@@ -34,12 +34,12 @@ void CMasterModule::OnRemove(){
 
 std::vector<int> CMasterModule::ListNotificationInterests()
 {
-	std::vector<int> interests;
-    interests.push_back(N_CMD_MASTER_REGISTER_CACHE);
-	interests.push_back(N_CMD_MASTER_REMOVE_CACHE);
-	interests.push_back(N_CMD_MASTER_KEEPTIMEOUT_CACHE);
-	interests.push_back(N_CMD_SERVANT_NODE_KEEPTIMEOUT);
-	return interests;
+	return std::vector<int>({
+		N_CMD_MASTER_REGISTER_CACHE,
+		N_CMD_MASTER_REMOVE_CACHE,
+		N_CMD_MASTER_KEEPTIMEOUT_CACHE,
+		N_CMD_SERVANT_NODE_KEEPTIMEOUT
+	});
 }
 
 IModule::InterestList CMasterModule::ListProtocolInterests()
@@ -75,7 +75,7 @@ void CMasterModule::HandleNotification(const CWeakPointer<INotification>& reques
 	case N_CMD_SERVANT_NODE_KEEPTIMEOUT:
 		if(g_bAutoRestart) {
 			CMasterCmdManager::PTR_T pMasterCmdMgr(CMasterCmdManager::Pointer());
-			uint16_t serverId = (uint16_t)request->GetType();
+			uint32_t serverId = request->GetType();
 			pMasterCmdMgr->Restart(serverId);
 		}
 		break;
@@ -84,22 +84,7 @@ void CMasterModule::HandleNotification(const CWeakPointer<INotification>& reques
     }
 }
 
-bool CMasterModule::CreatChannel(uint16_t serverId, const std::string& endPoint, uint16_t serverType) {
-	thd::CScopedWriteLock wrLock(m_rwLock);
-	if(!m_channel.IsInvalid()) {
-		return false;
-	}
-	m_channel.SetRawPointer(new CMasterChannel);
-	if(m_channel.IsInvalid()) {
-		return false;
-	}
-	m_channel->SetServerId(serverId);
-	m_channel->SetEndPoint(endPoint);
-	m_channel->SetServerType(serverType);
-	return true;
-}
-
-bool CMasterModule::CreatChannel(uint16_t serverId, const std::string& endPoint, uint16_t serverType,
+bool CMasterModule::CreatChannel(uint32_t serverId, const std::string& endPoint, uint16_t serverType,
 	const std::string& acceptAddress, const std::string& processPath, const std::string& projectName,
 	uint16_t serverRegion) 
 {
@@ -121,7 +106,7 @@ bool CMasterModule::CreatChannel(uint16_t serverId, const std::string& endPoint,
 	return true;
 }
 
-bool CMasterModule::RemoveChannel(uint16_t serverId) {
+bool CMasterModule::RemoveChannel(uint32_t serverId) {
 	thd::CScopedWriteLock wrLock(m_rwLock);
 	if(m_channel.IsInvalid()) {
 		return false;
@@ -155,7 +140,7 @@ CAutoPointer<IChannelValue> CMasterModule::GetLowLoadByRegion(uint16_t serverReg
 	return CAutoPointer<IChannelValue>();
 }
 
-CAutoPointer<IChannelValue> CMasterModule::GetChnlByDirServId(uint16_t serverId) const
+CAutoPointer<IChannelValue> CMasterModule::GetChnlByDirServId(uint32_t serverId) const
 {
 	thd::CScopedReadLock rdLock(m_rwLock);
 	if(m_channel.IsInvalid()) {

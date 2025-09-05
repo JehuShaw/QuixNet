@@ -5,10 +5,11 @@
  * Created on 2010_9_17, 9:45
  */
 
-#ifndef _SYSTICKCOUNT_H
-#define	_SYSTICKCOUNT_H
+#ifndef SYSTICKCOUNT_H
+#define	SYSTICKCOUNT_H
 
+// microsecond
 SHARED_DLL_DECL uint64_t GetSysTickCount(void);
 
-#endif	/* _SYSTICKCOUNT_H */
+#endif	/* SYSTICKCOUNT_H */
 

@@ -1,30 +1,32 @@
 
-#ifndef __CIRCLE_QUEUE_H
-#define __CIRCLE_QUEUE_H
+#ifndef CIRCLEQUEUE_H
+#define CIRCLEQUEUE_H
 
 #include <assert.h>
 #include "SpinLock.h"
+#include "SysTickCount.h"
 
 namespace thd {
+
 /// \brief A single producer consumer implementation without critical sections.
-template <class ElementType>
+template <typename DataType, int NodeKeepSize = 8, int NodeKeepTimeMS = 300000>
 class CCircleQueue
 {
 public:
     /// Constructor
-    CCircleQueue(unsigned long minimunSize = 8)  throw();
+    CCircleQueue()  throw();
 
     /// Destructor
     ~CCircleQueue()  throw();
 
     /// WriteLock must be immediately followed by WriteUnlock.  These two functions must be called in the same thread.
     /// \return A pointer to a block of data you can write to.
-    ElementType* WriteLock(void)  throw();
+    DataType* WriteLock(void)  throw();
 
     /// Call if you don't want to write to a block of data from WriteLock() after all.
     /// Cancelling locks cancels all locks back up to the data passed.  So if you lock twice and cancel using the first lock, the second lock is ignored
     /// \param[in] cancelToLocation Which WriteLock() to cancel.
-    void CancelWriteLock(ElementType* cancelToLocation)  throw();
+    void CancelWriteLock(DataType* cancelToLocation)  throw();
 
     /// Call when you are done writing to a block of memory returned by WriteLock()
     void WriteUnlock(void)  throw();
@@ -32,11 +34,11 @@ public:
     /// ReadLock must be immediately followed by ReadUnlock. These two functions must be called in the same thread.
     /// \retval 0 No data is availble to read
     /// \retval Non-zero The data previously written to, in another thread, by WriteLock followed by WriteUnlock.
-    ElementType* ReadLock(void)  throw();
+    DataType* ReadLock(void)  throw();
 
     // Cancelling locks cancels all locks back up to the data passed.  So if you lock twice and cancel using the first lock, the second lock is ignored
     /// param[in] Which ReadLock() to cancel.
-    void CancelReadLock(ElementType* cancelToLocation)  throw();
+    void CancelReadLock(DataType* cancelToLocation)  throw();
 
     /// Signals that we are done reading the the data from the least recent call of ReadLock.
     /// At this point that pointer is no longer valid, and should no longer be read.
@@ -51,62 +53,66 @@ public:
 
     /// Make sure that the pointer we done reading for the call to ReadUnlock is the right pointer.
     /// param[in] A previous pointer returned by ReadLock()
-    bool CheckReadUnlockOrder(const ElementType* data) const;
+    bool CheckReadUnlockOrder(const DataType* data) const;
 
     /// Returns if ReadUnlock was called before ReadLock
     /// \return If the read is locked
     bool ReadIsLocked(void) const;
 
 private:
-    struct DataPlusPtr
+    struct CircleNode
     {
-        ElementType object;
+        DataType object;
+
+        volatile CircleNode* next;
+
+        uint32_t activeTime;
         // Ready to read is so we can use an equality boolean comparison, in case the writePointer var is trashed while context switching.
         volatile bool readyToRead;
-        volatile DataPlusPtr *next;
     };
-    volatile DataPlusPtr *readAheadPointer;
-    volatile DataPlusPtr *writeAheadPointer;
-    volatile DataPlusPtr *readPointer;
-    volatile DataPlusPtr *writePointer;
+    volatile CircleNode* readAheadPointer;
+    volatile CircleNode* writeAheadPointer;
+    volatile CircleNode* readPointer;
+    volatile CircleNode* writePointer;
+	volatile CircleNode* readLastPointer;
+    volatile CircleNode* idleTailPointer;
+    volatile CircleNode* idleHeadPointer;
     volatile unsigned long unreadCount;
-	volatile DataPlusPtr *readLastPointer;
-	volatile unsigned long circleSize;
-    volatile DataPlusPtr *idleTailPointer;
-    volatile DataPlusPtr *idleHeadPointer;
-	unsigned long minimumQueueSize;
+    volatile unsigned long circleSize;
 	thd::CSpinLock rLock;
 	thd::CSpinLock wLock;
 };
 
-template <class ElementType>
-        CCircleQueue<ElementType>::CCircleQueue(unsigned long minimunSize/* = 8*/)  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::CCircleQueue()  throw()
 {
 	wLock.Lock();
 	rLock.Lock();
-	minimumQueueSize = minimunSize;
     idleTailPointer = NULL;
     idleHeadPointer = idleTailPointer;
     // Preallocate
-    readPointer = new DataPlusPtr;
-    readPointer->readyToRead = false;
+    readPointer = new CircleNode;
     readPointer->next = NULL;
+    readPointer->activeTime = static_cast<uint32_t>(GetSysTickCount());
+    readPointer->readyToRead = false;
     writePointer=readPointer;
-    readPointer->next = new DataPlusPtr;
-    readPointer->next->readyToRead = false;
+    readPointer->next = new CircleNode;
     readPointer->next->next = NULL;
+    readPointer->next->activeTime = static_cast<uint32_t>(GetSysTickCount());
+    readPointer->next->readyToRead = false;
     int listSize;
 #ifdef _DEBUG
-    assert(minimumQueueSize >= 3);
+    assert(NodeKeepSize >= 3);
 #endif
-    for (listSize=2; listSize < (int)minimumQueueSize; listSize++)
+    for (listSize=2; listSize < NodeKeepSize; listSize++)
     {
         readPointer=readPointer->next;
-        readPointer->next = new DataPlusPtr;
-        readPointer->next->readyToRead = false;
+        readPointer->next = new CircleNode;
         readPointer->next->next = NULL;
+        readPointer->next->activeTime = static_cast<uint32_t>(GetSysTickCount());
+        readPointer->next->readyToRead = false;
     }
-	circleSize = minimumQueueSize;
+	circleSize = NodeKeepSize;
     readPointer->next->next=writePointer; // last to next = start
     // set last read pointer
     readLastPointer = readPointer->next;
@@ -118,13 +124,13 @@ template <class ElementType>
 	rLock.Unlock();
 }
 
-template <class ElementType>
-        CCircleQueue<ElementType>::~CCircleQueue()  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::~CCircleQueue()  throw()
 {
 	wLock.Lock();
 	rLock.Lock();
 	unreadCount = 0;
-    volatile DataPlusPtr* next = NULL;
+    volatile CircleNode* next = NULL;
     readPointer = writeAheadPointer->next;
     while (readPointer!=writeAheadPointer)
     {
@@ -149,27 +155,29 @@ template <class ElementType>
 	rLock.Unlock();
 }
 
-template <class ElementType>
-        ElementType* CCircleQueue<ElementType>::WriteLock( void ) throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        DataType* CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::WriteLock( void ) throw()
 {
 	wLock.Lock();
     if (writeAheadPointer->next == readLastPointer ||
             writeAheadPointer->next->readyToRead==true)
     {
-        volatile DataPlusPtr* newNextNode(NULL);
+        volatile CircleNode* newNextNode(NULL);
         if(idleHeadPointer == idleTailPointer
             || NULL == idleTailPointer){
 
-            newNextNode = new DataPlusPtr;
-            newNextNode->readyToRead = false;
+            newNextNode = new CircleNode;
             newNextNode->next = NULL;
+            newNextNode->activeTime = static_cast<uint32_t>(GetSysTickCount());
+            newNextNode->readyToRead = false;
         } else {
             newNextNode = idleTailPointer;
+            newNextNode->activeTime = static_cast<uint32_t>(GetSysTickCount());
             atomic_xchgptr(&idleTailPointer, idleTailPointer->next);
         }
         assert(NULL != newNextNode);
         // set new node
-        volatile DataPlusPtr *originalNext=writeAheadPointer->next;
+        volatile CircleNode* originalNext=writeAheadPointer->next;
         atomic_xchgptr(&writeAheadPointer->next, newNextNode);
 
         assert(writeAheadPointer->next);
@@ -179,9 +187,9 @@ template <class ElementType>
 
     } else {
 
-        if(idleHeadPointer != idleTailPointer) {
+        if (idleHeadPointer != idleTailPointer) {
 
-            DataPlusPtr *deletePointer = (DataPlusPtr *)idleTailPointer;
+            volatile CircleNode* deletePointer = idleTailPointer;
             atomic_xchgptr(&idleTailPointer, idleTailPointer->next);
 
             delete deletePointer;
@@ -189,20 +197,20 @@ template <class ElementType>
         }
     }
 
-    volatile DataPlusPtr *last(writeAheadPointer);
+    volatile CircleNode* last(writeAheadPointer);
 	atomic_xchgptr(&writeAheadPointer, writeAheadPointer->next);
-    return (ElementType*) last;
+    return (DataType*) last;
 }
 
-template <class ElementType>
-        void CCircleQueue<ElementType>::CancelWriteLock( ElementType* cancelToLocation )  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        void CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::CancelWriteLock( DataType* cancelToLocation )  throw()
 {
-    atomic_xchgptr(&writeAheadPointer, (DataPlusPtr *)cancelToLocation);
+    atomic_xchgptr(&writeAheadPointer, (CircleNode *)cancelToLocation);
 	wLock.Unlock();
 }
 
-template <class ElementType>
-        void CCircleQueue<ElementType>::WriteUnlock( void )  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        void CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::WriteUnlock( void )  throw()
 {
 
 #ifdef _DEBUG
@@ -219,8 +227,8 @@ template <class ElementType>
 	wLock.Unlock();
 }
 
-template <class ElementType>
-        ElementType* CCircleQueue<ElementType>::ReadLock( void )  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        DataType* CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::ReadLock( void )  throw()
 {
 	rLock.Lock();
     if (readAheadPointer==writePointer ||
@@ -230,23 +238,26 @@ template <class ElementType>
         return 0;
     }
 
-    volatile DataPlusPtr *last(readAheadPointer);
+    volatile CircleNode* last(readAheadPointer);
     atomic_xchgptr(&readAheadPointer, readAheadPointer->next);
-    return (ElementType*)last;
+	if (!last) {
+		rLock.Unlock();
+	}
+    return (DataType*)last;
 }
 
-template <class ElementType>
-        void CCircleQueue<ElementType>::CancelReadLock( ElementType* cancelToLocation )  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        void CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::CancelReadLock( DataType* cancelToLocation )  throw()
 {
 #ifdef _DEBUG
     assert(readPointer!=writePointer);
 #endif
-    atomic_xchgptr(&readAheadPointer, (DataPlusPtr *)cancelToLocation);
+    atomic_xchgptr(&readAheadPointer, (CircleNode* )cancelToLocation);
 	rLock.Unlock();
 }
 
-template <class ElementType>
-        void CCircleQueue<ElementType>::ReadUnlock( void )  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        void CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::ReadUnlock( void )  throw()
 {
 #ifdef _DEBUG
     assert(readAheadPointer!=readPointer); // If hits, then called ReadUnlock before ReadLock
@@ -254,13 +265,13 @@ template <class ElementType>
 
     //if(readLastPointer->next != readPointer) {
     //    int nCount1 = 0;
-    //    volatile DataPlusPtr *tempPointer1 = readLastPointer->next;
+    //    volatile CircleNode *tempPointer1 = readLastPointer->next;
     //    while(tempPointer1 != readPointer) {
     //        ++nCount1;
     //        tempPointer1 = tempPointer1->next;
     //    }
     //    int nCount2 = 0;
-    //    volatile DataPlusPtr *tempPointer2 = readPointer;
+    //    volatile CircleNode *tempPointer2 = readPointer;
     //    while(tempPointer2 != readLastPointer->next) {
     //        ++nCount2;
     //        tempPointer2 = tempPointer2->next;
@@ -273,18 +284,16 @@ template <class ElementType>
     long nLeaveSize = circleSize - atomic_dec(&unreadCount);
 	if(
         (nLeaveSize > 2 || nLeaveSize < 1) // leave 2,1 empty node,don't push into delete list
-		&& circleSize > (unsigned long)minimumQueueSize
-/*            && readLastPointer->next == readPointer
-        && readAheadPointer != readPointer
-        && writePointer != readPointer*/)
+		&& circleSize > (unsigned long)NodeKeepSize
+        && (static_cast<uint32_t>(GetSysTickCount()) - readPointer->activeTime) > NodeKeepTimeMS)
     {
         atomic_xchgptr(&readLastPointer->next, readPointer->next);
 
-        volatile DataPlusPtr *deletePointer = readPointer;
+        volatile CircleNode* deletePointer = readPointer;
         atomic_xchgptr(&readPointer, readPointer->next);
         // reset data
-        deletePointer->readyToRead = false;
         deletePointer->next = NULL;
+        deletePointer->readyToRead = false;
 
         atomic_dec(&circleSize);
 
@@ -308,16 +317,16 @@ template <class ElementType>
 	rLock.Unlock();
 }
 
-template <class ElementType>
-        void CCircleQueue<ElementType>::Clear( void )  throw()
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        void CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::Clear( void )  throw()
 {
 	wLock.Lock();
 	rLock.Lock();
     // Shrink the list down to MINIMUM_LIST_SIZE elements
     writePointer = readPointer->next;
-    volatile DataPlusPtr *next = NULL;
+    volatile CircleNode* next = NULL;
 
-    int listSize=(int)circleSize;
+    int listSize = (int)circleSize;
     //next=readPointer->next;
     //while (next!=readPointer)
     //{
@@ -326,7 +335,7 @@ template <class ElementType>
     //}
     //assert(listSize == circleSize);
 
-    while (listSize-- > (int)minimumQueueSize)
+    while (listSize-- > NodeKeepSize)
     {
         next=writePointer->next;
 #ifdef _DEBUG
@@ -335,7 +344,7 @@ template <class ElementType>
         delete writePointer;
         writePointer = next;
     }
-    circleSize = minimumQueueSize;
+    circleSize = NodeKeepSize;
 
     readPointer->next = writePointer;
     writePointer = readPointer;
@@ -355,24 +364,24 @@ template <class ElementType>
 	rLock.Unlock();
 }
 
-template <class ElementType>
-        int CCircleQueue<ElementType>::Size(void) const
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        int CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::Size(void) const
 {
 	return (int)unreadCount;
 }
 
-template <class ElementType>
-        bool CCircleQueue<ElementType>::CheckReadUnlockOrder(const ElementType* data) const
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        bool CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::CheckReadUnlockOrder(const DataType* data) const
 {
-    return const_cast<const ElementType *>(&readPointer->object) == data;
+    return const_cast<const DataType *>(&readPointer->object) == data;
 }
 
-template <class ElementType>
-        bool CCircleQueue<ElementType>::ReadIsLocked(void) const
+template <typename DataType, int NodeKeepSize, int NodeKeepTimeMS>
+        bool CCircleQueue<DataType, NodeKeepSize, NodeKeepTimeMS>::ReadIsLocked(void) const
 {
     return readAheadPointer!=readPointer;
 }
 
 }
 
-#endif /* CIRCLE_QUEUE */
+#endif /* CIRCLEQUEUE_H */

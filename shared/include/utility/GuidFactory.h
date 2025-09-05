@@ -8,85 +8,70 @@
 #ifndef GUIDFACTORY_H
 #define	GUIDFACTORY_H
 
-#include "Common.h"
-#include "Singleton.h"
+#include <stdint.h>
 #include "AtomicLock.h"
+#include "TimestampManager.h"
+
 
 namespace util {
-/**
- * Create 64bits guid,  Unix timestamp,  since 1970.1.1 to 2149.1.1
- */
-class SHARED_DLL_DECL CGuidFactory
-	: public util::Singleton<CGuidFactory>
-{
-public:
-	CGuidFactory();
-    /**
-     * create 64 bits guid 
-     * @return 
-     */
-    uint64_t CreateGuid();
-    /**
-     * Set code field
-     * @param value
-     */
-	inline void SetCodeInt16(uint16_t value){
-		atomic_xchg16(&m_code.u16Code, value);
-	}
-    /**
-     * Set code field high 8bits
-     * @param value
-     */
-	inline void SetCodeInt8H(uint8_t value) {
-		atomic_xchg8(&m_code.u8CodeH, value);
-	}
-    /**
-     * Set code field low 8bits
-     * @param value
-     */
-	inline void SetCodeInt8L(uint8_t value) {
-		atomic_xchg8(&m_code.u8CodeL, value);
-	}
+
+	// 2014-1-1 00:00:00
+#define START_FILETIME (1391184000)
 
 	/**
-     * Get code field 16bit 
-     * @param value
-     */
-	inline uint16_t GetCodeInt16() const {
-		return (uint16_t)m_code.u16Code;
-	}
-    /**
-     * Get code field high 8bits
-     * @param value
-     */
-	inline uint8_t GetCodeInt8H() const {
-		return (uint8_t)m_code.u8CodeH;
-	}
-    /**
-     * Get code field low 8bits
-     * @param value
-     */
-	inline uint8_t GetCodeInt8L() const {
-		return (uint8_t)m_code.u8CodeL;
-	}
+	 * Create 64bits guid,  Unix timestamp,  since 1970.1.1 to 2149.1.1
+	 */
+	template<int typeValue>
+	class CGuidFactory
+	{
+#define TYPE_MASK 0x7
+#define TYPE_BIT 12
 
-private:
-	CGuidFactory(const CGuidFactory &): m_uCount(0) {
-		atomic_xchg16(&m_code.u16Code, 0);
-	}
+#define TIMESTAMP_MASK 0xFFFFFFFF
+#define TIMESTAMP_BIT 32
 
-	CGuidFactory& operator = (const CGuidFactory &) { return *this; }
+#define INSTANCE_MASK 0x1FFFF
+#define INSTANCE_BIT 17
+	public:
+		CGuidFactory() : m_uCount(0)
+		{
+#if defined( __WIN32__ ) || defined( WIN32 ) || defined( _WIN32 ) || defined( _WIN64 )
+			BUILD_BUG_ON(sizeof(uint32_t) < sizeof(unsigned long));
+#endif
+			evt::CTimestampManager::Pointer();
+		}
+		/**
+		 * Generate 64 bits id 
+		 * @return 
+		 */
+		uint64_t GenerateID()
+		{
+			evt::CTimestampManager::PTR_T pTsMgr(evt::CTimestampManager::Pointer());
+			time_t curTime = pTsMgr->GetTimestamp();
+			int32_t difTime = static_cast<int32_t>(curTime - START_FILETIME);
+			if (difTime < 1) {
+				difTime = static_cast<int32_t>(curTime);
+			}
 
-private:
-	volatile union {
-		uint16_t u16Code;
-		struct {
-			uint8_t u8CodeL;
-			uint8_t u8CodeH;
-		};
-	} m_code;
-	volatile uint16_t m_uCount;
-};
+			uint32_t elapse = static_cast<uint32_t>(difTime);
+
+			uint64_t u64GuidField = typeValue & TYPE_MASK;
+			u64GuidField <<= (TYPE_BIT + TIMESTAMP_BIT);
+			u64GuidField |= elapse;
+			u64GuidField <<= INSTANCE_BIT;
+			u64GuidField |= atomic_inc(&m_uCount) & INSTANCE_MASK;
+
+			return u64GuidField;
+		}
+
+	private:
+		CGuidFactory(const CGuidFactory &) : m_uCount(0) {}
+
+		CGuidFactory& operator = (const CGuidFactory &) { return *this; }
+
+	private:
+		volatile uint32_t m_uCount;
+	};
 
 }
 

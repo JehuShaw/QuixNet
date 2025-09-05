@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _HTTPCLIENTMANAGER_H
-#define _HTTPCLIENTMANAGER_H
+#ifndef HTTPCLIENTMANAGER_H
+#define HTTPCLIENTMANAGER_H
 
 #include "HttpRequest.h"
 #include "Singleton.h"
@@ -43,4 +43,4 @@ private:
 
 }
 
-#endif /* _HTTPCLIENTMANAGER_H */
+#endif /* HTTPCLIENTMANAGER_H */

@@ -9,116 +9,120 @@ using namespace util;
 
 
 int CMasterCmdManager::SendByUserId(
-	const std::string& strServerName,
 	uint64_t nUserId, int32_t nCmd)
 {
-	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
-	CAutoPointer<CNodeModule> pNodeModule(pFacade->RetrieveModule(strServerName));
-	if(pNodeModule.IsInvalid()) {
-		return FALSE;
+	uint32_t serverId = ID_NULL;
+	uint32_t mapId = ID_NULL;
+	CMasterServiceImp::SeizeServerLocal(serverId, mapId, nUserId, m_agentServerName);
+	if(ID_NULL == serverId || ID_NULL == mapId) {
+		return SERVER_FAILURE;
 	}
 
-	uint16_t serverId = CMasterServiceImp::RouteGetServerId(strServerName, nUserId);
-	if(ID_NULL == serverId) {
-		return FALSE;
-	}
-
-	return pNodeModule->SendNotification(serverId, nCmd);
+	return CNodeModule::SendNodeMessage(serverId, nCmd, nUserId, mapId);
 }
 
 int CMasterCmdManager::SendByUserId(
-	const std::string& strServerName,
 	uint64_t nUserId, int32_t nCmd,
-	const ::google::protobuf::Message& message)
+	const ::google::protobuf::Message& request)
 {
-	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
-	CAutoPointer<CNodeModule> pNodeModule(pFacade->RetrieveModule(strServerName));
-	if(pNodeModule.IsInvalid()) {
-		return FALSE;
+	uint32_t serverId = ID_NULL;
+	uint32_t mapId = ID_NULL;
+	CMasterServiceImp::SeizeServerLocal(serverId, mapId, nUserId, m_agentServerName);
+	if (ID_NULL == serverId || ID_NULL == mapId) {
+		return SERVER_FAILURE;
 	}
 
-	uint16_t serverId = CMasterServiceImp::RouteGetServerId(strServerName, nUserId);
-	if(ID_NULL == serverId) {
-		return FALSE;
-	}
-
-	return pNodeModule->SendNotification(serverId, nCmd, nUserId, message);
+	return CNodeModule::SendNodeMessage(serverId, nCmd, nUserId, request, mapId);
 }
 
 int CMasterCmdManager::SendByUserId(
-	const std::string& strServerName,
 	uint64_t nUserId, int32_t nCmd,
-	const std::string& data)
+	const ::google::protobuf::Message& request,
+	::google::protobuf::Message& response)
 {
-	mdl::CFacade::PTR_T pFacade(mdl::CFacade::Pointer());
-	CAutoPointer<CNodeModule> pNodeModule(pFacade->RetrieveModule(strServerName));
-	if(pNodeModule.IsInvalid()) {
-		return FALSE;
+	uint32_t serverId = ID_NULL;
+	uint32_t mapId = ID_NULL;
+	CMasterServiceImp::SeizeServerLocal(serverId, mapId, nUserId, m_agentServerName);
+	if (ID_NULL == serverId || ID_NULL == mapId) {
+		return SERVER_FAILURE;
 	}
 
-	uint16_t serverId = CMasterServiceImp::RouteGetServerId(strServerName, nUserId);
-	if(ID_NULL == serverId) {
-		return FALSE;
-	}
-
-	return pNodeModule->SendNotification(serverId, nCmd, nUserId, data);
+	return CNodeModule::SendNodeMessage(serverId, nCmd, nUserId, request, response, mapId);
 }
 
-int CMasterCmdManager::Restart(uint16_t nServerId)
+int CMasterCmdManager::SendByUserId(
+	uint64_t nUserId, int32_t nCmd,
+	const std::string& request,
+	std::string &response)
+{
+	uint32_t serverId = ID_NULL;
+	uint32_t mapId = ID_NULL;
+	CMasterServiceImp::SeizeServerLocal(serverId, mapId, nUserId, m_agentServerName);
+	if (ID_NULL == serverId || ID_NULL == mapId) {
+		return SERVER_FAILURE;
+	}
+
+	return CNodeModule::SendNodeMessage(serverId, nCmd, nUserId, request, response, mapId);
+}
+
+int CMasterCmdManager::Restart(uint32_t nServerId)
 {
 	CAutoPointer<IChannelValue> rpcChannel(
 		CNodeModule::GetStaticChannel(nServerId));
 	if(rpcChannel.IsInvalid()) {
-		return FALSE;
+		return SERVER_FAILURE;
 	}
 
 	::node::DataPacket servantRequest;
 	servantRequest.set_cmd(N_CMD_MASTER_RESTART);
 	servantRequest.set_route(nServerId);
+	servantRequest.set_route_type(ROUTE_BALANCE_SERVERID);
 
 	return CNodeModule::SendNodeMessage(rpcChannel, servantRequest);
 }
 
-int CMasterCmdManager::Shutdown(uint16_t nServerId)
+int CMasterCmdManager::Shutdown(uint32_t nServerId)
 {
 	CAutoPointer<IChannelValue> rpcChannel(
 		CNodeModule::GetStaticChannel(nServerId));
 	if(rpcChannel.IsInvalid()) {
-		return FALSE;
+		return SERVER_FAILURE;
 	}
 
 	::node::DataPacket servantRequest;
 	servantRequest.set_cmd(N_CMD_MASTER_SHUTDOWN);
 	servantRequest.set_route(nServerId);
+	servantRequest.set_route_type(ROUTE_BALANCE_SERVERID);
 
 	return CNodeModule::SendNodeMessage(rpcChannel, servantRequest);
 }
 
-int CMasterCmdManager::Erase(uint16_t nServerId)
+int CMasterCmdManager::Erase(uint32_t nServerId)
 {
 	CAutoPointer<IChannelValue> rpcChannel(
 		CNodeModule::GetStaticChannel(nServerId));
 	if(rpcChannel.IsInvalid()) {
-		return FALSE;
+		return SERVER_FAILURE;
 	}
 
 	if(REGISTER_TYPE_NODE != rpcChannel->GetServerType()) {
-		return FALSE;
+		return SERVER_FAILURE;
 	}
 
 	if(CMasterServiceImp::IsServerAlive(nServerId, REGISTER_TYPE_NODE)) {
-		return FALSE;
+		return SERVER_FAILURE;
 	}
 
 	::node::DataPacket servantRequest;
 	servantRequest.set_cmd(N_CMD_MASTER_ERASE);
 	servantRequest.set_route(nServerId);
+	servantRequest.set_route_type(ROUTE_BALANCE_SERVERID);
 
 	if(CNodeModule::SendNodeMessage(rpcChannel, servantRequest) == TRUE) {
 		CNodeModule::RemoveStaticChannel(nServerId);
-		return TRUE;
+		return SERVER_SUCCESS;
 	}
-	return FALSE;
+	return SERVER_FAILURE;
 }
 
 

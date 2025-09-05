@@ -4,8 +4,8 @@
  *
  */
 
-#ifndef _MYSQLDATABASE_H
-#define _MYSQLDATABASE_H
+#ifndef MYSQLDATABASE_H
+#define MYSQLDATABASE_H
 
 #include <mysql.h>
 #include "Database.h"
@@ -81,4 +81,4 @@ protected:
 
 }
 
-#endif		// _MYSQLDATABASE_H
+#endif /* MYSQLDATABASE_H */

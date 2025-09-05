@@ -5,13 +5,13 @@
  * Created on 2010_9_6 PM 3:23
  */
 
-#ifndef _GAMESERVER_H_
-#define	_GAMESERVER_H_
+#ifndef GAMESERVER_H
+#define	GAMESERVER_H
 
 #include <string>
 #include <vector>
 #include "NodeDefines.h"
-#include "CThreads.h"
+#include "ThreadBase.h"
 #include "rpcz.hpp"
 #include "AutoPointer.h"
 #include "WorkerServiceImp.h"
@@ -20,7 +20,7 @@
 #include "IServerRegister.h"
 
 class CGameServer
-	: public thd::CThread
+	: public thd::ThreadBase
 	, public util::Singleton<CGameServer>
 {
 public:
@@ -32,25 +32,35 @@ public:
 
     void Dispose();
 
-    virtual bool Run();
+    virtual bool OnRun();
+
+	virtual void OnShutdown() {}
 
 private:
 	void DisposeKeepRegTimer();
+
 	void ConnectServers(
 		const std::string& strServerName,
-		const std::string& strBind,
-		uint16_t u16ServerId,
+		const std::string& endPoint,
+		uint32_t uServerId,
 		uint16_t u16ServerRegion);
+
 	void DisconnectServers();
-	void KeepServersRegister(std::string& connect, volatile bool& bRun);
+
+	void KeepServersRegister(
+		std::string& connect,
+		volatile bool& bRun,
+		volatile long& nTimeoutCount);
 
 	void ConnectControlServant(
 		const std::string& strServant,
 		const std::string& strServerName,
-		const std::string& strBind,
-		uint16_t u16ServerId,
+		const std::string& endPoint,
+		uint32_t uServerId,
 		uint16_t u16ServerRegion);
+
 	void DisconnectControlServant();
+
 	void KeepControlServantRegister(std::string& connect, volatile bool& bRun);
 
 private:
@@ -67,5 +77,5 @@ private:
 	util::CAutoPointer<IServerRegister> m_pServerRegister;
 };
 
-#endif	/* _GAMESERVER_H_ */
+#endif	/* GAMESERVER_H */
 

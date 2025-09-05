@@ -6,8 +6,8 @@
 
 // Configuration Header File
 
-#ifndef _NODEDEFINES_H
-#define _NODEDEFINES_H
+#ifndef NODEDEFINES_H
+#define NODEDEFINES_H
 
 #include "AppConfig.h"
 #include "ShareDefines.h"
@@ -23,26 +23,28 @@ extern volatile long g_serverStatus;
 
 #define CALL_REGISTER_MS 15000
 
-#define CALL_DEADLINE_MS 6000
+#define CALL_DEADLINE_MS 12000
 
 #define CALL_UNREGISTER_MS 8000
 
 #define TIMEOUT_MAX_TIMES_REMOVE_CHANNEL 100
 
+#define TIMEOUT_MAX_TIMES_REMOVE_SERVER 100
+
 // 3 second
-#define KEEP_REGISTER_INTERVAL 30
+#define KEEP_REGISTER_INTERVAL 300
 
 // 3 keep register times
 #define KEEP_REGISTER_TIMEOUT (KEEP_REGISTER_INTERVAL*3)
 
-// check CWorkerModule db delay time (0.1 second)
-#define WORKERMODULE_DELAY_TIME 40
-
 
 // login expiry, 30 second
-#define LOGIN_EXPIRY_TIME 300
-// keep second and close connect, 3 second
-#define KEEP_FOR_CLOSE_CONNECTION 3
+#define LOGIN_EXPIRY_TIME 3000
+// keep second and close connect, 0.3 second
+#define KEEP_FOR_CLOSE_CONNECTION 30
+
+// logout delay 60 second
+#define LOGOUT_DELAY 6000
 
 //--------------------------------------
 //  Module name Define
@@ -58,6 +60,7 @@ extern volatile long g_serverStatus;
 #define APPCONFIG_SERVERNAME "ServerName"
 #define APPCONFIG_SERVERREGION "ServerRegion"
 #define APPCONFIG_SERVERBIND "ServerBind"
+#define APPCONFIG_ENDPOINT "EndPoint"
 #define APPCONFIG_SERVERACCEPT "ServerAccept"
 #define APPCONFIG_ACCEPTMAXLINK "AcceptMaxLink"
 #define APPCONFIG_ACCEPTPACKETLIMIT "AcceptPacketLimit"
@@ -68,5 +71,5 @@ extern volatile long g_serverStatus;
 #define APPCONFIG_ZMQIOTHREADS "ZmqioThreads"
 //////////////////////////////////////////////////
 
-#endif  /*_NODEDEFINES_H*/
+#endif  /* NODEDEFINES_H */
 

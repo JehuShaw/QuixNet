@@ -26,6 +26,8 @@
 #include <string.h>
 #include <iconv.h>
 #include <time.h>
+#include <sys/types.h>
+#include <signal.h>
 #include "TCPThreadPool.h"
 
 #if defined( __ANDROID__ ) || defined( ANDROID )
@@ -124,14 +126,14 @@ bool TCPSocketLinux::Start(const char* address, unsigned short maxLink, unsigned
     m_maxLink = maxLink;
 
     if(atomic_cmpxchg8((volatile char*)&m_isListened
-        , (char)true, (char)false) != (char)false) {
+        , (char)false, (char)true) != (char)false) {
 
 		TRACE_MSG("Start, Already listened \n");
 		return false;
     }
 
     if(atomic_cmpxchg8((volatile char*)&m_isStarted
-        , (char)true, (char)false) != (char)false) {
+        , (char)false, (char)true) != (char)false) {
 
 		m_isListened = false;
 		TRACE_MSG("Start, Already started \n");
@@ -292,7 +294,7 @@ bool TCPSocketLinux::Start(const char* address, unsigned short maxLink, unsigned
 bool TCPSocketLinux::Stop(void) {
 
     if(atomic_cmpxchg8((volatile char*)&m_isListened
-        , (char)false, (char)true) == (char)true){
+        , (char)true, (char)false) == (char)true){
 
         shutdown(m_listenfd,SHUT_RDWR);
         if(m_listenfd != -1){
@@ -304,7 +306,7 @@ bool TCPSocketLinux::Stop(void) {
     }
 
 	if(atomic_cmpxchg8((volatile char*)&m_isStarted
-		, (char)false, (char)true) != (char)true) {
+		, (char)true, (char)false) != (char)true) {
 
 		TRACE_MSG("Stop, Already started \n");
 		return false;
@@ -313,11 +315,11 @@ bool TCPSocketLinux::Stop(void) {
 	if(m_pSktLinks) {
 		socket_links_t::iterator it(m_pSktLinks->Begin());
 		for(; m_pSktLinks->End() != it; ++it) {
-			socket_links_t::value_t val(it.GetValue());
-			if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+			socket_links_t::pair_t pair(it.GetPair());
+			if(XQXTABLE_INDEX_NIL == pair.GetIndex()) {
 				continue;
 			}
-			SocketLink* pSktLink = val.pObject;
+			const SocketLink* pSktLink = pair.GetValue();
 			if(pSktLink) {
 				shutdown(pSktLink->fd, SHUT_RDWR);
 			} else {
@@ -327,13 +329,13 @@ bool TCPSocketLinux::Stop(void) {
 	} else {
 		TRACE_MSG("Stop, NULL == m_pSktLinks \n");
 	}
-
-	close(m_epfd);
-
+	
     if(NULL != m_pThreadPool) {
 		m_pThreadPool->Release();
 		m_pThreadPool = NULL;
     }
+
+	close(m_epfd);
 
 	atomic_xchg(&m_eventNum, 0);
 
@@ -349,7 +351,7 @@ bool TCPSocketLinux::Stop(void) {
 bool TCPSocketLinux::Connect(SocketID& socketId, const char* address, unsigned short threadNum /* = 0*/) {
 
     if(atomic_cmpxchg8((volatile char*)&m_isStarted
-        , (char)true, (char)false) != (char)false) {
+        , (char)false, (char)true) != (char)false) {
         TRACE_MSG("Connect, Already started \n");
         return false;
     }
@@ -511,21 +513,32 @@ bool TCPSocketLinux::Connect(SocketID& socketId, const char* address, unsigned s
     }
 
     // add client
-	socket_links_t::value_t val(m_pSktLinks->Add());
-	SocketLink* pSktLink = val.pObject;
-	assert(pSktLink);
+	SocketLink sktLink(false);
 	// write data
 	SetNonblocking(sockfd);
-	pSktLink->fd = sockfd;
-    pSktLink->binaryAddress = inet_addr(hostname);
-    pSktLink->port = port;
-    pSktLink->CreateBuffer();
-    if(NULL == pSktLink->ptr){
-        pSktLink->ptr = AllocateLinkerData();
+	sktLink.fd = sockfd;
+    sktLink.binaryAddress = inet_addr(hostname);
+    sktLink.port = port;
+    sktLink.CreateBuffer();
+    if(NULL == sktLink.ptr){
+        sktLink.ptr = AllocateLinkerData();
     }
-    pSktLink->recLock = false;
-    pSktLink->senLock = false;
-    pSktLink->events = 0;
+    sktLink.recLock = false;
+    sktLink.senLock = false;
+    sktLink.events = 0;
+	SocketLink* pSktLink = m_pSktLinks->AddSetIndex(sktLink, (uint32_t&)sktLink.index);
+	if(NULL == pSktLink) {
+		m_isStarted = false;
+        close(sockfd);
+        close(m_epfd);
+        delete [] m_pEvents;
+        m_pEvents = NULL;
+		delete m_pSktLinks;
+		m_pSktLinks = NULL;
+		TRACE_MSG("Can't operate more then %d sockets \n", m_pSktLinks->Size());
+		assert(false);
+		return false;
+	}
 
     //set file describe
     struct epoll_event ev = {0,{0}};
@@ -544,11 +557,11 @@ bool TCPSocketLinux::Connect(SocketID& socketId, const char* address, unsigned s
         return false;
     }
 
-    pSktLink->GetSocketID(socketId, 0);
+    pSktLink->GetSocketID(socketId);
     return true;
 }
 
-void TCPSocketLinux::CloseConnection(const SocketID& socketId) {
+void TCPSocketLinux::CloseConnection(const SocketID& socketId, int nWhy) {
 
 	if(!m_isStarted) {
 		TRACE_MSG("CloseConnection, !m_isStarted \n");
@@ -560,26 +573,20 @@ void TCPSocketLinux::CloseConnection(const SocketID& socketId) {
 		return;
 	}
 
-	socket_links_t::value_t val(m_pSktLinks->Find(socketId.index));
-	if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-		TRACE_MSG("CloseConnection, XQXTABLE0S_INDEX_NIL == val.nIndex"
-			" : socketId.index = %d \n", socketId.index);
-		return;
-	}
-
-	SocketLink* pSktLink = val.pObject;
-	if(NULL == pSktLink) {
-		assert(pSktLink);
-		return;
-	}
-
+	SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+    if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
+        TRACE_MSG("CloseConnection, NULL == pSktLink || !pSktLink->IsSocketID(socketId)"
+            " : socketId.index = %d,  pSktLink = %x \n", socketId.index, pSktLink);
+        return;
+    }
+	atomic_xchg(&pSktLink->lostReason, nWhy);
     shutdown(pSktLink->fd, SHUT_RDWR);
 }
 
 bool TCPSocketLinux::Send(
 	unsigned char* data,
 	unsigned int length,
-	int socketIdx,
+	const SocketID& socketId,
 	unsigned char* prefixData,
 	unsigned int prefixLength){
 
@@ -600,14 +607,9 @@ bool TCPSocketLinux::Send(
 		return false;
 	}
 
-	socket_links_t::value_t val(m_pSktLinks->Find(socketIdx));
-	if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-		return false;
-	}
-
-	SocketLink* pSktLink = val.pObject;
-	if(NULL == pSktLink) {
-		assert(pSktLink);
+	SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+	if(NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
+		TRACE_MSG("Send, NULL == m_pSktLinks || !pSktLink->IsSocketID(socketId) pSktLink = %x \n", pSktLink);
 		return false;
 	}
 
@@ -616,55 +618,78 @@ bool TCPSocketLinux::Send(
     SendCallback(*p,data,length,prefixData, prefixLength);
     pSktLink->outgoingMessages.WriteUnlock();
 
-	int nSize = pSktLink->outgoingMessages.Size();
-	if(1 == nSize) {
+	if(!(pSktLink->events & EPOLLOUT)) {
 		struct epoll_event ev = {0,{0}};
 		ev.data.ptr = pSktLink;
 		ev.events = atomic_or_fetch(&pSktLink->events, EPOLLOUT);
 
 		if(epoll_ctl(m_epfd, EPOLL_CTL_MOD, pSktLink->fd, &ev) == -1) {
+			atomic_and_fetch(&pSktLink->events, ~((int)EPOLLOUT));
 			TRACE_MSG("Send, epoll_ctl failed with error: %d\n", errno);
 			return false;
 		}
-	} else {
-		assert(nSize > -1);
 	}
 	return true;
 }
 
+bool TCPSocketLinux::Exist(const SocketID& socketId) const {
+	if (!m_isStarted) {
+		return false;
+	}
+
+	if (NULL == m_pSktLinks) {
+		TRACE_MSG("Exist, NULL == m_pSktLinks \n");
+		return false;
+	}
+
+	SocketLink* pSktLink = m_pSktLinks->Find(socketId.index);
+	if (NULL == pSktLink || !pSktLink->IsSocketID(socketId)) {
+		return false;
+	}
+
+	return true;
+}
+
+uint32_t TCPSocketLinux::Size() const {
+	if(NULL == m_pSktLinks) {
+		TRACE_MSG("Size, NULL == m_pSktLinks \n");
+		return 0;
+	}
+	return m_pSktLinks->Size();
+}
+
 void TCPSocketLinux::ClearSocketLink(){
 
-	if(NULL == m_pSktLinks) {
+	if (NULL == m_pSktLinks) {
 		TRACE_MSG("ClearSocketLink, NULL == m_pSktLinks \n");
 		return;
 	}
 
 	socket_links_t::iterator it(m_pSktLinks->Begin());
-	for(; m_pSktLinks->End() != it; ++it) {
-		socket_links_t::value_t val(it.GetValue());
-		if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
+	for (; m_pSktLinks->End() != it; ++it) {
+		socket_links_t::pair_t pair(it.GetPair());
+		if(XQXTABLE_INDEX_NIL == pair.GetIndex()) {
 			continue;
 		}
-		SocketLink* pSktLink = val.pObject;
+		SocketLink* pSktLink = pair.GetValue();
 		if(pSktLink) {
-			RemoveSocketLink(*pSktLink, val.nIndex);
+			RemoveSocketLink(*pSktLink);
 		} else {
 			assert(pSktLink);
 		}
 	}
 }
 
-bool TCPSocketLinux::RemoveSocketLink(SocketLink& socketLink, size_t index){
+bool TCPSocketLinux::RemoveSocketLink(SocketLink& socketLink){
 
 	if(NULL == m_pSktLinks) {
 		return false;
 	}
 
-	if(XQXTABLE0S_INDEX_NIL == m_pSktLinks->Find(index).nIndex) {
-		return false;
-	}
-
-	DisconnectCallback(socketLink);
+	int nIndex = socketLink.index;
+	SocketID socketId;
+	socketLink.GetSocketID(socketId);
+	int nWhy = socketLink.GetLostReason();
 
 	struct epoll_event ev = {0,{0}};
 	ev.data.ptr = &socketLink;
@@ -675,10 +700,11 @@ bool TCPSocketLinux::RemoveSocketLink(SocketLink& socketLink, size_t index){
 	}
 	close(socketLink.fd);
 
-	// clear RemoteClient
-	socketLink.Clear();
+	if(XQXTABLE_INDEX_NIL != nIndex) {
+		m_pSktLinks->Remove(nIndex, &SocketLink::Clear);
+	}
 
-	m_pSktLinks->Remove(index);
+	DisconnectCallback(nIndex, socketId, nWhy);
 	return true;
 }
 
@@ -757,55 +783,19 @@ bool TCPSocketLinux::OnRecvCompletion(SocketLink& socketLink) {
 
 bool TCPSocketLinux::OnSendCompletion(SocketLink& socketLink) {
 
-    const int nMsgSize = socketLink.outgoingMessages.Size();
-    int nCount(0);
-
     for(;;) { // To avoid the accumulation of packet.
         Packet * p = socketLink.outgoingMessages.ReadLock();
         if(NULL == p) {
             break;
         }
 
-		if(send(socketLink.fd, (char*)p->data,
-			p->length, MSG_NOSIGNAL) == -1)
-		{
-            if(EAGAIN == errno
-				// nonblocking socket no EINTR error.
-				//|| EINTR == errno
-                || EWOULDBLOCK == errno)
-			{
-				socketLink.outgoingMessages.CancelReadLock(p);
-				return true;
-            }
+		if(!SendCompletion(socketLink.fd, static_cast<char*>(p->data), static_cast<ssize_t>(p->length))) {
 			TRACE_MSG((char*)"send errno ........ = %d\n",errno);
 			socketLink.outgoingMessages.ReadUnlock();
             return false;
         }
-
-        if(++nCount < nMsgSize) {
-			socketLink.outgoingMessages.ReadUnlock();
-            continue;
-        }
-
 		socketLink.outgoingMessages.ReadUnlock();
-        break;
     }
-
-	if(socketLink.outgoingMessages.Size() < 1) {
-		struct epoll_event evt = {0,{0}};
-		evt.data.ptr = &socketLink;
-		evt.events = atomic_and_fetch(&socketLink.events, ~(EPOLLOUT));
-		do {
-			if(epoll_ctl(m_epfd, EPOLL_CTL_MOD, socketLink.fd, &evt) == -1) {
-				TRACE_MSG("OnSendCompletion, epoll_ctl failed with error: %d\n", errno);
-			}
-			if(socketLink.outgoingMessages.Size() > 0 && !(socketLink.events & EPOLLOUT)) {
-				// If send is be doing and have a data, the flag can't be canceled.
-				evt.events = atomic_or_fetch(&socketLink.events, EPOLLOUT);
-				continue;
-			}
-		} while(false);
-	}
 	return true;
 }
 
@@ -826,12 +816,6 @@ void TCPSocketLinux::ListenRun(){
 			continue;
 		}
 
-		socket_links_t::value_t val(m_pSktLinks->Add());
-		if(XQXTABLE0S_INDEX_NIL == val.nIndex) {
-			close(clientfd);
-			TRACE_MSG("Can't operate more then %d sockets \n", m_pSktLinks->Size());
-			continue;
-		}
 
 		int keepAlive = 1;
         int keepIdle = KEEPALIVE_IDLE_S;
@@ -863,24 +847,26 @@ void TCPSocketLinux::ListenRun(){
         }
 
         //create remoteClient
-		SocketLink* pSktLink = val.pObject;
+		SocketLink sktLink(false);
+		SetNonblocking(clientfd);
+        sktLink.fd = clientfd;
+        sktLink.binaryAddress=sin.sin_addr.s_addr;
+        sktLink.port=ntohs( sin.sin_port);
+        sktLink.CreateBuffer();
+        if(NULL == sktLink.ptr){
+            sktLink.ptr = AllocateLinkerData();
+        }
+        sktLink.recLock = false;
+        sktLink.senLock = false;
+        sktLink.events = 0;
+		
+		SocketLink* pSktLink = m_pSktLinks->AddSetIndex(sktLink, (uint32_t&)sktLink.index);
 		if(NULL == pSktLink) {
 			close(clientfd);
-			m_pSktLinks->Remove(val.nIndex);
+			TRACE_MSG("Can't operate more then %d sockets \n", m_pSktLinks->Size());
 			assert(false);
 			continue;
 		}
-		SetNonblocking(clientfd);
-        pSktLink->fd = clientfd;
-        pSktLink->binaryAddress=sin.sin_addr.s_addr;
-        pSktLink->port=ntohs( sin.sin_port);
-        pSktLink->CreateBuffer();
-        if(NULL == pSktLink->ptr){
-            pSktLink->ptr = AllocateLinkerData();
-        }
-        pSktLink->recLock = false;
-        pSktLink->senLock = false;
-        pSktLink->events = 0;
 
 		//set read event
 		struct epoll_event ev = {0,{0}};
@@ -891,8 +877,7 @@ void TCPSocketLinux::ListenRun(){
         if(epoll_ctl(m_epfd, EPOLL_CTL_ADD, pSktLink->fd, &ev) == -1) {
 			TRACE_MSG("ListenRun, epoll_ctl failed with error: %d\n", errno);
 			close(clientfd);
-            pSktLink->Clear();
-            m_pSktLinks->Remove(val.nIndex);
+            m_pSktLinks->Remove(pSktLink->index, &SocketLink::Clear);
 			continue;
 		}
 
@@ -901,7 +886,7 @@ void TCPSocketLinux::ListenRun(){
     m_listenDone.Resume();
 }
 
-#define EVERY_THREAD_PROCESS_EVENT_NUM 128
+// #define EVERY_THREAD_PROCESS_EVENT_NUM 128
 /* get need resume thread number. */
 int TCPSocketLinux::LeaderFunc(void *argv)
 {
@@ -911,7 +896,7 @@ int TCPSocketLinux::LeaderFunc(void *argv)
     if (!mgr->m_isStarted) {
 		return -1;
     } else {
-		int num = epoll_wait(mgr->m_epfd, mgr->m_pEvents, mgr->m_maxLink + 1, -1);
+		int num = epoll_wait(mgr->m_epfd, mgr->m_pEvents, mgr->m_maxLink + 1, 1000);
 		if (num > 0) {
 			atomic_xchg(&mgr->m_eventNum, num);
 			//num = (num+(int)(EVERY_THREAD_PROCESS_EVENT_NUM)-1)/(int)(EVERY_THREAD_PROCESS_EVENT_NUM);
@@ -930,8 +915,7 @@ int TCPSocketLinux::LaskFunc(void *argv)
 {
     TCPSocketLinux * mgr = (TCPSocketLinux *) argv;
 
-    for(;;)
-    {
+    do {
 		if(!mgr->m_isStarted) {
             return -1;
 		}
@@ -943,45 +927,29 @@ int TCPSocketLinux::LaskFunc(void *argv)
 
 		assert(ev->data.ptr != NULL);
 
-		bool bRet = !(ev->events & EPOLLRDHUP) && !(ev->events & EPOLLERR);
+		bool bRemove = ev->events & EPOLLRDHUP || ev->events & EPOLLERR;
 
-		if(bRet) {
-			if(ev->events & EPOLLIN) {
+		if (!bRemove) {
+			if (ev->events & EPOLLIN) {
 				SocketLink& socketLink = *static_cast<SocketLink*>(ev->data.ptr);
-				if(atomic_cmpxchg8(&socketLink.recLock, true, false) == false) {
-					if(!mgr->OnRecvCompletion(socketLink)) {
-						bRet = false;
-					}
-					atomic_xchg8(&socketLink.recLock, false);
+				if (!TaskRecvCompletion(mgr, socketLink)) {
+					bRemove = true;
 				}
 			}
 
-			if(ev->events & EPOLLOUT) {
+			if (ev->events & EPOLLOUT) {
 				SocketLink& socketLink = *static_cast<SocketLink*>(ev->data.ptr);
-				if(atomic_cmpxchg8(&socketLink.senLock, true, false) == false) {
-					if(!mgr->OnSendCompletion(socketLink)) {
-						bRet = false;
-					}
-					atomic_xchg8(&socketLink.senLock, false);
+				if (!TaskSendCompletion(mgr, socketLink)) {
+					bRemove = true;
 				}
 			}
 		}
 
-		if(!bRet) {
+		if (bRemove) {
 			SocketLink& socketLink = *static_cast<SocketLink*>(ev->data.ptr);
-			if(atomic_cmpxchg8(&socketLink.removeLock, true, false) == false) {
-				size_t index = XQXTABLE0S_INDEX_NIL;
-                socket_links_t* pSktLinks = mgr->m_pSktLinks;
-				if(pSktLinks) {
-					index = pSktLinks->GetIndexByPtr(&socketLink);
-				} else {
-					assert(pSktLinks);
-				}
-				mgr->RemoveSocketLink(socketLink, index);
-				atomic_xchg8(&socketLink.removeLock, false);
-			}
+			TaskRemoveSocket(mgr, socketLink);
 		}
-	}
+	} while (true);
 
     return 0;
 }

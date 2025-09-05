@@ -5,7 +5,8 @@
  * Created on 2014_5_8, 14:09
  */
 
-#pragma once
+#ifndef ITPRIORITYQUEUE_H
+#define ITPRIORITYQUEUE_H
 
 #include "AutoPointer.h"
 
@@ -85,3 +86,5 @@ protected:
 };
 
 }
+
+#endif /* ITPRIORITYQUEUE_H */

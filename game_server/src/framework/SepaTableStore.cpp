@@ -1,22 +1,20 @@
 #include "SepaTableStore.h"
 #include "Log.h"
 #include "CacheOperateHelper.h"
-#include "SmallBuffer.h"
 #include "ValueStream.h"
 
 using namespace mdl;
-using namespace ntwk;
 using namespace util;
 
-CSepaTableStore::CSepaTableStore(uint16_t u16CacheId) 
-	: m_u16CacheId(u16CacheId), m_nMaxTableSize(0) {
+CSepaTableStore::CSepaTableStore(uint32_t uCacheId) 
+	: m_uCacheId(uCacheId), m_nMaxTableSize(0) {
 ;
 }
 
 CSepaTableStore::~CSepaTableStore() {
 }
 
-int CSepaTableStore::LoadMaxTableSize(uint16_t u16CacheId, const char* szSPMaxTableSize)
+int CSepaTableStore::LoadMaxTableSize(uint32_t uCacheId, const char* szSPMaxTableSize)
 {
 	if(NULL == szSPMaxTableSize) {
 		OutputDebug("NULL == szSPMaxTableSize");
@@ -30,7 +28,7 @@ int CSepaTableStore::LoadMaxTableSize(uint16_t u16CacheId, const char* szSPMaxTa
 	loadRequest.SetKey(datas);
 
 	CResponseRows loadResponse;
-	McDBStoredProcDirServId(u16CacheId, loadRequest, loadResponse);
+	McDBStoredProcDirServId(uCacheId, loadRequest, loadResponse);
 	int nSize = loadResponse.GetSize();
 	if(nSize < 1) {
 		OutputDebug("nSize < 1");
@@ -87,7 +85,6 @@ bool CSepaTableStore::LoadTables(long nMaxTableSize, const char* szSPExistTables
 bool CSepaTableStore::CheckAndStore(const char* szSPCreate, const char* szSPStore, uint64_t userId, const char* szContext, int nLength)
 {
 	if(m_nMaxTableSize < 1) {
-		OutputDebug("m_nMaxTableSize < 1");
 		return false;
 	}
 	int nIndex = GetTableIndex(userId);
