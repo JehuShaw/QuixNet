@@ -7,7 +7,9 @@ The server architecture can look at some of the files in the doc directory.
 
 Friends who are interested or have questions can contact me :
 
-Email: kongke84@outlook.com Tencent QQ: 183708457
+Email: kongke84@outlook.com or xiaoqx83@gmail.com
+
+X account: Jehu Shaw
 
 # Why use QuixNet
 Distributed game server development general technology is relatively difficult and development cycle is relatively long. The traditional game server development model is to customize a distributed game framework for a game, so you should think it is not a common framework to solve Repeat the development of the framework and whether the public functions can be developed in advance through the framework.
