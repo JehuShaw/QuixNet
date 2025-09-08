@@ -13,13 +13,6 @@ Distributed game server development general technology is relatively difficult a
 Whether it is possible to reduce the difficulty of development through an automated way, such as: automatic routing of messages, automatic update of data within the node server to the database, automatic memory management, automatic locking of multi-threaded operations, and so on.
 With these problems, this framework was born.
 
-# 为什么使用QuixNet
-分布式游戏服务端开发一般技术难度比较大而且开发周期比较长,传统的游戏服务端开发模式都是针对某款游戏定制一个分布式游戏框架,所以你应该会想是不是用通用的框架来解决重复开发框架的问题,并且能否通过框架的形式预先把公共的功能都开发好,
-是否可以通过一种自动化的方式让开发难度降低,比如:自动路由消息,自动把节点内的数据更新到数据库,自动内存管理,多线程操作自动加锁等等.
-
-就是带着这些问题,这套服务端框架就这样诞生了.
-
-
 # How to build
 #### 1.Building QuixNet for Windows
 ##### 1).Install "Visual Studio 2022"
@@ -48,34 +41,6 @@ Open "xxxx_server\vsproject\xxxx_server.sln"
 \> make -j$(nproc)
 ##### 4). No need to execute make install. If it is a release version, please set the parameter to  -DCMAKE_SUILD_TYPE=Release
 
-# 如何编译
-#### 1.在Windows下编译 QuixNet
-##### 1). 安装 Visual Studio 2022
-##### 2). 安装子模块（第三方依赖库）
-打开命令窗口 "Developer Command Prompt for VS 2022", 输入如下：
-
-\> "你工程的路径\submodule.bat"
-
-##### 3).编译代码
-打开每个节点VS工程文件 "xxxx_server\vsproject\xxxx_server.sln"
-#### 2.在Linux 下编译 QuixNet
-##### 1). 安装 CMake 3.5 及以上版本 或者 使用图形界面IDE CLion
-##### 2). 安装子模块（第三方依赖库）， 到你的工程目录打开终端“Terminal"并执行如下命令：
-
-\> "你的工程目录/submodule.sh"
-
-##### 3). 编译代码，使用CMake编译，输入如下命令：
-
-\> cd xxxx_server
-
-\> mkdir cbuild
-
-\> cd cbuild
-
-\> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
-
-\> make -j$(nproc)
-##### 4). 没必要执行 make install。如果需要编译release 版本，请修改参数为 -DCMAKE_SUILD_TYPE=Release 。
 
 # how to use
 #### 1. Set the configuration file for the node (Like agent_server, game_server, login_server, cache_server, etc. are all called nodes.)
@@ -113,7 +78,44 @@ Therefore, what message the node needs to register needs to be registered, and t
 Need special instructions:  
 1. They handle differently in the case of no message registration, no messages are registered between nodes, all messages are received, and the modules are
 No message is received without message registration.  
-2. The message is ultimately processed within the module.  
+2. The message is ultimately processed within the module.
+
+
+
+# 为什么使用QuixNet
+分布式游戏服务端开发一般技术难度比较大而且开发周期比较长,传统的游戏服务端开发模式都是针对某款游戏定制一个分布式游戏框架,所以你应该会想是不是用通用的框架来解决重复开发框架的问题,并且能否通过框架的形式预先把公共的功能都开发好,
+是否可以通过一种自动化的方式让开发难度降低,比如:自动路由消息,自动把节点内的数据更新到数据库,自动内存管理,多线程操作自动加锁等等.
+
+就是带着这些问题,这套服务端框架就这样诞生了.
+
+# 如何编译
+#### 1.在Windows下编译 QuixNet
+##### 1). 安装 Visual Studio 2022
+##### 2). 安装子模块（第三方依赖库）
+打开命令窗口 "Developer Command Prompt for VS 2022", 输入如下：
+
+\> "你工程的路径\submodule.bat"
+
+##### 3).编译代码
+打开每个节点VS工程文件 "xxxx_server\vsproject\xxxx_server.sln"
+#### 2.在Linux 下编译 QuixNet
+##### 1). 安装 CMake 3.5 及以上版本 或者 使用图形界面IDE CLion
+##### 2). 安装子模块（第三方依赖库）， 到你的工程目录打开终端“Terminal"并执行如下命令：
+
+\> "你的工程目录/submodule.sh"
+
+##### 3). 编译代码，使用CMake编译，输入如下命令：
+
+\> cd xxxx_server
+
+\> mkdir cbuild
+
+\> cd cbuild
+
+\> cmake -G "Unix Makefiles" -DCMAKE_SYSTEM_PROCESSOR=x86_64 -DCMAKE_BUILD_TYPE=Debug .. 
+
+\> make -j$(nproc)
+##### 4). 没必要执行 make install。如果需要编译release 版本，请修改参数为 -DCMAKE_SUILD_TYPE=Release 
 
 # 如何使用
 #### 1.为节点设置配置文件 （像 agent_server、game_server、login_server、cache_server 等等，都称为节点）
