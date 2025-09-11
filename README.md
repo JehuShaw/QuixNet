@@ -19,9 +19,13 @@ If this project has been helpful to you, or you'd like to see it developed furth
 
 ## 💝 赞助支持
 如果这个项目对您有帮助，或者您希望看到它的进一步发展，请考虑通过 [**PayPal**](https://paypal.me/JehuShaw) 赞助我。非常感谢您的支持！ 
+
 当然您也可以使用支付宝：
+
 ![支付宝收款码](sponsor_alipay.jpg)
+
 或者微信：
+
 ![微信收款码](sponsor_wxpay.jpg)
 
 # Why use QuixNet
