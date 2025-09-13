@@ -176,6 +176,7 @@ if not exist "third_party\openssl\win\%USE_PLATFORM%\lib\libcrypto.lib" (
 		echo "Git add submodule openssl failed !"
 		goto endlocal
 	)
+	set PROJECT_DIR=%cd%
 	cd submodule/win/openssl
 	git checkout OpenSSL_1_1_1u
 	if %errorlevel% neq 0 (
@@ -189,9 +190,9 @@ if not exist "third_party\openssl\win\%USE_PLATFORM%\lib\libcrypto.lib" (
 	)
 
 	if %USE_PLATFORM% == x64 (
-		perl Configure VC-WIN64A --prefix=%cd%\..\..\..\third_party\openssl\win\x64
+		perl Configure VC-WIN64A --prefix=%PROJECT_DIR%\third_party\openssl\win\x64
 	) else if %USE_PLATFORM% == x32 (
-		perl Configure VC-WIN32 --prefix=%cd%\..\..\..\third_party\openssl\win\x32
+		perl Configure VC-WIN32 --prefix=%PROJECT_DIR%\third_party\openssl\win\x32
 	) else (
 		echo "Unknown USE_PLATFORM value !"
 		goto endlocal
