@@ -18,11 +18,15 @@ Telegram ：xiaoqx25
 If this project has been helpful to you, or you'd like to see it developed further, please consider sponsoring me via [**PayPal**](https://paypal.me/JehuShaw). Thank you so much for your support!
 
 ## 💝 赞助支持
-如果这个项目对您有帮助，或者您希望看到它的进一步发展，请考虑通过 [**PayPal**](https://paypal.me/JehuShaw) 赞助我。非常感谢您的支持！ 
-当然您也可以使用支付宝：
-![支付宝收款码](sponsor_alipay.jpg)
-或者微信：
-![微信收款码](sponsor_wxpay.jpg)
+如果这个项目对您有帮助，或者您希望看到它的进一步发展，请考虑通过 [**PayPal**](https://paypal.me/JehuShaw) 赞助我， 
+
+当然你可以选择扫码支付：
+支付宝支付：| 微信支付：
+--- | ---
+![支付宝收款码](sponsor_alipay.jpg) | ![微信收款码](sponsor_wxpay.jpg)
+
+非常感谢您的支持！
+
 
 # Why use QuixNet
 Distributed game server development general technology is relatively difficult and development cycle is relatively long. The traditional game server development model is to customize a distributed game framework for a game, so you should think it is not a common framework to solve Repeat the development of the framework and whether the public functions can be developed in advance through the framework.
