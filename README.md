@@ -240,9 +240,13 @@ int32_t exp;
     <add key="DatabasePSW" value="xmxy08155" />
 
   在ubuntu下安装 MySQL 数据库 (windows 下安装mysql数据库就不具体说明了）：
+
 \> sudo apt update
+
 \> sudo apt install mariadb-server
+
 \> sudo service mariadb start
+
 \> sudo mysql_secure_installation
 
 创建数据库并导入数据:
