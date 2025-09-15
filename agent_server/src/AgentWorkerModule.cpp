@@ -95,7 +95,7 @@ std::vector<int> CAgentWorkerModule::ListNotificationInterests()
 {
 	CScopedLock scopedLock(m_notifMutex);
 	if (m_notifications.IsInvalid()) {
-		CAutoPointer<IChannelValue> rpcChannel(GetLowLoadUserChnl());
+		CAutoPointer<IChannelValue> rpcChannel(GetFirstChnl());
 		assert(!rpcChannel.IsInvalid());
 		::node::WorkerService_Stub workerService_stub(&*rpcChannel->GetRpcChannel(), false);
 		::node::VoidPacket workerVoid;
@@ -112,8 +112,7 @@ std::vector<int> CAgentWorkerModule::ListNotificationInterests()
 			{
 				RemoveChannel(rpcChannel->GetServerId());
 			}
-		}
-		else {
+		} else {
 			rpcChannel->SetTimeoutCount(0);
 		}
 
@@ -127,8 +126,7 @@ std::vector<int> CAgentWorkerModule::ListNotificationInterests()
 			vInterest.push_back(N_CMD_CHECK_SWITCH_MAPID);
 			return vInterest;
 		}
-	}
-	else {
+	} else {
 		return *m_notifications;
 	}
 	return std::vector<int>({ N_CMD_CHECK_SWITCH_MAPID });
@@ -139,7 +137,7 @@ IModule::InterestList CAgentWorkerModule::ListProtocolInterests()
 	CScopedLock scopedLock(m_protoMutex);
 	InterestList interests;
 	if (m_protocols.IsInvalid()) {
-		CAutoPointer<IChannelValue> rpcChannel(GetLowLoadUserChnl());
+		CAutoPointer<IChannelValue> rpcChannel(GetFirstChnl());
 		assert(!rpcChannel.IsInvalid());
 		::node::WorkerService_Stub workerService_stub(&*rpcChannel->GetRpcChannel(), false);
 		::node::VoidPacket workerVoid;
@@ -156,8 +154,7 @@ IModule::InterestList CAgentWorkerModule::ListProtocolInterests()
 			{
 				RemoveChannel(rpcChannel->GetServerId());
 			}
-		}
-		else {
+		} else {
 			rpcChannel->SetTimeoutCount(0);
 		}
 
@@ -171,8 +168,7 @@ IModule::InterestList CAgentWorkerModule::ListProtocolInterests()
 					vInterest[i], &CAgentWorkerModule::HandleAgentMessage));
 			}
 		}
-	}
-	else {
+	} else {
 		const std::vector<int>& vInterest = *m_protocols;
 		int nSize = (int)vInterest.size();
 		for (int i = 0; i < nSize; ++i) {

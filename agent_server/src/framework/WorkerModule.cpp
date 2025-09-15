@@ -74,7 +74,7 @@ std::vector<int> CWorkerModule::ListNotificationInterests()
 		controller.wait();
 
 		if (!controller.ok()) {
-			if(rpcChannel->IncTimeoutCount()
+			if (rpcChannel->IncTimeoutCount()
 				>= TIMEOUT_MAX_TIMES_REMOVE_CHANNEL)
 			{
 				RemoveChannel(rpcChannel->GetServerId());
@@ -84,10 +84,10 @@ std::vector<int> CWorkerModule::ListNotificationInterests()
 		}
 
 		int nSize = workerInterest.interests_size();
-		if(nSize > 0){
+		if (nSize > 0) {
 			m_notifications.SetRawPointer(new std::vector<int>(nSize, 0));
 			std::vector<int>& vInterest = *m_notifications;
-			for(int i = 0; i < nSize; ++i) {
+			for (int i = 0; i < nSize; ++i) {
 				vInterest[i] = workerInterest.interests(i);
 			}
 			return vInterest;
@@ -102,7 +102,7 @@ IModule::InterestList CWorkerModule::ListProtocolInterests()
 {
 	CScopedLock scopedLock(m_protoMutex);
 	InterestList interests;
-	if(m_protocols.IsInvalid()) {
+	if (m_protocols.IsInvalid()) {
 		CAutoPointer<IChannelValue> rpcChannel(GetFirstChnl());
 		assert(!rpcChannel.IsInvalid());
 		::node::WorkerService_Stub workerService_stub(&*rpcChannel->GetRpcChannel(), false);
@@ -115,7 +115,7 @@ IModule::InterestList CWorkerModule::ListProtocolInterests()
 		controller.wait();
 
 		if (!controller.ok()) {
-			if(rpcChannel->IncTimeoutCount()
+			if (rpcChannel->IncTimeoutCount()
 				>= TIMEOUT_MAX_TIMES_REMOVE_CHANNEL)
 			{
 				RemoveChannel(rpcChannel->GetServerId());
@@ -125,10 +125,10 @@ IModule::InterestList CWorkerModule::ListProtocolInterests()
 		}
 
 		int nSize = workerInterest.interests_size();
-		if(nSize > 0){
+		if (nSize > 0) {
 			m_protocols.SetRawPointer(new std::vector<int>(nSize, 0));
 			std::vector<int>& vInterest = *m_protocols;
-			for(int i = 0; i < nSize; ++i) {
+			for (int i = 0; i < nSize; ++i) {
 				vInterest[i] = workerInterest.interests(i);
 				interests.push_back(BindMethod<CWorkerModule>(
 					vInterest[i], &CWorkerModule::HandleMessage));
