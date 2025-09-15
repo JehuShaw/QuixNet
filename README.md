@@ -149,6 +149,7 @@ mysql\> source centredb/xyproject.sql;
 
 
 cache_server/src/App.config Configuration Notes:
+
 cache_server requires two databases: node_memcache.sql and node_control_centre.sql for the control node. node_memcache.sql contains configuration information required by cache_server, while node_control_centre.sql contains specific business logic data.
 
 
@@ -245,21 +246,36 @@ int32_t exp;
 \> sudo mysql_secure_installation
 
 创建数据库并导入数据:
+
 cd 你的工程路径/QuixNet/mysql_script
+
 sudo mariadb -u root -p
+
 创建数据库
+
 mysql\> source create_database.sql;
+
 导入控制端cache_server的数据 (说明：框架分控制端数据库和游戏逻辑数据库， 控制端是用来管理所有节点的，游戏逻辑部分就是游戏的具体业务逻辑部分。）
+
 mysql\> use node_memcache;
+
 mysql\> source centredb/node_memcache.sql;
+
 mysql\> use node_control_centre;
+
 mysql\> source centredb/node_control_centre.sql;
+
 导入游戏逻辑cache_server (游戏逻辑的cache_server 是另外开启一个进程，和控制端cache_server 分开， 需要重新修改一下App.config配置）
+
 mysql\> use xyproject_memcache;
+
 mysql\> source centredb/xyproject_memcache.sql;
+
 mysql\> use xyproject;
+
 mysql\> source centredb/xyproject.sql;
 
 cache_server/src/App.config 配置说明：
+
 cache_server 需要关联两个数据库，比如：控制节点 node_memcache.sql 和 node_control_centre.sql ，node_memcache.sql 为cache_server需要知道的相关配置信息，而node_control_centre.sql为具体的业务逻辑数据
 
