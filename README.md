@@ -118,20 +118,35 @@ Install the MySQL database on Ubuntu (installing the MySQL database on Windows i
 \> sudo mysql_secure_installation
 
 Create a database and import data:
+
 cd your project directory/QuixNet/mysql_script
+
 sudo mariadb -u root -p
+
 Create the database
+
 mysql\> source create_database.sql;
+
 Import the data for the control-side cache_server (Note: The framework is divided into a control-side database and a game logic database. The control-side database manages all nodes, while the game logic database contains the game's specific business logic.)
+
 mysql\> use node_memcache;
+
 mysql\> source centredb/node_memcache.sql;
+
 mysql\> use node_control_centre;
+
 mysql\> source centredb/node_control_centre.sql;
+
 Import the game logic cache_server (the game logic cache_server is a separate process from the control-side cache_server, requiring modification of the App.config configuration.)
+
 mysql\> use xyproject_memcache;
+
 mysql\> source centredb/xyproject_memcache.sql;
+
 mysql\> use xyproject;
+
 mysql\> source centredb/xyproject.sql;
+
 
 cache_server/src/App.config Configuration Notes:
 cache_server requires two databases: node_memcache.sql and node_control_centre.sql for the control node. node_memcache.sql contains configuration information required by cache_server, while node_control_centre.sql contains specific business logic data.
