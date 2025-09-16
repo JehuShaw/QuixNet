@@ -16,6 +16,7 @@ Telegram ：xiaoqx25
 
 ## 💝 Sponsorship
 If this project has been helpful to you, or you'd like to see it developed further, please consider sponsoring me via [**PayPal**](https://paypal.me/JehuShaw). Thank you so much for your support!
+[**Instructional video**](https://ko-fi.com/JehuShaw)
 
 ## 💝 赞助支持
 如果这个项目对您有帮助，或者您希望看到它的进一步发展，请考虑通过 [**PayPal**](https://paypal.me/JehuShaw) 赞助我， 
